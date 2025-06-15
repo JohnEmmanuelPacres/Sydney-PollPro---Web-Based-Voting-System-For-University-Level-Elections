@@ -130,7 +130,7 @@
 .signIn1 {
   	position: absolute;
   	top: 665px;
-  	left: 694px;
+  	left: 625px;
   	display: flex;
   	align-items: center;
   	justify-content: flex-start;
@@ -153,7 +153,7 @@
 .signUp {
   	position: absolute;
   	top: 799px;
-  	left: 693px;
+  	left: 625px;
   	display: flex;
   	align-items: center;
   	justify-content: flex-start;
@@ -200,6 +200,8 @@
   	position: relative;
   	height: 30px;
   	color: #fff2f2;
+	left: 210px;
+
 }
 .options {
   	position: absolute;
