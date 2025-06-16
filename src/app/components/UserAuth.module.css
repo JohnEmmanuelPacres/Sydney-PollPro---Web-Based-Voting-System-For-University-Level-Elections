@@ -53,21 +53,30 @@
   	height: 50px;
 }
 .institutionalEmail {
-  	position: absolute;
-  	top: calc(50% - 112.5px);
-  	left: calc(50% - 250px);
+  	/* position: absolute; */
+  	top: unset;
+  	left: unset;
   	font-size: 20px;
+  	margin-bottom: 16px;
+  	display: block;
 }
 .rectangleDiv {
   	position: absolute;
   	top: calc(50% + 26.5px);
   	left: calc(50% - 250px);
-  	border-radius: 10px;
-  	background-color: #fff;
-  	border: 1px solid #bcbec0;
-  	box-sizing: border-box;
   	width: 500px;
   	height: 50px;
+  	border: none;
+  	background: transparent;
+  	box-shadow: none;
+  	border-radius: 10px;
+  	color: #000;
+  	font-size: 16px;
+  	padding-left: 24px;
+  	z-index: 2;
+}
+.rectangleDiv:focus {
+  outline: none;
 }
 .password {
   	position: absolute;
@@ -124,8 +133,22 @@
   	left: 694px;
   	display: flex;
   	align-items: center;
+  	justify-content: flex-start;
+  	padding-left: 24px;
   	width: 184px;
   	height: 23px;
+  	color: #fff;
+  	font-size: 20px;
+  	font-weight: bold;
+  	cursor: pointer;
+  	border: none;
+  	background: none;
+  	border-radius: 0;
+  	transition: color 0.2s;
+  	text-align: left;
+}
+.signIn1:hover {
+  	color: #fac36b;
 }
 .signUp {
   	position: absolute;
@@ -133,8 +156,22 @@
   	left: 693px;
   	display: flex;
   	align-items: center;
+  	justify-content: flex-start;
+  	padding-left: 24px;
   	width: 184px;
   	height: 23px;
+  	color: #fff;
+  	font-size: 20px;
+  	font-weight: bold;
+  	cursor: pointer;
+  	border: none;
+  	background: none;
+  	border-radius: 0;
+  	transition: color 0.2s;
+  	text-align: left;
+}
+.signUp:hover {
+  	color: #fac36b;
 }
 .home1 {
   	position: absolute;

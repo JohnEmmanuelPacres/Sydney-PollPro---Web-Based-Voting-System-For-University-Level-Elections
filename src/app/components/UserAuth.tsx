@@ -1,53 +1,167 @@
+'use client';
+import React, { useState, useEffect } from 'react'
 import type { NextPage } from 'next';
 import Image from "next/image";
 import styles from './UserAuth.module.css';
+import { supabase } from '../../utils/supabaseClient';
+import { useRouter } from 'next/navigation';
 
+const SIGNIN: NextPage = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [signInError, setSignInError] = useState("");
+  const router = useRouter();
 
-const SIGNIN:NextPage = () => {
-  	return (
-    		<div className={styles.signIn}>
-      			<div className={styles.signInChild} />
-      			<div className={styles.loginParent}>
-        				<div className={styles.login}>Login</div>
-        				<div className={styles.dontHaveAn}>Don’t have an account yet?</div>
-          					<div className={styles.groupChild} />
-          					<div className={styles.groupItem} />
-          					<div className={styles.rectangleParent}>
-            						<div className={styles.groupInner} />
-            						<div className={styles.institutionalEmail}>Institutional Email</div>
-            						<div className={styles.rectangleDiv} />
-            						<div className={styles.password}>Password</div>
-            						<div className={styles.usernamecitedu}>username@cit.edu</div>
-            						<div className={styles.password1}>Password</div>
-            						<div className={styles.forgotPassword}>Forgot Password?</div>
-              							<Image className={styles.clarityeyeHideLineIcon} width={16} height={16} sizes="100vw" alt="" src="/clarity:eye-hide-line.svg" />
-              							</div>
-              							</div>
-              							<div className={styles.signIn1}>SIGN IN</div>
-              							<div className={styles.signUp}>SIGN UP</div>
-              							<div className={styles.header}>
-                								<div className={styles.options}>
-                  									<div className={styles.home}>
-                    										<div className={styles.home1}>Home</div>
-                  									</div>
-                  									<div className={styles.results}>
-                    										<div className={styles.home1}>Results</div>
-                  									</div>
-                  									<div className={styles.updates}>
-                    										<div className={styles.home1}>Updates</div>
-                  									</div>
-                  									<div className={styles.about}>
-                    										<div className={styles.home1}>About</div>
-                  									</div>
-                								</div>
-                								<div className={styles.univote}>UniVote</div>
-                								<Image className={styles.websiteLogoIcon} width={146} height={120} sizes="100vw" alt="" src="/Website Logo.png" />
-                								<div className={styles.signInButtonAnimation}>
-                  									<b className={styles.signIn2}>SIGN IN</b>
-                								</div>
-              							</div>
-              							</div>);
-            						};
-            						
-            						export default SIGNIN;
+  const handleSignIn = async () => {
+    setSignInError("");
+    if (!email.endsWith('@cit.edu')) {
+      setSignInError('Email must end with @cit.edu');
+      return;
+    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      setSignInError(error.message);
+    } else {
+      router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+    }
+  };
+
+  useEffect(() => {
+    if (signInError) {
+      const timer = setTimeout(() => setSignInError("") , 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [signInError]);
+
+  return (
+    <div className={styles.signIn}>
+      <div className={styles.signInChild} />
+      <div className={styles.loginParent}>
+        <div className={styles.login}>Login</div>
+        <div className={styles.dontHaveAn}>Don't have an account yet?</div>
+        <div className={styles.groupChild} />
+        <div className={styles.groupItem} />
+        <div className={styles.rectangleParent}>
+          <div className={styles.institutionalEmail}>Institutional Email</div>
+          <div style={{ height: '12px' }} />
+          <input
+            type="email"
+            className={styles.rectangleDiv}
+            style={{
+              position: 'absolute',
+              top: '26.5px',
+              left: '0',
+              width: '500px',
+              height: '50px',
+              borderRadius: '10px',
+              backgroundColor: '#fff',
+              border: '1px solid #bcbec0',
+              boxSizing: 'border-box',
+              fontSize: '16px',
+              paddingLeft: '24px',
+              color: '#000',
+            }}
+            placeholder="username@cit.edu"
+            value={email}
+            onChange={e => {
+              setEmail(e.target.value);
+              if (e.target.value && !e.target.value.endsWith('@cit.edu')) {
+                setEmailError('Email must end with @cit.edu');
+              } else {
+                setEmailError("");
+              }
+            }}
+          />
+          {emailError && (
+            <div style={{ position: 'absolute', top: '80px', left: '0', color: '#d90429', fontSize: '16px', fontWeight: 'bold', textShadow: '0 1px 2px #fff' }}>{emailError}</div>
+          )}
+          <div className={styles.password}>Password</div>
+          <input
+            type={showPassword ? "text" : "password"}
+            className={styles.rectangleDiv}
+            style={{
+              position: 'absolute',
+              top: '102.5px',
+              left: '0',
+              width: '500px',
+              height: '50px',
+              borderRadius: '10px',
+              backgroundColor: '#fff',
+              border: '1px solid #bcbec0',
+              boxSizing: 'border-box',
+              fontSize: '16px',
+              paddingLeft: '24px',
+              color: '#000',
+            }}
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
+          {/* Show Password Checkbox */}
+          <div style={{ position: 'absolute', top: '162px', left: '0', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="checkbox"
+              id="showPassword"
+              checked={showPassword}
+              onChange={() => setShowPassword(!showPassword)}
+              style={{ marginRight: '8px' }}
+            />
+            <label htmlFor="showPassword" style={{ color: '#000', fontSize: '14px' }}>Show Password</label>
+          </div>
+          <div className={styles.forgotPassword}>Forgot Password?</div>
+        </div>
+      </div>
+      <button className={styles.signIn1} onClick={handleSignIn}>
+        SIGN IN
+      </button>
+      {signInError && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          background: '#d90429',
+          color: '#fff',
+          fontWeight: 'bold',
+          fontSize: '18px',
+          padding: '16px',
+          textAlign: 'center',
+          borderRadius: '0 0 10px 10px',
+          zIndex: 1000,
+        }}>
+          invalid email or password!
+        </div>
+      )}
+      <div className={styles.signUp}>SIGN UP</div>
+      <div className={styles.header}>
+        <div className={styles.options}>
+          <div className={styles.home}>
+            <div className={styles.home1}>Home</div>
+          </div>
+          <div className={styles.results}>
+            <div className={styles.home1}>Results</div>
+          </div>
+          <div className={styles.updates}>
+            <div className={styles.home1}>Updates</div>
+          </div>
+          <div className={styles.about}>
+            <div className={styles.home1}>About</div>
+          </div>
+        </div>
+        <div className={styles.univote}>UniVote</div>
+        <Image className={styles.websiteLogoIcon} width={146} height={120} sizes="100vw" alt="" src="/Website Logo.png" />
+        <div className={styles.signInButtonAnimation}>
+          <b className={styles.signIn2}>SIGN IN</b>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SIGNIN;
             						
