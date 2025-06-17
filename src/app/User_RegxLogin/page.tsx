@@ -74,7 +74,7 @@ const SIGNIN: NextPage = () => {
   return (
     <div className="w-full h-[1024px] relative bg-gradient-to-b from-[#c31d1d] to-[#b38308] overflow-hidden text-left text-xl text-white font-['Actor']">
       {/* Sign In Container */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79 w-[790px] h-[727px]">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[790px] h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79">
         <div className="absolute top-[calc(50%-274px)] left-[calc(50%-251.5px)] font-semibold text-[38px] font-['Baloo_Da_2']">
           Login
         </div>
@@ -100,7 +100,7 @@ const SIGNIN: NextPage = () => {
             }}
           />
           {emailError && (
-            <div className="absolute top-[80px] left-0 text-[#d90429] text-base font-bold text-shadow-sm">
+            <div className="mt-1 text-[#d90429] text-base font-bold">
               {emailError}
             </div>
           )}
@@ -130,23 +130,23 @@ const SIGNIN: NextPage = () => {
           
           <div className="mt-4 text-black">Forgot Password?</div>
         </div>
+
+      {/* Sign in */}
+        <button 
+          onClick={handleSignIn}
+          className="absolute top-[calc(50%+120px)] left-[calc(50%-92px)] w-[184px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
+        >
+          SIGN IN
+        </button>
+
+      {/* Sign up */}
+        <button 
+          onClick={handleSignUp}
+          className="absolute top-[calc(50%+220px)] left-[calc(50%-92px)] w-[184px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
+        >
+          SIGN UP
+        </button>
       </div>
-
-      {/* Sign In Button */}
-      <button 
-        onClick={handleSignIn}
-        className="absolute top-[665px] left-[680px] flex items-center justify-center w-[184px] h-[23px] text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 text-left hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
-      >
-        SIGN IN
-      </button>
-
-      {/* Sign Up Button */}
-      <button 
-        onClick={handleSignUp}
-        className="absolute top-[799px] left-[680px] flex items-center justify-center w-[184px] h-[23px] text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 text-left hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
-      >
-        SIGN UP
-      </button>
 
       {/* Header */}
       <div className="absolute w-[calc(100%+61px)] -top-[11px] -right-[61px] left-0 shadow-[0px_5px_4px_rgba(0,0,0,0.5)] bg-[#7c0101] h-[127px] overflow-hidden font-['Inter']">
@@ -186,4 +186,3 @@ const SIGNIN: NextPage = () => {
 };
 
 export default SIGNIN;
-                        
