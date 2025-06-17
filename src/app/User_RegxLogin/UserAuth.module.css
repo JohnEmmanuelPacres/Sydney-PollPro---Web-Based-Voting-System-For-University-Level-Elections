@@ -1,0 +1,278 @@
+.signInChild {
+  	position: absolute;
+  	top: calc(50% - 312px);
+  	left: calc(50% - 395px);
+  	backdrop-filter: blur(25px);
+  	border-radius: 40px;
+  	background-color: rgba(255, 255, 255, 0.1);
+  	border: 3px solid rgba(255, 255, 255, 0.79);
+  	box-sizing: border-box;
+  	width: 790px;
+  	height: 727px;
+}
+.login {
+  	position: absolute;
+  	top: calc(50% - 274px);
+  	left: calc(50% - 251.5px);
+  	font-weight: 600;
+}
+.dontHaveAn {
+  	position: absolute;
+  	top: calc(50% + 188px);
+  	left: calc(50% - 87.5px);
+  	font-size: 18px;
+  	font-family: Actor;
+}
+.groupChild {
+  	position: absolute;
+  	top: calc(50% + 90px);
+  	left: calc(50% - 248.5px);
+  	border-radius: 10px;
+  	background-color: #1d1b1c;
+  	width: 500px;
+  	height: 50px;
+}
+.groupItem {
+  	position: absolute;
+  	top: calc(50% + 224px);
+  	left: calc(50% - 248.5px);
+  	border-radius: 10px;
+  	background-color: #1d1b1c;
+  	width: 500px;
+  	height: 50px;
+}
+.groupInner {
+  	position: absolute;
+  	top: calc(50% - 79.5px);
+  	left: calc(50% - 250px);
+  	border-radius: 10px;
+  	background-color: #fff;
+  	border: 1px solid #bcbec0;
+  	box-sizing: border-box;
+  	width: 500px;
+  	height: 50px;
+}
+.institutionalEmail {
+  	/* position: absolute; */
+  	top: unset;
+  	left: unset;
+  	font-size: 20px;
+  	margin-bottom: 16px;
+  	display: block;
+}
+.rectangleDiv {
+  	position: absolute;
+  	top: calc(50% + 26.5px);
+  	left: calc(50% - 250px);
+  	width: 500px;
+  	height: 50px;
+  	border: none;
+  	background: transparent;
+  	box-shadow: none;
+  	border-radius: 10px;
+  	color: #000;
+  	font-size: 16px;
+  	padding-left: 24px;
+  	z-index: 2;
+}
+.rectangleDiv:focus {
+  outline: none;
+}
+.password {
+  	position: absolute;
+  	top: calc(50% - 6.5px);
+  	left: calc(50% - 250px);
+  	font-size: 20px;
+}
+.usernamecitedu {
+  	position: absolute;
+  	top: calc(50% - 66.5px);
+  	left: calc(50% - 227px);
+  	color: #bcbec0;
+}
+.password1 {
+  	position: absolute;
+  	top: calc(50% + 39.5px);
+  	left: calc(50% - 227px);
+  	color: #bcbec0;
+}
+.forgotPassword {
+  	position: absolute;
+  	top: calc(50% + 88.5px);
+  	left: calc(50% - 250px);
+}
+.clarityeyeHideLineIcon {
+  	position: absolute;
+  	top: calc(50% + 43.5px);
+  	left: calc(50% + 213px);
+  	border-radius: 40px;
+  	width: 16px;
+  	height: 16px;
+  	overflow: hidden;
+}
+.rectangleParent {
+  	position: absolute;
+  	top: calc(50% - 172px);
+  	left: calc(50% - 251.5px);
+  	width: 500px;
+  	height: 225px;
+  	font-size: 14px;
+}
+.loginParent {
+  	position: absolute;
+  	top: calc(50% - 224px);
+  	left: calc(50% - 256px);
+  	width: 503px;
+  	height: 548px;
+  	font-size: 38px;
+  	font-family: 'Baloo Da 2';
+}
+.signIn1 {
+  	position: absolute;
+  	top: 665px;
+  	left: 625px;
+  	display: flex;
+  	align-items: center;
+  	justify-content: flex-start;
+  	padding-left: 24px;
+  	width: 184px;
+  	height: 23px;
+  	color: #fff;
+  	font-size: 20px;
+  	font-weight: bold;
+  	cursor: pointer;
+  	border: none;
+  	background: none;
+  	border-radius: 0;
+  	transition: color 0.2s;
+  	text-align: left;
+}
+.signIn1:hover {
+  	color: #fac36b;
+}
+.signUp {
+  	position: absolute;
+  	top: 799px;
+  	left: 625px;
+  	display: flex;
+  	align-items: center;
+  	justify-content: flex-start;
+  	padding-left: 24px;
+  	width: 184px;
+  	height: 23px;
+  	color: #fff;
+  	font-size: 20px;
+  	font-weight: bold;
+  	cursor: pointer;
+  	border: none;
+  	background: none;
+  	border-radius: 0;
+  	transition: color 0.2s;
+  	text-align: left;
+}
+.signUp:hover {
+  	color: #fac36b;
+}
+.home1 {
+  	position: absolute;
+  	top: 0%;
+  	left: 0%;
+  	line-height: 150%;
+  	font-weight: 500;
+}
+.home {
+  	width: 55px;
+  	position: relative;
+  	height: 30px;
+}
+.results {
+  	width: 72px;
+  	position: relative;
+  	height: 30px;
+}
+.updates {
+  	width: 81px;
+  	position: relative;
+  	height: 30px;
+}
+.about {
+  	width: 58px;
+  	position: relative;
+  	height: 30px;
+  	color: #fff2f2;
+	left: 210px;
+
+}
+.options {
+  	position: absolute;
+  	top: 47px;
+  	right: 359px;
+  	display: flex;
+  	flex-direction: row;
+  	align-items: center;
+  	justify-content: flex-start;
+  	padding: 11px 21px;
+  	gap: 44px;
+}
+.univote {
+  	position: absolute;
+  	top: 35px;
+  	left: 213px;
+  	font-size: 45px;
+  	line-height: 150%;
+  	font-family: 'Abyssinica SIL';
+}
+.websiteLogoIcon {
+  	position: absolute;
+  	top: 7px;
+  	left: 38px;
+  	width: 146px;
+  	height: 120px;
+  	overflow: hidden;
+  	object-fit: cover;
+}
+.signIn2 {
+  	position: relative;
+  	line-height: 150%;
+}
+.signInButtonAnimation {
+  	position: absolute;
+  	top: 41px;
+  	left: 1230px;
+  	box-shadow: -2px -4px 18px rgba(250, 195, 107, 0.1), -1px -2px 6px rgba(250, 195, 107, 0.4), 2px 4px 18px rgba(0, 0, 0, 0.2), 1px 2px 6px rgba(0, 0, 0, 0.4);
+  	border-radius: 999px;
+  	background: linear-gradient(100.7deg, #60523b, #fac36b 95.23%);
+  	border: 3px solid #fac36b;
+  	box-sizing: border-box;
+  	width: 135px;
+  	display: flex;
+  	flex-direction: row;
+  	align-items: center;
+  	justify-content: center;
+  	padding: 14px 24px;
+  	font-family: Jaldi;
+}
+.header {
+  	position: absolute;
+  	width: calc(100% + 61px);
+  	top: -11px;
+  	right: -61px;
+  	left: 0px;
+  	box-shadow: 0px 5px 4px rgba(0, 0, 0, 0.5);
+  	background-color: #7c0101;
+  	height: 127px;
+  	overflow: hidden;
+  	font-family: Inter;
+}
+.signIn {
+  	width: 100%;
+  	position: relative;
+  	background: linear-gradient(180deg, #c31d1d, #b38308);
+  	height: 1024px;
+  	overflow: hidden;
+  	text-align: left;
+  	font-size: 20px;
+  	color: #fff;
+  	font-family: Actor;
+}
+
