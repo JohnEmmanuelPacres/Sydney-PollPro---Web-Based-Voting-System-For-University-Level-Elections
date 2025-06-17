@@ -17,17 +17,47 @@ const SIGNIN: NextPage = () => {
   const handleSignIn = async () => {
     setSignInError("");
     if (!email.endsWith('@cit.edu')) {
-      setSignInError('Email must end with @cit.edu');
+      setSignInError('Please use your CIT email address (@cit.edu)');
       return;
     }
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      setSignInError(error.message);
-    } else {
-      router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          setSignInError('Please check your email (@cit.edu) for a confirmation link. Click the link to verify your account before logging in.');
+        } else if (error.message.includes('Invalid login credentials')) {
+          setSignInError('Invalid email or password. Please try again.');
+        } else {
+          setSignInError(error.message);
+        }
+      } else if (data.user) {
+        router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+      }
+    } catch (err) {
+      setSignInError('An unexpected error occurred. Please try again.');
+      console.error('Login error:', err);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+      
+      if (error) {
+        setSignInError('Failed to resend confirmation email. Please try again.');
+      } else {
+        setSignInError('Confirmation email has been resent. Please check your inbox.');
+      }
+    } catch (err) {
+      setSignInError('Failed to resend confirmation email. Please try again.');
     }
   };
 
@@ -138,7 +168,24 @@ const SIGNIN: NextPage = () => {
           borderRadius: '0 0 10px 10px',
           zIndex: 1000,
         }}>
-          invalid email or password!
+          {signInError}
+          {signInError.includes('check your email') && (
+            <button 
+              onClick={handleResendConfirmation}
+              style={{
+                marginLeft: '10px',
+                padding: '5px 10px',
+                background: '#fff',
+                color: '#d90429',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Resend Confirmation
+            </button>
+          )}
         </div>
       )}
       <button className={styles.signUp} onClick={handleSignUp}>SIGN UP</button>
