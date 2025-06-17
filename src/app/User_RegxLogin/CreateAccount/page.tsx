@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
-import styles from './CreateAccount.module.css';
 import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'next/navigation';
 
@@ -44,16 +43,14 @@ const CreateAccount = () => {
         } else {
           setError(signUpError.message);
         }
-        // Make the error disappear after 5 seconds
         setTimeout(() => {
           setError(null);
         }, 5000);
-        return; // Stop further execution if there's an error
+        return;
       }
 
       if (data.user) {
         setSuccess('Registered successfully! You can now log in.');
-        // Wait for 5 seconds before redirecting to login page
         setTimeout(() => {
           router.push('/User_RegxLogin');
         }, 5000);
@@ -65,65 +62,53 @@ const CreateAccount = () => {
   };
 
   return (
-    <div className={styles.registration}>
+    <div className="w-full h-[1024px] relative bg-gradient-to-b from-[#bb8b1b] to-[#b01818] overflow-hidden text-center text-2xl text-white font-['Merriweather']">
       {error && (
-        <div className={styles.error} style={{ color: 'red', marginBottom: '10px' }}>
+        <div className="text-red-500 mb-2.5">
           {error}
         </div>
       )}
       {success && (
-        <div className={styles.success} style={{ 
-          color: 'green', 
-          marginBottom: '10px',
-          padding: '10px',
-          backgroundColor: '#e6ffe6',
-          borderRadius: '5px',
-          textAlign: 'center'
-        }}>
+        <div className="text-green-500 mb-2.5 p-2.5 bg-[#e6ffe6] rounded-[5px] text-center">
           {success}
         </div>
       )}
-      <div className={styles.logo}>
-        <div className={styles.joinUs}>JOIN US</div>
+
+      {/* Logo Section */}
+      <div className="absolute top-[309.47px] left-[256px] w-[198px] h-[63px] text-left text-[50px]">
+        <div className="absolute top-0 left-0 font-black">JOIN US</div>
       </div>
 
-      <div className={styles.aboutUs}>
-        <div className={styles.aboutUsChild} />
-        <b className={styles.aboutUs1}>About Us</b>
-        <b className={styles.forMoreInformation}>
+      {/* About Us Section */}
+      <div className="absolute top-[512.47px] left-[142px] w-[426px] h-[161px] text-[26px]">
+        <div className="absolute top-[89px] left-[114px] rounded-[40px] bg-[#222121] w-[200px] h-[72px]" />
+        <div className="absolute top-[111px] left-[155px] font-bold">About Us</div>
+        <div className="absolute top-0 left-0 text-xl inline-block w-[426px] h-[65px] font-bold">
           For more information, click the button below!
-        </b>
+        </div>
       </div>
 
+      {/* Form Image */}
       <Image
-        className={styles.formIcon}
+        className="w-full relative top-[145px] left-[260px] max-w-full overflow-hidden h-[734.9px] object-contain"
         width={740.4}
         height={734.9}
-        sizes="100vw"
-        alt=""
+        alt="Form"
         src="/form.png"
       />
 
-      <b className={styles.register}>Register</b>
+      {/* Register Title */}
+      <div className="absolute top-[199.47px] left-[827px] text-[40px] inline-block text-[#f3e2e2] w-[343px] h-[82px]">
+        Register
+      </div>
 
-      <form className={styles.form} onSubmit={handleSubmit}>
+      {/* Form */}
+      <form className="absolute top-[292.47px] left-[759px] w-[450px] h-[292px] text-[#c6c3c3]" onSubmit={handleSubmit}>
         <input
           type="email"
           name="email"
           placeholder="University Email"
-          className={styles.formItem}
-          style={{
-              position: 'absolute',
-              width: '500px',
-              height: '50px',
-              borderRadius: '10px',
-              backgroundColor: '#fff',
-              border: '1px solid #bcbec0',
-              boxSizing: 'border-box',
-              fontSize: '16px',
-              paddingLeft: '24px',
-              color: '#000',
-            }}
+          className="absolute top-0 left-0 w-[500px] h-[50px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] rounded-[10px] bg-white border border-[#bcbec0] box-border text-base pl-6 text-black"
           value={formData.email}
           onChange={handleChange}
           required
@@ -133,19 +118,7 @@ const CreateAccount = () => {
           type="text"
           name="courseYear"
           placeholder="Course & Year"
-          className={styles.formChild}
-          style={{
-              position: 'absolute',
-              width: '500px',
-              height: '50px',
-              borderRadius: '10px',
-              backgroundColor: '#fff',
-              border: '1px solid #bcbec0',
-              boxSizing: 'border-box',
-              fontSize: '16px',
-              paddingLeft: '24px',
-              color: '#000',
-            }}
+          className="absolute top-[118px] left-0 w-[500px] h-[50px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] rounded-[10px] bg-white border border-[#bcbec0] box-border text-base pl-6 text-black"
           value={formData.courseYear}
           onChange={handleChange}
           required
@@ -155,48 +128,38 @@ const CreateAccount = () => {
           type="password"
           name="password"
           placeholder="Password"
-          className={styles.formInner}
-          style={{
-              position: 'absolute',
-              width: '500px',
-              height: '50px',
-              borderRadius: '10px',
-              backgroundColor: '#fff',
-              border: '1px solid #bcbec0',
-              boxSizing: 'border-box',
-              fontSize: '16px',
-              paddingLeft: '24px',
-              color: '#000',
-            }}
+          className="absolute top-[236px] left-0 w-[500px] h-[50px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] rounded-[10px] bg-white border border-[#bcbec0] box-border text-base pl-6 text-black"
           value={formData.password}
           onChange={handleChange}
           required
         />
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 5px)',
-          left: '24px',
-          color: '#666',
-          fontSize: '12px',
-          fontStyle: 'italic'
-        }}>
+        <div className="absolute top-[calc(100%+5px)] left-6 text-[#666] text-xs italic">
           Password must be at least 6 characters long
         </div>
       </form>
 
-      <a className={styles.logInHere} href="/User_RegxLogin">Log in here</a>
+      {/* Login Link */}
+      <a 
+        href="/User_RegxLogin" 
+        className="absolute top-[603.47px] left-[779px] text-xl inline-block w-[223px] h-8 no-underline text-white font-bold cursor-pointer border-none bg-transparent rounded-none transition-colors duration-200 text-left hover:text-[#fac36b]"
+      >
+        Log in here
+      </a>
 
-      <button className={styles.register1} onClick={handleSubmit}>
-        <div className={styles.registerChild} />
-        <b className={styles.register2}>Register</b>
+      {/* Register Button */}
+      <button 
+        onClick={handleSubmit}
+        className="absolute top-[667.47px] left-[758px] flex items-center justify-center w-[184px] h-[23px] text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 text-left hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
+      >
+        Register
       </button>
 
+      {/* Logo */}
       <Image
-        className={styles.logoOfMsad1}
+        className="absolute top-[145.47px] left-[282px] w-[147px] h-[147px] object-cover"
         width={147}
         height={147}
-        sizes="100vw"
-        alt=""
+        alt="Website Logo"
         src="/Website Logo.png"
       />
     </div>
