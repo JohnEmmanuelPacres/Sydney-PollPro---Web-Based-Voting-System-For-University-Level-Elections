@@ -134,7 +134,7 @@ const SIGNIN: NextPage = () => {
       {/* Sign in */}
         <button 
           onClick={handleSignIn}
-          className="absolute top-[calc(50%+120px)] left-[calc(50%-92px)] w-[184px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
+          className="absolute top-[calc(50%+120px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
         >
           SIGN IN
         </button>
@@ -142,7 +142,7 @@ const SIGNIN: NextPage = () => {
       {/* Sign up */}
         <button 
           onClick={handleSignUp}
-          className="absolute top-[calc(50%+220px)] left-[calc(50%-92px)] w-[184px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
+          className="absolute top-[calc(50%+220px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
         >
           SIGN UP
         </button>
