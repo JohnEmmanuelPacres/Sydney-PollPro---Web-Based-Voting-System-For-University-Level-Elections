@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'next/navigation';
@@ -20,8 +20,58 @@ const CreateAccount = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const courseYearOptions = [
+    'BS Computer Science - 1st Year',
+    'BS Computer Science - 2nd Year',
+    'BS Computer Science - 3rd Year',
+    'BS Computer Science - 4rd Year',
+    'BS Computer Engineer - 1st Year',
+    'BS Computer Engineer - 2nd Year',
+    'BS Computer Engineer - 3rd Year',
+    'BS Computer Engineer - 4rd Year',
+    'BA English - 1st Year',
+    'BA English - 2nd Year',
+    'BA English - 3rd Year',
+    'BBA - 1st Year',
+    'BBA - 2nd Year',
+    'BBA - 3rd Year',
+  ];
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  // Keyboard navigation
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  const handleDropdownKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!dropdownOpen) return;
+    if (e.key === 'ArrowDown') {
+      setHighlightedIndex((prev) => (prev < courseYearOptions.length - 1 ? prev + 1 : 0));
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : courseYearOptions.length - 1));
+      e.preventDefault();
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      setFormData((prev) => ({ ...prev, courseYear: courseYearOptions[highlightedIndex] }));
+      setDropdownOpen(false);
+      setHighlightedIndex(-1);
+      e.preventDefault();
+    } else if (e.key === 'Escape') {
+      setDropdownOpen(false);
+      setHighlightedIndex(-1);
+      e.preventDefault();
+    }
+  };
+
   // Memoized form handler to prevent unnecessary re-creations
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
@@ -114,7 +164,7 @@ const CreateAccount = () => {
         </div>
         
         {/* Form Content */}
-        <div className="absolute z-10 w-full max-w-screen-md p-10, pr-30 pl-30">
+        <div className="absolute z-10 w-full max-w-screen-md p-10 pr-30 pl-30">
           <h2 className="text-[40px] text-[#f3e2e2] mb-12 text-center">Register</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -131,17 +181,48 @@ const CreateAccount = () => {
               />
             </div>
 
-            <div>
-              <input
-                type="text"
-                name="courseYear"
-                placeholder="Course & Year"
-                className={inputClasses}
-                value={formData.courseYear}
-                onChange={handleChange}
-                required
-                autoComplete="off"
-              />
+            <div className="relative" ref={dropdownRef}>
+              <div
+                tabIndex={0}
+                className={`${inputClasses} flex items-center justify-between cursor-pointer focus:border-[#fac36b] focus:ring-2 focus:ring-[#fac36b] transition-all duration-200 hover:border-[#fac36b] pr-10 bg-white text-black`}
+                onClick={() => setDropdownOpen((open) => !open)}
+                onKeyDown={handleDropdownKeyDown}
+                aria-haspopup="listbox"
+                aria-expanded={dropdownOpen}
+                aria-label="Select Course and Year"
+              >
+                <span className={formData.courseYear ? 'text-black' : 'text-gray-400'}>
+                  {formData.courseYear || 'Select Course & Year'}
+                </span>
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+              {dropdownOpen && (
+                <ul
+                  className="absolute left-0 mt-2 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-60 overflow-auto"
+                  role="listbox"
+                >
+                  {courseYearOptions.map((option, idx) => (
+                    <li
+                      key={option}
+                      className={`px-6 py-2 cursor-pointer text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
+                        formData.courseYear === option ? 'bg-[#fac36b] text-white' : ''
+                      } ${highlightedIndex === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, courseYear: option }));
+                        setDropdownOpen(false);
+                        setHighlightedIndex(-1);
+                      }}
+                      onMouseEnter={() => setHighlightedIndex(idx)}
+                      role="option"
+                      aria-selected={formData.courseYear === option}
+                    >
+                      {option}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div>
