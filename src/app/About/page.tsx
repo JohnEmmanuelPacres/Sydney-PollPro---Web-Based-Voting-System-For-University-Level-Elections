@@ -44,7 +44,6 @@ export default function AboutPage() {
                         border-8 border-red-900 rounded-3xl
                         transform hover:scale-105 transition-all duration-300 cursor-pointer
                         hover:shadow-[0_25px_50px_rgba(0,0,0,0.5),inset_0_-10px_20px_rgba(0,0,0,0.4),inset_0_10px_20px_rgba(255,255,255,0.3)]
-                        hover:bg-gradient-to-br hover:from-yellow-300 hover:via-orange-300 hover:to-red-500 hover:brightness-125
                         before:absolute before:inset-[-4px] before:bg-red-900 before:-z-10 before:rounded-[28px]
                         after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm">
             <h2 className="text-6xl md:text-9xl font-black font-['Inter'] relative
@@ -56,7 +55,7 @@ export default function AboutPage() {
                          after:content-[attr(data-text)] after:absolute after:inset-0
                          after:bg-gradient-to-br after:from-red-900 after:to-black after:bg-clip-text after:text-transparent
                          after:translate-x-[4px] after:translate-y-[4px] after:-z-20
-                         hover:drop-shadow-[0_0_30px_rgba(255,255,0,0.8)]"
+                         hover:drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]"
                 data-text="Meet the team">
               Meet the team
             </h2>
