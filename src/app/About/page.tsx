@@ -35,7 +35,7 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Enhanced 3D Team Section */}
+      {/* 3D Team Section */}
       <div className="w-full relative pb-60" style={{ marginTop: '1050px' }}>
         {/* 3D Framed "Meet the team" title */}
         <div className="w-full text-center mb-32 relative flex justify-center">
@@ -45,17 +45,23 @@ export default function AboutPage() {
                         transform hover:scale-105 transition-all duration-300 cursor-pointer
                         hover:shadow-[0_25px_50px_rgba(0,0,0,0.5),inset_0_-10px_20px_rgba(0,0,0,0.4),inset_0_10px_20px_rgba(255,255,255,0.3)]
                         before:absolute before:inset-[-4px] before:bg-red-900 before:-z-10 before:rounded-[28px]
-                        after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm">
+                        after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm
+                        group">
             <h2 className="text-6xl md:text-9xl font-black font-['Inter'] relative
                          bg-gradient-to-b from-red-200 via-red-300 to-red-500 bg-clip-text text-transparent
+                         group-hover:bg-gradient-to-b group-hover:from-yellow-200 group-hover:via-orange-300 group-hover:to-orange-500 group-hover:bg-clip-text group-hover:text-transparent
                          drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]
+                         group-hover:drop-shadow-[0_0_10px_rgba(251,146,60,0.5)]
                          before:content-[attr(data-text)] before:absolute before:inset-0 
                          before:bg-gradient-to-t before:from-red-800 before:to-red-600 before:bg-clip-text before:text-transparent
+                         group-hover:before:bg-gradient-to-t group-hover:before:from-orange-700 group-hover:before:to-yellow-600 group-hover:before:bg-clip-text group-hover:before:text-transparent
                          before:translate-x-[2px] before:translate-y-[2px] before:-z-10
                          after:content-[attr(data-text)] after:absolute after:inset-0
                          after:bg-gradient-to-br after:from-red-900 after:to-black after:bg-clip-text after:text-transparent
+                         group-hover:after:bg-gradient-to-br group-hover:after:from-orange-800 group-hover:after:to-black group-hover:after:bg-clip-text group-hover:after:text-transparent
                          after:translate-x-[4px] after:translate-y-[4px] after:-z-20
-                         hover:drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]"
+                         hover:drop-shadow-[0_0_20px_rgba(251,146,60,0.8)]
+                         transition-all duration-300"
                 data-text="Meet the team">
               Meet the team
             </h2>
@@ -63,7 +69,7 @@ export default function AboutPage() {
         </div>
 
         <div className="container mx-auto px-4">
-          {/* Team Member 1 - Enhanced 3D effects */}
+          {/* Team Member 1 */}
           <div className="flex flex-col md:flex-row items-center justify-center mb-24 relative group">
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-orange-600 to-orange-800 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
@@ -82,7 +88,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Team Member 2 - Enhanced 3D effects */}
+          {/* Team Member 2 */}
           <div className="flex flex-col md:flex-row-reverse items-center justify-center mb-24 relative group">
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-orange-600 to-orange-800 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
@@ -101,7 +107,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Team Member 3 - Enhanced 3D effects */}
+          {/* Team Member 3 */}
           <div className="flex flex-col md:flex-row items-center justify-center mb-24 relative group">
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-rose-700 to-rose-900 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
@@ -120,7 +126,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Team Member 4 - Enhanced 3D effects */}
+          {/* Team Member 4 */}
           <div className="flex flex-col md:flex-row-reverse items-center justify-center mb-32 relative group">
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-rose-700 to-rose-900 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
@@ -141,7 +147,7 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Enhanced 3D Footer - Restored to original */}
+      {/* Enhanced 3D Footer */}
       <footer className="w-full h-40 bg-[#7c0101] shadow-[0_-5px_4px_rgba(0,0,0,0.5)] absolute bottom-0">
         <div className="h-full flex items-center justify-center">
           <p className="text-white text-lg">© 2025 UniVote. All rights reserved.</p>
