@@ -1,11 +1,27 @@
 "use client";
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 
 export default function AboutPage() {
   const router = useRouter();
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    setIsLoaded(true);
+
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const teamSectionOffset = 1050; 
+  const isTeamVisible = scrollY > teamSectionOffset - 600;
+  const teamTitleVisible = scrollY > teamSectionOffset - 400;
 
   return (
     <div className="w-full min-h-screen relative bg-gradient-to-br from-yellow-600 via-orange-500 to-red-800 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden">
@@ -13,15 +29,19 @@ export default function AboutPage() {
 
       {/* Hero Section */}
       <div className="w-full h-[809px] left-0 top-[128px] absolute overflow-hidden">
-        <Image
-          src="/hero-image.jpg"
-          alt="Sydney Polls Background"
-          layout="fill"
-          objectFit="cover"
-          quality={100}
-          priority
-          className="object-cover"
-        />
+        <div className={`w-full h-full transform transition-transform duration-1000 ease-out ${
+          isLoaded ? 'scale-100' : 'scale-50'
+        }`}>
+          <Image
+            src="/hero-image.jpg"
+            alt="Sydney Polls Background"
+            layout="fill"
+            objectFit="cover"
+            quality={100}
+            priority
+            className="object-cover"
+          />
+        </div>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute left-1/2 top-[40%] transform -translate-x-1/2 -translate-y-1/2 text-center w-full px-4 z-10">
           <h1 className="text-red-500 text-6xl md:text-9xl font-black font-['Inter'] mb-4 
@@ -38,7 +58,9 @@ export default function AboutPage() {
       {/* 3D Team Section */}
       <div className="w-full relative pb-60" style={{ marginTop: '1050px' }}>
         {/* 3D Framed "Meet the team" title */}
-        <div className="w-full text-center mb-32 relative flex justify-center">
+        <div className={`w-full text-center mb-32 relative flex justify-center transform transition-all duration-1000 ${
+          teamTitleVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+        }`}>
           <div className="relative bg-gradient-to-br from-yellow-400 via-orange-400 to-red-600 p-8 md:p-12
                         shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_-8px_16px_rgba(0,0,0,0.3),inset_0_8px_16px_rgba(255,255,255,0.2)]
                         border-8 border-red-900 rounded-3xl
@@ -70,7 +92,9 @@ export default function AboutPage() {
 
         <div className="container mx-auto px-4">
           {/* Team Member 1 */}
-          <div className="flex flex-col md:flex-row items-center justify-center mb-24 relative group">
+          <div className={`flex flex-col md:flex-row items-center justify-center mb-24 relative group transform transition-all duration-1000 ${
+            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
+          }`} style={{ transitionDelay: '200ms' }}>
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-orange-600 to-orange-800 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
                           flex items-center justify-center relative z-10 transform transition-all duration-300
@@ -89,7 +113,9 @@ export default function AboutPage() {
           </div>
 
           {/* Team Member 2 */}
-          <div className="flex flex-col md:flex-row-reverse items-center justify-center mb-24 relative group">
+          <div className={`flex flex-col md:flex-row-reverse items-center justify-center mb-24 relative group transform transition-all duration-1000 ${
+            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+          }`} style={{ transitionDelay: '400ms' }}>
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-orange-600 to-orange-800 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
                           flex items-center justify-center relative z-10 transform transition-all duration-300
@@ -108,7 +134,9 @@ export default function AboutPage() {
           </div>
 
           {/* Team Member 3 */}
-          <div className="flex flex-col md:flex-row items-center justify-center mb-24 relative group">
+          <div className={`flex flex-col md:flex-row items-center justify-center mb-24 relative group transform transition-all duration-1000 ${
+            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
+          }`} style={{ transitionDelay: '600ms' }}>
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-rose-700 to-rose-900 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
                           flex items-center justify-center relative z-10 transform transition-all duration-300
@@ -127,7 +155,9 @@ export default function AboutPage() {
           </div>
 
           {/* Team Member 4 */}
-          <div className="flex flex-col md:flex-row-reverse items-center justify-center mb-32 relative group">
+          <div className={`flex flex-col md:flex-row-reverse items-center justify-center mb-32 relative group transform transition-all duration-1000 ${
+            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
+          }`} style={{ transitionDelay: '800ms' }}>
             <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-rose-700 to-rose-900 rounded-full 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
                           flex items-center justify-center relative z-10 transform transition-all duration-300
