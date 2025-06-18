@@ -121,7 +121,7 @@ const CreateAccount = () => {
   ), []);
 
   return (
-    <div className="h-screen flex bg-gradient-to-b from-[#bb8b1b] to-[#b01818] text-white font-['Merriweather']">
+    <div className="h-screen flex bg-gradient-to-b from-[#bb8b1b] to-[#b01818] text-white font-['Actor']">
       {/* Left Content Section */}
       <div className="w-1/2 flex flex-col items-center justify-center p-8 relative">
         <div className="mb-8 flex flex-col items-center">
@@ -184,7 +184,7 @@ const CreateAccount = () => {
             <div className="relative" ref={dropdownRef}>
               <div
                 tabIndex={0}
-                className={`${inputClasses} flex items-center justify-between cursor-pointer focus:border-[#fac36b] focus:ring-2 focus:ring-[#fac36b] transition-all duration-200 hover:border-[#fac36b] pr-10 bg-white text-black`}
+                className={`${inputClasses} flex items-center justify-between cursor-pointer focus:border-[#fac36b] focus:ring-2 focus:ring-[#fac36b] transition-all duration-200 hover:border-[#fac36b] pr-3 bg-white text-black`}
                 onClick={() => setDropdownOpen((open) => !open)}
                 onKeyDown={handleDropdownKeyDown}
                 aria-haspopup="listbox"
@@ -225,7 +225,7 @@ const CreateAccount = () => {
               )}
             </div>
 
-            <div>
+            {/*<div>
               <input
                 type="password"
                 name="password"
@@ -237,12 +237,12 @@ const CreateAccount = () => {
                 minLength={6}
                 autoComplete="new-password"
               />
-              <p className="text-[#666] text-xs italic mt-2">
+              <p className="text-[#899499] text-xs italic mt-2">
                 Password must be at least 6 characters long
               </p>
-            </div>
+            </div>*/}
 
-            <div className="pt-4">
+            <div className="pt-2">
               <a 
                 href="/User_RegxLogin" 
                 className="text-xl text-white font-bold hover:text-[#fac36b] block mb-6 transition-colors"

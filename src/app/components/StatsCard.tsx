@@ -15,7 +15,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, subtitle }) => {
       <p className="w-full md:w-80 h-16 md:h-20 text-center justify-start text-white text-3xl md:text-4xl lg:text-5xl font-['Baloo_2'] leading-tight md:leading-[81px]">
         {value}
       </p>
-      <p className="w-full md:w-80 justify-center text-zinc-500 text-lg md:text-xl lg:text-2xl font-normal font-['Inter'] leading-7 md:leading-9">
+      <p className="w-full md:w-80 justify-center text-[	#D3D3D3] text-lg md:text-xl lg:text-2xl font-normal font-['Inter'] leading-7 md:leading-9">
         {subtitle}
       </p>
     </div>

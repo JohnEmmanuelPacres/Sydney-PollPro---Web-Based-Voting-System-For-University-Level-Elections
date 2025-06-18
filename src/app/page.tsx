@@ -13,7 +13,7 @@ export default function Home() {
       <h2 className="left-[266px] top-[222px] absolute justify-center text-white text-4xl md:text-5xl lg:text-7xl font-normal font-['Baloo_2'] leading-tight md:leading-[105px] z-10">
         Secure Digital Voting Platform
       </h2>
-      <p className="left-[146px] top-[409px] absolute justify-center text-stone-300 text-xl md:text-2xl lg:text-3xl font-normal font-['Baloo_2'] leading-8 md:leading-10 z-10 max-w-4xl">
+      <p className="left-[146px] top-[409px] absolute justify-center text-stone-300 text-xl md:text-2xl lg:text-3xl font-normal font-['Baloo_2'] leading-8 md:leading-10 z-10">
         Participate in university and departmental election transparently, securely, and accessibly.
       </p>
       <p className="left-[596px] top-[364px] absolute justify-center text-stone-300 text-xl md:text-2xl lg:text-3xl font-normal font-['Baloo_2'] leading-8 md:leading-10 z-10">
@@ -21,7 +21,7 @@ export default function Home() {
       </p>
   
       <section className="w-full md:w-[1440px] px-4 md:px-20 left-0 top-[901px] absolute inline-flex flex-col justify-start items-start gap-2.5 z-10">
-        <div className="self-stretch h-auto md:h-80 inline-flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6">
+        <div className="self-stretch h-auto md:h-80 inline-flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6 text-stone-300">
           <StatsCard 
             title="Total Registered Voters"
             value="2, 847"

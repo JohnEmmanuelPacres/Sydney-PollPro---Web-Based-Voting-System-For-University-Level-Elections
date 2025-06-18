@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react'
 import type { NextPage } from 'next';
-import Image from "next/image";
+import AuthPageHeader from '../components/AuthPageHeader';
 import { supabase } from '../../utils/supabaseClient';
 import { useRouter } from 'next/navigation';
 
@@ -73,6 +73,9 @@ const SIGNIN: NextPage = () => {
 
   return (
     <div className="w-full h-[1024px] relative bg-gradient-to-b from-[#c31d1d] to-[#b38308] overflow-hidden text-left text-xl text-white font-['Actor']">
+      {/* Header */}
+      <AuthPageHeader />
+
       {/* Sign In Container */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[790px] h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79">
         <div className="absolute top-[calc(50%-274px)] left-[calc(50%-251.5px)] font-semibold text-[38px] font-['Baloo_Da_2']">
@@ -146,25 +149,6 @@ const SIGNIN: NextPage = () => {
         >
           SIGN UP
         </button>
-      </div>
-
-      {/* Header */}
-      <div className="absolute w-[calc(100%+61px)] -top-[11px] -right-[61px] left-0 shadow-[0px_5px_4px_rgba(0,0,0,0.5)] bg-[#7c0101] h-[127px] overflow-hidden font-['Inter']">
-        <div className="absolute top-[47px] right-[359px] flex flex-row items-center justify-start py-[11px] px-[21px] gap-[44px]">
-          <div className="w-[58px] relative h-[30px] text-[#fff2f2] ml-[210px]">
-            <div className="absolute left-0 top-0 leading-[150%] font-medium">About</div>
-          </div>
-        </div>
-        <div className="absolute top-[35px] left-[213px] text-[45px] leading-[150%] font-['Abyssinica_SIL']">
-          UniVote
-        </div>
-        <Image 
-          className="absolute top-[7px] left-[38px] w-[146px] h-[120px] object-cover"
-          width={146}
-          height={120}
-          alt="Website Logo"
-          src="/Website Logo.png"
-        />
       </div>
 
       {/* Error Message */}

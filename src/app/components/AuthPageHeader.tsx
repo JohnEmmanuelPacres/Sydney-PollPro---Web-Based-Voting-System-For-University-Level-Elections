@@ -2,18 +2,14 @@ import React from 'react';
 import NavButton from './NavButton';
 import SignInButton from './SignInButton';
 
-const Header: React.FC = () => {
+const AuthPageHeader: React.FC = () => {
   return (
     <header className="w-full h-24 md:h-32 left-0 top-0 absolute bg-red-900 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
-      <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
+      <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[1075px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
         <NavButton href="/">Home</NavButton>
         <NavButton href="/Election_Results">Results</NavButton>
         <NavButton href="/dashboard">Updates</NavButton>
-        <NavButton href="/About">About</NavButton>
-
-        <SignInButton href="/User_RegxLogin">
-        SIGN IN
-        </SignInButton>
+        <NavButton href="/dashboard">About</NavButton>
       </nav>
       
 
@@ -29,4 +25,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header; 
+export default AuthPageHeader; 

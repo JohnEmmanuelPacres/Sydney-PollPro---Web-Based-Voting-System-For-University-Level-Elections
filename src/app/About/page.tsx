@@ -2,38 +2,20 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Header from '../components/Header';
 
 export default function AboutPage() {
   const router = useRouter();
 
   return (
     <div className="w-full min-h-screen relative bg-gradient-to-l from-yellow-600 to-red-800 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden">
-      {/* Header*/}
-      <header className="w-full h-32 left-0 top-0 absolute bg-red-900 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
-        <nav className="px-5 py-2.5 left-[641px] top-[35px] absolute inline-flex justify-start items-center gap-11">
-          <button className="text-white text-xl font-medium font-['Inter'] leading-loose transition-all duration-300 ease-in-out transform-gpu hover:text-yellow-400 hover:drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] hover:scale-105 cursor-pointer" onClick={() => router.push("/")}>Home</button>
-          <button className="text-white text-xl font-medium font-['Inter'] leading-loose transition-all duration-300 ease-in-out transform-gpu hover:text-yellow-400 hover:drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] hover:scale-105 cursor-pointer" onClick={() => router.push("/Election_Results")}>Results</button>
-          <button className="text-white text-xl font-medium font-['Inter'] leading-loose transition-all duration-300 ease-in-out transform-gpu hover:text-yellow-400 hover:drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] hover:scale-105 cursor-pointer">Updates</button>
-          <button className="text-white text-xl font-medium font-['Inter'] leading-loose transition-all duration-300 ease-in-out transform-gpu hover:text-yellow-400 hover:drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] hover:scale-105 cursor-pointer">About</button>
-        </nav>
-        <h1 className="left-[213px] top-[32px] absolute justify-center text-white text-5xl font-normal font-['Abyssinica_SIL'] leading-[67.50px]">UniVote</h1>
-        <Image 
-          className="w-28 h-28 left-[38px] top-[7px] absolute" 
-          src="/logo.png" 
-          alt="UniVote Logo" 
-          width={112}
-          height={112}
-          priority
-        />
-        <Link href="/User_RegxLogin" className="w-32 px-6 py-3.5 left-[1180px] top-[32px] absolute bg-gradient-to-br from-stone-600 to-orange-300 rounded-[999px] shadow-[1px_2px_6px_0px_rgba(0,0,0,0.40)] shadow-[2px_4px_18px_0px_rgba(0,0,0,0.20)] shadow-[-1px_-2px_6px_0px_rgba(250,195,107,0.40)] shadow-[-2px_-4px_18px_0px_rgba(250,195,107,0.10)] outline outline-[3px] outline-offset-[-3px] outline-orange-300 inline-flex justify-center items-center gap-2 transition-all duration-300 ease-in-out hover:scale-105">
-          <span className="justify-center text-white text-xl font-normal font-['Jaldi'] leading-loose">SIGN IN</span>
-        </Link>
-      </header>
+      {/* Header */}
+      <Header />
 
       {/* Hero Section*/}
       <div className="w-full h-[809px] left-0 top-[128px] absolute overflow-hidden">
         <Image
-          src="/hero-image.png"
+          src="/hero-image.jpg"
           alt="Sydney Polls Background"
           layout="fill"
           objectFit="cover"
