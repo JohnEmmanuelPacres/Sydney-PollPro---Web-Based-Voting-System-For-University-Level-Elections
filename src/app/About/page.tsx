@@ -1,6 +1,6 @@
-import Header from './components/Header';
-import TeamGrid from './components/TeamGrid';
-import Footer from './components/Footer';
+import Header from './Components/Header';
+import TeamGrid from './Components/TeamGrid';
+import Footer from './Components/Footer';
 
 export default function AboutPage() {
   return (
