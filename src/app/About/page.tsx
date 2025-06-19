@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Footer from "../components/Footer";
 import Header from '../components/Header';
 
 export default function AboutPage() {
@@ -176,13 +177,8 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-
-      {/* Enhanced 3D Footer */}
-      <footer className="w-full h-40 bg-[#7c0101] shadow-[0_-5px_4px_rgba(0,0,0,0.5)] absolute bottom-0">
-        <div className="h-full flex items-center justify-center">
-          <p className="text-white text-lg">© 2025 UniVote. All rights reserved.</p>
-        </div>
-      </footer>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

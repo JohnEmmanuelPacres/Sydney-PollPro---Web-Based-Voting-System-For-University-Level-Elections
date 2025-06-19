@@ -2,6 +2,7 @@
 import type { NextPage } from 'next';
 import Header from '../components/Header';
 import PollCard from '../components/PollCard';
+import Footer from '../components/Footer';
 
 const Results: NextPage = () => {
   const pollsData = [
@@ -45,11 +46,9 @@ const Results: NextPage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="w-full shadow-[0_-5px_4px_rgba(0,0,0,0.5)] bg-[#7c0101] h-[156px]">
-        <div className="flex items-center justify-center h-full">
-          <div className="w-[57px] h-[30px]" />
-        </div>
-      </footer>
+      <Footer />
+
+      {/* Background Image */}
     </div>
   );
 };
