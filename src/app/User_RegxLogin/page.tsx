@@ -2,61 +2,85 @@
 import React, { useState, useEffect } from 'react'
 import type { NextPage } from 'next';
 import AuthPageHeader from '../components/AuthPageHeader';
-import { supabase } from '../../utils/supabaseClient';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
 
 const SIGNIN: NextPage = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [credential, setCredential] = useState("");
+  const [showCredential, setShowCredential] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [signInError, setSignInError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSignIn = async () => {
     setSignInError("");
+    setIsLoading(true);
+    
     if (!email.endsWith('@cit.edu')) {
       setSignInError('Please use your CIT email address (@cit.edu)');
+      setIsLoading(false);
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
-          setSignInError('Please check your email (@cit.edu) for a confirmation link. Click the link to verify your account before logging in.');
-        } else if (error.message.includes('Invalid login credentials')) {
-          setSignInError('Invalid email or password. Please try again.');
-        } else {
-          setSignInError(error.message);
-        }
-      } else if (data.user) {
-        router.push(`/dashboard?email=${encodeURIComponent(email)}`);
-      }
-    } catch (err) {
-      setSignInError('An unexpected error occurred. Please try again.');
-      console.error('Login error:', err);
+    if (!credential) {
+      setSignInError('Please enter your PIN or password');
+      setIsLoading(false);
+      return;
     }
-  };
 
-  const handleResendConfirmation = async () => {
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-      });
-      
-      if (error) {
-        setSignInError('Failed to resend confirmation email. Please try again.');
-      } else {
-        setSignInError('Confirmation email has been resent. Please check your inbox.');
+    // Check if credential is a 6-digit PIN
+    const isPIN = /^\d{6}$/.test(credential);
+
+    if (isPIN) {
+      // Handle PIN-based login
+      try {
+        const response = await fetch('/api/send-pin', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, pin: credential }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setSignInError(data.error || 'Invalid PIN');
+          setIsLoading(false);
+          return;
+        }
+
+        // Redirect to password setup page
+        router.push(`/User_RegxLogin/SetPassword?email=${encodeURIComponent(email)}${data.courseYear ? `&courseYear=${encodeURIComponent(data.courseYear)}` : ''}`);
+      } catch (err) {
+        setSignInError('An unexpected error occurred. Please try again.');
+        console.error('Login error:', err);
+        setIsLoading(false);
       }
-    } catch (err) {
-      setSignInError('Failed to resend confirmation email. Please try again.');
+    } else {
+      // Handle password-based login
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password: credential,
+        });
+
+        if (error) {
+          setSignInError('Invalid email or password. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.user) {
+          router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+        }
+      } catch (err) {
+        setSignInError('An unexpected error occurred. Please try again.');
+        console.error('Login error:', err);
+        setIsLoading(false);
+      }
     }
   };
 
@@ -108,38 +132,54 @@ const SIGNIN: NextPage = () => {
             </div>
           )}
           
-          <div className="text-xl mt-4">Password</div>
+          <div className="text-xl mt-4">PIN or Password</div>
           <input
-            type={showPassword ? "text" : "password"}
+            type={showCredential ? "text" : "password"}
             className="w-[500px] h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black mt-2"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
+            placeholder="Enter 6-digit PIN or your password"
+            value={credential}
+            onChange={e => {
+              const value = e.target.value;
+              // If it looks like a PIN (only numbers), limit to 6 digits
+              if (/^\d*$/.test(value)) {
+                setCredential(value.slice(0, 6));
+              } else {
+                // Otherwise, allow any characters for password
+                setCredential(value);
+              }
+            }}
+            maxLength={credential.match(/^\d*$/) ? 6 : undefined}
           />
           
-          {/* Show Password Checkbox */}
+          {/* Show Credential Checkbox */}
           <div className="flex items-center mt-4">
             <input
               type="checkbox"
-              id="showPassword"
-              checked={showPassword}
-              onChange={() => setShowPassword(!showPassword)}
+              id="showCredential"
+              checked={showCredential}
+              onChange={() => setShowCredential(!showCredential)}
               className="mr-2"
             />
-            <label htmlFor="showPassword" className="text-black text-sm">
-              Show Password
+            <label htmlFor="showCredential" className="text-black text-sm">
+              Show {/^\d{6}$/.test(credential) ? 'PIN' : 'Password'}
             </label>
           </div>
           
-          <div className="mt-4 text-black">Forgot Password?</div>
+          <div className="mt-4 text-black">
+            {/^\d{6}$/.test(credential) 
+              ? '' 
+              : ''
+            }
+          </div>
         </div>
 
       {/* Sign in */}
         <button 
           onClick={handleSignIn}
-          className="absolute top-[calc(50%+120px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
+          disabled={isLoading}
+          className="absolute top-[calc(50%+120px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          SIGN IN
+          {isLoading ? 'VERIFYING...' : 'SIGN IN'}
         </button>
 
       {/* Sign up */}
@@ -155,14 +195,6 @@ const SIGNIN: NextPage = () => {
       {signInError && (
         <div className="fixed top-0 left-0 w-full bg-[#d90429] text-white font-bold text-lg p-4 text-center rounded-b-[10px] z-[1000]">
           {signInError}
-          {signInError.includes('check your email') && (
-            <button 
-              onClick={handleResendConfirmation}
-              className="ml-2.5 px-2.5 py-1.5 bg-white text-[#d90429] border-none rounded-[5px] cursor-pointer font-bold"
-            >
-              Resend Confirmation
-            </button>
-          )}
         </div>
       )}
     </div>

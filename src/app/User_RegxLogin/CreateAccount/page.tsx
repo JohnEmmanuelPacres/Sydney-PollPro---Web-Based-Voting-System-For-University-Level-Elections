@@ -1,13 +1,11 @@
 'use client';
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'next/navigation';
 
 type FormData = {
   email: string;
   courseYear: string;
-  password: string;
 };
 
 const CreateAccount = () => {
@@ -15,10 +13,10 @@ const CreateAccount = () => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     courseYear: '',
-    password: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const courseYearOptions = [
     'BS Computer Science - 1st Year',
@@ -81,37 +79,44 @@ const CreateAccount = () => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    setIsLoading(true);
     
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            course_year: formData.courseYear,
-          }
+      // Validate email format
+      if (!formData.email.endsWith('@cit.edu')) {
+        setError('Please use your CIT email address (@cit.edu)');
+        setIsLoading(false);
+        return;
+      }
+
+      // Send temporary PIN
+      const response = await fetch('/api/send-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ 
+          email: formData.email,
+          courseYear: formData.courseYear 
+        }),
       });
 
-      if (signUpError) {
-        const errorMessage = signUpError.message.includes('User already registered') || 
-                           signUpError.message.includes('User already exists')
-                          ? 'Account already registered'
-                          : signUpError.message;
-        
-        setError(errorMessage);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to send temporary PIN');
         setTimeout(() => setError(null), 5000);
         return;
       }
 
-      if (data.user) {
-        setSuccess('Registered successfully! You can now log in.');
-        setTimeout(() => router.push('/User_RegxLogin'), 5000);
-      }
+      setSuccess('Temporary PIN sent to your email! Please check your inbox and use the PIN to log in.');
+      setTimeout(() => router.push('/User_RegxLogin'), 8000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during registration';
       setError(errorMessage);
       console.error('Registration error:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, [formData, router]);
 
@@ -172,7 +177,7 @@ const CreateAccount = () => {
               <input
                 type="email"
                 name="email"
-                placeholder="University Email"
+                placeholder="University Email (@cit.edu)"
                 className={inputClasses}
                 value={formData.email}
                 onChange={handleChange}
@@ -225,23 +230,6 @@ const CreateAccount = () => {
               )}
             </div>
 
-            {/*<div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                className={inputClasses}
-                value={formData.password}
-                onChange={handleChange}
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-              <p className="text-[#899499] text-xs italic mt-2">
-                Password must be at least 6 characters long
-              </p>
-            </div>*/}
-
             <div className="pt-2">
               <a 
                 href="/User_RegxLogin" 
@@ -253,10 +241,11 @@ const CreateAccount = () => {
 
               <button 
                 type="submit"
-                className="w-[184px] h-[50px] text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors"
+                disabled={isLoading}
+                className="w-[184px] h-[50px] text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Register account"
               >
-                Register
+                {isLoading ? 'Sending...' : 'Register'}
               </button>
             </div>
           </form>
