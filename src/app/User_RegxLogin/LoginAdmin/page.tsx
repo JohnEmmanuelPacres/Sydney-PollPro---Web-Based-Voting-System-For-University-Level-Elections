@@ -1,11 +1,11 @@
 'use client';
 import React, { useState, useEffect } from 'react'
 import type { NextPage } from 'next';
-import AuthPageHeader from '../components/AuthPageHeader';
+import AuthPageHeader from '../../components/AuthPageHeader';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 
-const SIGNIN: NextPage = () => {
+const SIGNIN_ADMIN: NextPage = () => {
   const [email, setEmail] = useState("");
   const [credential, setCredential] = useState("");
   const [showCredential, setShowCredential] = useState(false);
@@ -17,7 +17,7 @@ const SIGNIN: NextPage = () => {
   const handleSignIn = async () => {
     setSignInError("");
     setIsLoading(true);
-    
+
     if (!email.endsWith('@cit.edu')) {
       setSignInError('Please use your CIT email address (@cit.edu)');
       setIsLoading(false);
@@ -30,11 +30,9 @@ const SIGNIN: NextPage = () => {
       return;
     }
 
-    // Check if credential is a 6-digit PIN
     const isPIN = /^\d{6}$/.test(credential);
 
     if (isPIN) {
-      // Handle PIN-based login
       try {
         const response = await fetch('/api/send-pin', {
           method: 'PUT',
@@ -52,30 +50,38 @@ const SIGNIN: NextPage = () => {
           return;
         }
 
-        // Redirect to password setup page
-        router.push(`/User_RegxLogin/SetPasswordVoter?email=${encodeURIComponent(email)}${data.courseYear ? `&courseYear=${encodeURIComponent(data.courseYear)}` : ''}`);
+        router.push(`/User_RegxLogin/SetPasswordAdmin?email=${encodeURIComponent(email)}${data.organizationName ? `&organizationName=${encodeURIComponent(data.organizationName)}` : ''}`);
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
         console.error('Login error:', err);
         setIsLoading(false);
       }
     } else {
-      // Handle password-based login
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password: credential,
         });
 
-        if (error) {
+        if (error || !data.user) {
           setSignInError('Invalid email or password. Please try again.');
           setIsLoading(false);
           return;
         }
 
-        if (data.user) {
-          router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError || profile?.user_type !== 'admin') {
+          setSignInError('Access denied. This account is not an admin.');
+          setIsLoading(false);
+          return;
         }
+
+        router.push('/dashboard');
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
         console.error('Login error:', err);
@@ -84,12 +90,8 @@ const SIGNIN: NextPage = () => {
     }
   };
 
-  const handleSignUp = () => {
-    router.push('/User_RegxLogin/CreateAccount');
-  };
-
-  const handleAdminLogin = () => {
-    router.push('/User_RegxLogin/LoginAdmin');
+  const handleAdminSignUp = () => {
+    router.push('/User_RegxLogin/CreateAdminAccount');
   };
 
   useEffect(() => {
@@ -101,19 +103,10 @@ const SIGNIN: NextPage = () => {
 
   return (
     <div className="w-full h-[1024px] relative bg-gradient-to-b from-[#c31d1d] to-[#b38308] overflow-hidden text-left text-xl text-white font-['Actor']">
-      {/* Header */}
       <AuthPageHeader />
-
-      {/* Sign In Container */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[790px] h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79">
-        <div className="absolute top-[calc(50%-274px)] left-[calc(50%-251.5px)] font-semibold text-[38px] font-['Baloo_Da_2']">
-          Login
-        </div>
-        <div className="absolute top-[calc(50%+188px)] left-[calc(50%-87.5px)] text-lg">
-          Don't have an account yet?
-        </div>
-
-        {/* Form Container */}
+        <div className="absolute top-[calc(50%-274px)] left-[calc(50%-251.5px)] font-semibold text-[38px] font-['Baloo_Da_2']">Login</div>
+        <div className="absolute top-[calc(50%+188px)] left-[calc(50%-87.5px)] text-lg">Don't have an account yet?</div>
         <div className="absolute top-[calc(50%-172px)] left-[calc(50%-251.5px)] w-[500px] h-[225px] text-sm">
           <div className="text-xl mb-4">Institutional Email</div>
           <input
@@ -130,32 +123,23 @@ const SIGNIN: NextPage = () => {
               }
             }}
           />
-          {emailError && (
-            <div className="mt-1 text-[#d90429] text-base font-bold">
-              {emailError}
-            </div>
-          )}
-          
-          <div className="text-xl mt-4">PIN or Password</div>
+          {emailError && <div className="mt-1 text-[#d90429] text-base font-bold">{emailError}</div>}
+          <div className="text-xl mt-4">Organization ID</div>
           <input
             type={showCredential ? "text" : "password"}
             className="w-[500px] h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black mt-2"
-            placeholder="Enter 6-digit PIN or your password"
+            placeholder="Enter Organization ID"
             value={credential}
             onChange={e => {
               const value = e.target.value;
-              // If it looks like a PIN (only numbers), limit to 6 digits
               if (/^\d*$/.test(value)) {
                 setCredential(value.slice(0, 6));
               } else {
-                // Otherwise, allow any characters for password
                 setCredential(value);
               }
             }}
             maxLength={credential.match(/^\d*$/) ? 6 : undefined}
           />
-          
-          {/* Show Credential Checkbox */}
           <div className="flex items-center mt-4">
             <input
               type="checkbox"
@@ -165,44 +149,17 @@ const SIGNIN: NextPage = () => {
               className="mr-2"
             />
             <label htmlFor="showCredential" className="text-black text-sm">
-              Show {/^\d{6}$/.test(credential) ? 'PIN' : 'Password'}
+              Show {/^[\d]{6}$/.test(credential) ? 'PIN' : 'ID'}
             </label>
           </div>
-          
-          <div className="mt-4 text-black">
-            {/^\d{6}$/.test(credential) 
-              ? '' 
-              : ''
-            }
-          </div>
         </div>
-
-      {/* Sign in */}
-        <button 
-          onClick={handleSignIn}
-          disabled={isLoading}
-          className="absolute top-[calc(50%+120px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button onClick={handleSignIn} disabled={isLoading} className="absolute top-[calc(50%+120px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black disabled:opacity-50 disabled:cursor-not-allowed">
           {isLoading ? 'VERIFYING...' : 'SIGN IN'}
         </button>
-
-      {/* Sign up */}
-        <button 
-          onClick={handleSignUp}
-          className="absolute top-[calc(50%+220px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
-        >
-          SIGN UP
-        </button>
-
-        <button
-          onClick={handleAdminLogin}
-          className="absolute top-[calc(50%+280px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl cursor-pointer rounded-lg transition-colors duration-200 hover:text-[#fac36b] underline underline-offset-4"
-        >
-          Login as Admin
+        <button onClick={handleAdminSignUp} className="absolute top-[calc(50%+220px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black">
+          CREATE ADMIN ACCOUNT
         </button>
       </div>
-
-      {/* Error Message */}
       {signInError && (
         <div className="fixed top-0 left-0 w-full bg-[#d90429] text-white font-bold text-lg p-4 text-center rounded-b-[10px] z-[1000]">
           {signInError}
@@ -212,4 +169,4 @@ const SIGNIN: NextPage = () => {
   );
 };
 
-export default SIGNIN;
+export default SIGNIN_ADMIN;
