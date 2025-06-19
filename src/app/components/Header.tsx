@@ -4,7 +4,7 @@ import SignInButton from './SignInButton';
 
 const Header: React.FC = () => {
   return (
-    <header className="w-full h-24 md:h-32 left-0 top-0 absolute bg-red-900 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
+    <header className="w-full h-24 md:h-32 left-0 top-0 absolute z-30 bg-red-900 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
       <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
         <NavButton href="/">Home</NavButton>
         <NavButton href="/Election_Results">Results</NavButton>
