@@ -8,7 +8,6 @@ import Header from '../components/Header';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-// Register ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
 
 export default function AboutPage() {
@@ -19,13 +18,11 @@ export default function AboutPage() {
   const teamTitleRef = useRef<HTMLDivElement>(null);
   const teamMembersRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Store refs for team members
   const addToTeamRefs = (el: HTMLDivElement | null, index: number) => {
     teamMembersRef.current[index] = el;
   };
 
   useEffect(() => {
-    // Set initial states
     gsap.set(heroImageRef.current, { scale: 0.5, opacity: 0 });
     gsap.set(heroTitleRef.current, { y: 100, opacity: 0, scale: 0.8 });
     gsap.set(heroSubtitleRef.current, { y: 50, opacity: 0 });
@@ -181,7 +178,6 @@ export default function AboutPage() {
       });
     }
 
-    // Cleanup function
     return () => {
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
       mainTl.kill();
@@ -227,34 +223,35 @@ export default function AboutPage() {
       {/* 3D Team Section */}
       <div className="w-full relative pb-60" style={{ marginTop: '1050px' }}>
         {/* 3D Framed "Meet the team" title */}
-        <div className="w-full text-center mb-32 relative flex justify-center">
-          <div 
-            ref={teamTitleRef}
-            className="relative bg-gradient-to-br from-yellow-400 via-orange-400 to-red-600 p-8 md:p-12
-                      shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_-8px_16px_rgba(0,0,0,0.3),inset_0_8px_16px_rgba(255,255,255,0.2)]
-                      border-8 border-red-900 rounded-3xl cursor-pointer
-                      before:absolute before:inset-[-4px] before:bg-red-900 before:-z-10 before:rounded-[28px]
-                      after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm
-                      group"
-          >
-            <h2 className="text-6xl md:text-9xl font-black font-['Inter'] relative
-                         bg-gradient-to-b from-red-200 via-red-300 to-red-500 bg-clip-text text-transparent
-                         group-hover:bg-gradient-to-b group-hover:from-yellow-200 group-hover:via-orange-300 group-hover:to-orange-500 group-hover:bg-clip-text group-hover:text-transparent
-                         drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]
-                         group-hover:drop-shadow-[0_0_10px_rgba(251,146,60,0.5)]
-                         before:content-[attr(data-text)] before:absolute before:inset-0 
-                         before:bg-gradient-to-t before:from-red-800 before:to-red-600 before:bg-clip-text before:text-transparent
-                         group-hover:before:bg-gradient-to-t group-hover:before:from-orange-700 group-hover:before:to-yellow-600 group-hover:before:bg-clip-text group-hover:before:text-transparent
-                         before:translate-x-[2px] before:translate-y-[2px] before:-z-10
-                         after:content-[attr(data-text)] after:absolute after:inset-0
-                         after:bg-gradient-to-br after:from-red-900 after:to-black after:bg-clip-text after:text-transparent
-                         group-hover:after:bg-gradient-to-br group-hover:after:from-orange-800 group-hover:after:to-black group-hover:after:bg-clip-text group-hover:after:text-transparent
-                         after:translate-x-[4px] after:translate-y-[4px] after:-z-20
-                         hover:drop-shadow-[0_0_20px_rgba(251,146,60,0.8)]
-                         transition-all duration-300"
-                data-text="Meet the team"
+          <div className="w-full text-center mb-32 relative flex justify-center">
+            <div 
+              ref={teamTitleRef}
+              className="relative bg-gradient-to-br from-yellow-400 via-orange-400 to-red-600 p-8 md:p-12
+                        shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_-8px_16px_rgba(0,0,0,0.3),inset_0_8px_16px_rgba(255,255,255,0.2)]
+                        border-8 border-red-900 rounded-3xl cursor-pointer
+                        hover:shadow-[0_25px_50px_rgba(0,0,0,0.5),inset_0_-10px_20px_rgba(0,0,0,0.4),inset_0_10px_20px_rgba(255,255,255,0.3)]
+                        before:absolute before:inset-[-4px] before:bg-red-900 before:-z-10 before:rounded-[28px]
+                        after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm
+                        group"
             >
-              Meet the team
+              <h2 className="text-6xl md:text-9xl font-black font-['Inter'] relative
+                          bg-gradient-to-b from-white via-gray-100 to-gray-200 bg-clip-text text-transparent
+                          group-hover:bg-gradient-to-b group-hover:from-white group-hover:via-yellow-100 group-hover:to-yellow-200 group-hover:bg-clip-text group-hover:text-transparent
+                          drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]
+                          group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]
+                          before:content-[attr(data-text)] before:absolute before:inset-0 
+                          before:bg-gradient-to-t before:from-gray-400 before:to-gray-300 before:bg-clip-text before:text-transparent
+                          group-hover:before:bg-gradient-to-t group-hover:before:from-yellow-300 group-hover:before:to-yellow-200 group-hover:before:bg-clip-text group-hover:before:text-transparent
+                          before:translate-x-[2px] before:translate-y-[2px] before:-z-10
+                          after:content-[attr(data-text)] after:absolute after:inset-0
+                          after:bg-gradient-to-br after:from-gray-600 after:to-black after:bg-clip-text after:text-transparent
+                          group-hover:after:bg-gradient-to-br group-hover:after:from-gray-500 group-hover:after:to-black group-hover:after:bg-clip-text group-hover:after:text-transparent
+                          after:translate-x-[4px] after:translate-y-[4px] after:-z-20
+                          hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.9)]
+                          transition-all duration-300"
+                  data-text="Meet the team"
+              >
+                Meet the team
             </h2>
           </div>
         </div>
