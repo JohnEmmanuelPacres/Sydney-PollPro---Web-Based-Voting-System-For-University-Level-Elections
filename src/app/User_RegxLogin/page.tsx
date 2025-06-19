@@ -106,6 +106,10 @@ const SIGNIN: NextPage = () => {
     router.push('/User_RegxLogin/CreateAccount');
   };
 
+  const handleAdminLogin = () => {
+    router.push('/User_RegxLogin/LoginAdmin');
+  };
+
   useEffect(() => {
     if (signInError) {
       const timer = setTimeout(() => setSignInError("") , 5000);
@@ -242,6 +246,14 @@ const SIGNIN: NextPage = () => {
           >
             SIGN UP
           </motion.button>
+
+          <motion.button
+          onClick={handleAdminLogin}
+          className="absolute top-[calc(50%+280px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl cursor-pointer rounded-lg transition-colors duration-200 hover:text-[#fac36b] underline underline-offset-4"
+        >
+          Login as Admin
+        </motion.button>
+
         </motion.div>
       </div>
 
