@@ -9,7 +9,7 @@ const AuthPageHeader: React.FC = () => {
         <NavButton href="/">Home</NavButton>
         <NavButton href="/Election_Results">Results</NavButton>
         <NavButton href="/dashboard">Updates</NavButton>
-        <NavButton href="/dashboard">About</NavButton>
+        <NavButton href="/About">About</NavButton>
       </nav>
       
 

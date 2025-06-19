@@ -29,17 +29,14 @@ const Results: NextPage = () => {
   const pollCardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
-  // Store refs without returning anything
   const addToRefs = (el: HTMLDivElement | null, index: number) => {
     pollCardsRef.current[index] = el;
   };
 
   useEffect(() => {
-    // Set initial state for all elements to prevent flash
     gsap.set(pollCardsRef.current, { x: 0, opacity: 0 });
     gsap.set(titleRef.current, { y: -50, opacity: 0 });
 
-    // Create timeline for smoother sequencing
     const tl = gsap.timeline();
 
     // Animate title first
@@ -64,12 +61,11 @@ const Results: NextPage = () => {
             duration: 0.8,
             ease: "back.out(1.7)",
           },
-          index * 0.3 // Stagger delay
+          index * 0.3 
         );
       }
     });
 
-    // Cleanup function
     return () => {
       tl.kill();
     };

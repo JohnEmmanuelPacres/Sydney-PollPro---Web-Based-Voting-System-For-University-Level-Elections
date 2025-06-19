@@ -89,6 +89,25 @@ const CreateAccount = () => {
         return;
       }
 
+      // Check if email already exists
+      try {
+        const checkRes = await fetch('/api/check-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email }),
+        });
+        const checkData = await checkRes.json();
+        if (checkData.exists) {
+          setError('This email is already registered. Please log in or use a different email.');
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        setError('Could not verify email. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
       // Send temporary PIN
       const response = await fetch('/api/send-pin', {
         method: 'POST',

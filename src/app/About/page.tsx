@@ -1,183 +1,279 @@
 "use client";
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import Footer from "../components/Footer";
-import Header from '../components/Header';
+import Header from "../components/Header";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+// Team member data
+const TEAM_MEMBERS = [
+  {
+    name: "Sean Tadiamon",
+    role: "Frontend Developer",
+    bio: "Sean is passionate about UI/UX and loves building beautiful web apps.",
+    image: "/sean.jpg",
+    socials: {
+      github: "https://github.com/NaesCode",
+      facebook: "https://www.facebook.com/seanrichard.tadiamon.9",
+      instagram: "https://www.instagram.com/sean_tadz",
+    },
+  },
+  {
+    name: "John Emmanuel Pacres",
+    role: "Frontend Developer",
+    bio: "Pacres specializes in React and animation, making interfaces lively and fun.",
+    image: "/pacres.jpg",
+    socials: {
+      github: "https://github.com/JohnEmmanuelPacres",
+      facebook: "https://www.facebook.com/jem.pacres",
+      instagram: "https://www.instagram.com/jepcrs",
+    },
+  },
+  {
+    name: "Harlie Cañas",
+    role: "Backend Developer",
+    bio: "Harlie ensures the server and database are always running smoothly.",
+    image: "/harlie.jpg",
+    socials: {
+      github: "https://github.com/major119791",
+      facebook: "https://www.facebook.com/harlie.khurt",
+      instagram: "https://www.instagram.com/adovong.hotdog",
+    },
+  },
+  {
+    name: "Chucky Ebesa",
+    role: "Backend Developer",
+    bio: "Chucky loves APIs, security, and scalable systems.",
+    image: "/chucky.jpg",
+    socials: {
+      github: "https://github.com/Chokinni",
+      facebook: "https://www.facebook.com/michaeljordan.ebesa",
+      instagram: "https://www.instagram.com/eee.c_k.v/",
+    },
+  },
+];
 
 export default function AboutPage() {
   const router = useRouter();
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
+  const heroImageRef = useRef<HTMLDivElement>(null);
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
+  const heroSubtitleRef = useRef<HTMLParagraphElement>(null);
+  const teamTitleRef = useRef<HTMLDivElement>(null);
+  const teamMembersRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [selectedMember, setSelectedMember] = useState<number | null>(null);
+
+  const addToTeamRefs = (el: HTMLDivElement | null, index: number) => {
+    teamMembersRef.current[index] = el;
+  };
 
   useEffect(() => {
-    setIsLoaded(true);
+    gsap.set(heroImageRef.current, { scale: 0.5, opacity: 0 });
+    gsap.set(heroTitleRef.current, { y: 100, opacity: 0 });
+    gsap.set(heroSubtitleRef.current, { y: 50, opacity: 0 });
+    gsap.set(teamTitleRef.current, { y: 100, opacity: 0 });
+    gsap.set(teamMembersRef.current, { x: -100, opacity: 0 });
 
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    
-    return () => window.removeEventListener('scroll', handleScroll);
+    const mainTl = gsap.timeline();
+
+    mainTl
+      .to(heroImageRef.current, { scale: 1, opacity: 1, duration: 1 })
+      .to(heroTitleRef.current, { y: 0, opacity: 1, duration: 0.8 }, "-=0.6")
+      .to(heroSubtitleRef.current, { y: 0, opacity: 1, duration: 0.6 }, "-=0.4");
+
+    gsap.to(teamTitleRef.current, {
+      y: 0,
+      opacity: 1,
+      duration: 1,
+      scrollTrigger: {
+        trigger: teamTitleRef.current,
+        start: "top 80%",
+        end: "top 20%",
+        toggleActions: "play none none reverse",
+      },
+    });
+
+    teamMembersRef.current.forEach((member, index) => {
+      if (member) {
+        gsap.to(member, {
+          x: 0,
+          opacity: 1,
+          duration: 1,
+          delay: index * 0.2,
+          scrollTrigger: {
+            trigger: member,
+            start: "top 85%",
+            end: "top 15%",
+            toggleActions: "play none none reverse",
+          },
+        });
+
+        const circle = member.querySelector(".team-circle");
+        const card = member.querySelector(".team-card");
+
+        if (circle && card) {
+          member.addEventListener("mouseenter", () => {
+            gsap.to(circle, {
+              scale: 1.05,
+              duration: 0.3,
+              ease: "power2.out",
+            });
+            gsap.to(card, {
+              scale: 1.02,
+              duration: 0.3,
+              ease: "power2.out",
+            });
+          });
+
+          member.addEventListener("mouseleave", () => {
+            gsap.to(circle, {
+              scale: 1,
+              duration: 0.3,
+              ease: "power2.out",
+            });
+            gsap.to(card, {
+              scale: 1,
+              duration: 0.3,
+              ease: "power2.out",
+            });
+          });
+        }
+      }
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      mainTl.kill();
+    };
   }, []);
 
-  const teamSectionOffset = 1050; 
-  const isTeamVisible = scrollY > teamSectionOffset - 600;
-  const teamTitleVisible = scrollY > teamSectionOffset - 400;
-
   return (
-    <div className="w-full min-h-screen relative bg-gradient-to-br from-yellow-600 via-orange-500 to-red-800 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-hidden">
+    <div className="w-full min-h-screen bg-gradient-to-br from-yellow-600 via-orange-500 to-red-800 overflow-hidden">
       <Header />
 
       {/* Hero Section */}
-      <div className="w-full h-[809px] left-0 top-[128px] absolute overflow-hidden">
-        <div className={`w-full h-full transform transition-transform duration-1000 ease-out ${
-          isLoaded ? 'scale-100' : 'scale-50'
-        }`}>
+      <section className="relative w-full min-h-[75vh] flex items-center justify-center text-center px-4">
+        <div ref={heroImageRef} className="absolute inset-0 z-0">
           <Image
             src="/hero-image.jpg"
             alt="Sydney Polls Background"
-            layout="fill"
-            objectFit="cover"
-            quality={100}
-            priority
+            fill
             className="object-cover"
+            priority
           />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute left-1/2 top-[40%] transform -translate-x-1/2 -translate-y-1/2 text-center w-full px-4 z-10">
-          <h1 className="text-red-500 text-6xl md:text-9xl font-black font-['Inter'] mb-4 
-                       drop-shadow-[0_8px_8px_rgba(0,0,0,0.6)] transform hover:scale-105 transition-transform duration-300 cursor-pointer">
+
+        <div className="relative z-10 flex flex-col items-center justify-center">
+          <h1
+            ref={heroTitleRef}
+            className="text-red-500 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black drop-shadow-[0_8px_8px_rgba(0,0,0,0.6)]"
+          >
             Sydney Polls
           </h1>
-          <p className="text-white text-xl md:text-3xl font-black font-['Inter'] 
-                      drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] transform hover:scale-105 transition-transform duration-300 cursor-pointer">
+          <p
+            ref={heroSubtitleRef}
+            className="text-white text-lg sm:text-xl md:text-2xl font-semibold mt-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)]"
+          >
             Empowering every vote, shaping every future.
           </p>
         </div>
-      </div>
+      </section>
 
-      {/* 3D Team Section */}
-      <div className="w-full relative pb-60" style={{ marginTop: '1050px' }}>
-        {/* 3D Framed "Meet the team" title */}
-        <div className={`w-full text-center mb-32 relative flex justify-center transform transition-all duration-1000 ${
-          teamTitleVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
-        }`}>
-          <div className="relative bg-gradient-to-br from-yellow-400 via-orange-400 to-red-600 p-8 md:p-12
-                        shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_-8px_16px_rgba(0,0,0,0.3),inset_0_8px_16px_rgba(255,255,255,0.2)]
-                        border-8 border-red-900 rounded-3xl
-                        transform hover:scale-105 transition-all duration-300 cursor-pointer
-                        hover:shadow-[0_25px_50px_rgba(0,0,0,0.5),inset_0_-10px_20px_rgba(0,0,0,0.4),inset_0_10px_20px_rgba(255,255,255,0.3)]
-                        before:absolute before:inset-[-4px] before:bg-red-900 before:-z-10 before:rounded-[28px]
-                        after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm
-                        group">
-            <h2 className="text-6xl md:text-9xl font-black font-['Inter'] relative
-                         bg-gradient-to-b from-red-200 via-red-300 to-red-500 bg-clip-text text-transparent
-                         group-hover:bg-gradient-to-b group-hover:from-yellow-200 group-hover:via-orange-300 group-hover:to-orange-500 group-hover:bg-clip-text group-hover:text-transparent
-                         drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]
-                         group-hover:drop-shadow-[0_0_10px_rgba(251,146,60,0.5)]
-                         before:content-[attr(data-text)] before:absolute before:inset-0 
-                         before:bg-gradient-to-t before:from-red-800 before:to-red-600 before:bg-clip-text before:text-transparent
-                         group-hover:before:bg-gradient-to-t group-hover:before:from-orange-700 group-hover:before:to-yellow-600 group-hover:before:bg-clip-text group-hover:before:text-transparent
-                         before:translate-x-[2px] before:translate-y-[2px] before:-z-10
-                         after:content-[attr(data-text)] after:absolute after:inset-0
-                         after:bg-gradient-to-br after:from-red-900 after:to-black after:bg-clip-text after:text-transparent
-                         group-hover:after:bg-gradient-to-br group-hover:after:from-orange-800 group-hover:after:to-black group-hover:after:bg-clip-text group-hover:after:text-transparent
-                         after:translate-x-[4px] after:translate-y-[4px] after:-z-20
-                         hover:drop-shadow-[0_0_20px_rgba(251,146,60,0.8)]
-                         transition-all duration-300"
-                data-text="Meet the team">
-              Meet the team
-            </h2>
-          </div>
+      {/* Team Section */}
+      <section className="w-full py-24 px-4">
+        <div ref={teamTitleRef} className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white drop-shadow-lg">
+            Meet the Team
+          </h2>
         </div>
 
-        <div className="container mx-auto px-4">
-          {/* Team Member 1 */}
-          <div className={`flex flex-col md:flex-row items-center justify-center mb-24 relative group transform transition-all duration-1000 ${
-            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
-          }`} style={{ transitionDelay: '200ms' }}>
-            <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-orange-600 to-orange-800 rounded-full 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
-                          flex items-center justify-center relative z-10 transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.4),inset_10px_10px_25px_rgba(255,255,255,0.15)]
-                          hover:scale-105 border-2 border-orange-400"
-                 style={{ marginRight: '-192px' }}> 
-              <span className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">Team Member 1</span>
+        <div className="max-w-6xl mx-auto space-y-16">
+          {TEAM_MEMBERS.map((member, i) => (
+            <div
+              key={i}
+              ref={(el) => addToTeamRefs(el, i)}
+              className={`flex flex-col md:flex-row ${
+                i % 2 !== 0 ? "md:flex-row-reverse" : ""
+              } items-center justify-between gap-6 group`}
+            >
+              <button
+                className="team-circle w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-64 rounded-full flex items-center justify-center 
+                            bg-gradient-to-br from-orange-600 to-orange-800 border-4 border-orange-300 shadow-lg focus:outline-none focus:ring-4 focus:ring-orange-400 transition-transform duration-200 overflow-hidden relative"
+                onClick={() => setSelectedMember(i)}
+                aria-label={`Show info for ${member.name}`}
+                tabIndex={0}
+              >
+                <div className="absolute inset-0 w-full h-full bg-gray-200 animate-pulse" />
+                <Image
+                  src={member.image}
+                  alt={member.name}
+                  fill
+                  className="w-full h-full object-cover rounded-full"
+                  sizes="(max-width: 768px) 100vw, 256px"
+                />
+                <span className="sr-only">Show info for {member.name}</span>
+              </button>
+              <div
+                className="team-card w-full md:flex-1 h-auto p-8 rounded-xl border-4 border-amber-500 
+                            bg-gradient-to-r from-amber-300 to-amber-400 shadow-md flex items-center justify-center"
+              >
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-black">
+                  {member.role}
+                </h3>
+              </div>
             </div>
-            <div className="w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-r from-amber-300 to-amber-400 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.3),inset_10px_10px_25px_rgba(255,255,255,0.4)]
-                          hover:scale-[1.02] border-2 border-amber-500">
-              <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Frontend Developer</h3>
-            </div>
-          </div>
+          ))}
+        </div>
+      </section>
 
-          {/* Team Member 2 */}
-          <div className={`flex flex-col md:flex-row-reverse items-center justify-center mb-24 relative group transform transition-all duration-1000 ${
-            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
-          }`} style={{ transitionDelay: '400ms' }}>
-            <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-orange-600 to-orange-800 rounded-full 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
-                          flex items-center justify-center relative z-10 transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.4),inset_10px_10px_25px_rgba(255,255,255,0.15)]
-                          hover:scale-105 border-2 border-orange-400"
-                 style={{ marginLeft: '-192px' }}> 
-              <span className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">Team Member 2</span>
-            </div>
-            <div className="w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-l from-amber-300 to-amber-400 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.3),inset_10px_10px_25px_rgba(255,255,255,0.4)]
-                          hover:scale-[1.02] border-2 border-amber-500">
-              <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Frontend Developer</h3>
-            </div>
-          </div>
-
-          {/* Team Member 3 */}
-          <div className={`flex flex-col md:flex-row items-center justify-center mb-24 relative group transform transition-all duration-1000 ${
-            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-20'
-          }`} style={{ transitionDelay: '600ms' }}>
-            <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-rose-700 to-rose-900 rounded-full 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
-                          flex items-center justify-center relative z-10 transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.4),inset_10px_10px_25px_rgba(255,255,255,0.15)]
-                          hover:scale-105 border-2 border-rose-400"
-                 style={{ marginRight: '-192px' }}> 
-              <span className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">Team Member 3</span>
-            </div>
-            <div className="w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-r from-amber-300 to-amber-400 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.3),inset_10px_10px_25px_rgba(255,255,255,0.4)]
-                          hover:scale-[1.02] border-2 border-amber-500">
-              <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Backend Developer</h3>
-            </div>
-          </div>
-
-          {/* Team Member 4 */}
-          <div className={`flex flex-col md:flex-row-reverse items-center justify-center mb-32 relative group transform transition-all duration-1000 ${
-            isTeamVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-20'
-          }`} style={{ transitionDelay: '800ms' }}>
-            <div className="w-64 h-64 md:w-96 md:h-96 bg-gradient-to-br from-rose-700 to-rose-900 rounded-full 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.3),inset_8px_8px_20px_rgba(255,255,255,0.1)] 
-                          flex items-center justify-center relative z-10 transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.4),inset_10px_10px_25px_rgba(255,255,255,0.15)]
-                          hover:scale-105 border-2 border-rose-400"
-                 style={{ marginLeft: '-192px' }}> 
-              <span className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">Team Member 4</span>
-            </div>
-            <div className="w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-l from-amber-300 to-amber-400 
-                          shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center transform transition-all duration-300
-                          hover:shadow-[25px_25px_50px_rgba(0,0,0,0.5),inset_-10px_-10px_25px_rgba(0,0,0,0.3),inset_10px_10px_25px_rgba(255,255,255,0.4)]
-                          hover:scale-[1.02] border-2 border-amber-500">
-              <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Backend Developer</h3>
+      {/* Modal for team member info */}
+      {selectedMember !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setSelectedMember(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative animate-fadeIn"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-2xl font-bold"
+              onClick={() => setSelectedMember(null)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <div className="flex flex-col items-center">
+              <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-orange-400 mb-4 flex items-center justify-center relative">
+                <div className="absolute inset-0 w-full h-full bg-gray-200 animate-pulse" />
+                <Image
+                  src={TEAM_MEMBERS[selectedMember].image}
+                  alt={TEAM_MEMBERS[selectedMember].name}
+                  fill
+                  className="w-full h-full object-cover rounded-full"
+                  sizes="112px"
+                />
+              </div>
+              <h3 className="text-2xl font-bold mb-2 text-orange-700">{TEAM_MEMBERS[selectedMember].name}</h3>
+              <p className="text-lg font-semibold mb-2 text-gray-700">{TEAM_MEMBERS[selectedMember].role}</p>
+              <p className="text-base text-gray-600 mb-4 text-center">{TEAM_MEMBERS[selectedMember].bio}</p>
+              <div className="flex gap-4 mt-2">
+                <a href={TEAM_MEMBERS[selectedMember].socials.github} target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-black text-2xl" aria-label="GitHub">
+                  <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.157-1.11-1.465-1.11-1.465-.908-.62.069-.608.069-.608 1.004.07 1.532 1.032 1.532 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.221-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.025A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.295 2.748-1.025 2.748-1.025.546 1.378.202 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.847-2.337 4.695-4.566 4.944.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.744 0 .267.18.579.688.481C19.138 20.203 22 16.447 22 12.021 22 6.484 17.523 2 12 2z"/></svg>
+                </a>
+                <a href={TEAM_MEMBERS[selectedMember].socials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:text-blue-900 text-2xl" aria-label="Facebook">
+                  <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35C.595 0 0 .592 0 1.326v21.348C0 23.408.595 24 1.325 24h11.495v-9.294H9.691v-3.622h3.129V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.408 24 22.674V1.326C24 .592 23.406 0 22.675 0"/></svg>
+                </a>
+                <a href={TEAM_MEMBERS[selectedMember].socials.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:text-pink-700 text-2xl" aria-label="Instagram">
+                  <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.334 3.608 1.308.974.974 1.246 2.241 1.308 3.608.058 1.266.069 1.646.069 4.85s-.012 3.584-.07 4.85c-.062 1.366-.334 2.633-1.308 3.608-.974.974-2.241 1.246-3.608 1.308-1.266.058-1.646.069-4.85.069s-3.584-.012-4.85-.07c-1.366-.062-2.633-.334-3.608-1.308-.974-.974-1.246-2.241-1.308-3.608C2.175 15.647 2.163 15.267 2.163 12s.012-3.584.07-4.85c.062-1.366.334-2.633 1.308-3.608C4.515 2.497 5.782 2.225 7.148 2.163 8.414 2.105 8.794 2.163 12 2.163zm0-2.163C8.741 0 8.332.012 7.052.07 5.771.128 4.659.388 3.678 1.37c-.98.98-1.24 2.092-1.298 3.373C2.012 5.668 2 6.077 2 12c0 5.923.012 6.332.07 7.613.058 1.281.318 2.393 1.298 3.373.981.981 2.093 1.241 3.374 1.299C8.332 23.988 8.741 24 12 24s3.668-.012 4.948-.07c1.281-.058 2.393-.318 3.374-1.299.98-.98 1.24-2.092 1.298-3.373.058-1.281.07-1.69.07-7.613 0-5.923-.012-6.332-.07-7.613-.058-1.281-.318-2.393-1.298-3.373-.981-.981-2.093-1.241-3.374-1.299C15.668.012 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zm0 10.162a3.999 3.999 0 1 1 0-7.998 3.999 3.999 0 0 1 0 7.998zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+                </a>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      {/* Footer */}
+      )}
+
       <Footer />
     </div>
   );
