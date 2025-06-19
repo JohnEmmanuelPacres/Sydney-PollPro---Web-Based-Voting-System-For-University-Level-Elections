@@ -159,24 +159,7 @@ export default function AboutPage() {
       });
     }
 
-    // Team title hover effect
-    if (teamTitleRef.current) {
-      teamTitleRef.current.addEventListener('mouseenter', () => {
-        gsap.to(teamTitleRef.current, {
-          scale: 1.05,
-          duration: 0.3,
-          ease: "power2.out"
-        });
-      });
-
-      teamTitleRef.current.addEventListener('mouseleave', () => {
-        gsap.to(teamTitleRef.current, {
-          scale: 1,
-          duration: 0.3,
-          ease: "power2.out"
-        });
-      });
-    }
+    // Team title hover effect - REMOVED
 
     return () => {
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
@@ -223,35 +206,27 @@ export default function AboutPage() {
       {/* 3D Team Section */}
       <div className="w-full relative pb-60" style={{ marginTop: '1050px' }}>
         {/* 3D Framed "Meet the team" title */}
-          <div className="w-full text-center mb-32 relative flex justify-center">
-            <div 
-              ref={teamTitleRef}
-              className="relative bg-gradient-to-br from-yellow-400 via-orange-400 to-red-600 p-8 md:p-12
-                        shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_-8px_16px_rgba(0,0,0,0.3),inset_0_8px_16px_rgba(255,255,255,0.2)]
-                        border-8 border-red-900 rounded-3xl cursor-pointer
-                        hover:shadow-[0_25px_50px_rgba(0,0,0,0.5),inset_0_-10px_20px_rgba(0,0,0,0.4),inset_0_10px_20px_rgba(255,255,255,0.3)]
-                        before:absolute before:inset-[-4px] before:bg-red-900 before:-z-10 before:rounded-[28px]
-                        after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm
-                        group"
+        <div className="w-full text-center mb-32 relative flex justify-center">
+          <div 
+            ref={teamTitleRef}
+            className="relative bg-gradient-to-br from-yellow-400 via-orange-400 to-red-600 p-8 md:p-12
+                      shadow-[0_20px_40px_rgba(0,0,0,0.4),inset_0_-8px_16px_rgba(0,0,0,0.3),inset_0_8px_16px_rgba(255,255,255,0.2)]
+                      border-8 border-red-900 rounded-3xl
+                      before:absolute before:inset-[-4px] before:bg-red-900 before:-z-10 before:rounded-[28px]
+                      after:absolute after:inset-[-8px] after:bg-red-800 after:-z-20 after:rounded-[32px] after:blur-sm"
+          >
+            <h2 className="text-6xl md:text-9xl font-black font-['Inter'] relative
+                         bg-gradient-to-b from-white via-gray-100 to-gray-200 bg-clip-text text-transparent
+                         drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]
+                         before:content-[attr(data-text)] before:absolute before:inset-0 
+                         before:bg-gradient-to-t before:from-gray-400 before:to-gray-300 before:bg-clip-text before:text-transparent
+                         before:translate-x-[2px] before:translate-y-[2px] before:-z-10
+                         after:content-[attr(data-text)] after:absolute after:inset-0
+                         after:bg-gradient-to-br after:from-gray-600 after:to-black after:bg-clip-text after:text-transparent
+                         after:translate-x-[4px] after:translate-y-[4px] after:-z-20"
+                data-text="Meet the team"
             >
-              <h2 className="text-6xl md:text-9xl font-black font-['Inter'] relative
-                          bg-gradient-to-b from-white via-gray-100 to-gray-200 bg-clip-text text-transparent
-                          group-hover:bg-gradient-to-b group-hover:from-white group-hover:via-yellow-100 group-hover:to-yellow-200 group-hover:bg-clip-text group-hover:text-transparent
-                          drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]
-                          group-hover:drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]
-                          before:content-[attr(data-text)] before:absolute before:inset-0 
-                          before:bg-gradient-to-t before:from-gray-400 before:to-gray-300 before:bg-clip-text before:text-transparent
-                          group-hover:before:bg-gradient-to-t group-hover:before:from-yellow-300 group-hover:before:to-yellow-200 group-hover:before:bg-clip-text group-hover:before:text-transparent
-                          before:translate-x-[2px] before:translate-y-[2px] before:-z-10
-                          after:content-[attr(data-text)] after:absolute after:inset-0
-                          after:bg-gradient-to-br after:from-gray-600 after:to-black after:bg-clip-text after:text-transparent
-                          group-hover:after:bg-gradient-to-br group-hover:after:from-gray-500 group-hover:after:to-black group-hover:after:bg-clip-text group-hover:after:text-transparent
-                          after:translate-x-[4px] after:translate-y-[4px] after:-z-20
-                          hover:drop-shadow-[0_0_20px_rgba(255,255,255,0.9)]
-                          transition-all duration-300"
-                  data-text="Meet the team"
-              >
-                Meet the team
+              Meet the team
             </h2>
           </div>
         </div>
@@ -272,7 +247,7 @@ export default function AboutPage() {
             </div>
             <div className="team-card w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-r from-amber-300 to-amber-400 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center
+                          flex items-center justify-center rounded-3xl
                           border-2 border-amber-500"
             >
               <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Frontend Developer</h3>
@@ -294,7 +269,7 @@ export default function AboutPage() {
             </div>
             <div className="team-card w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-l from-amber-300 to-amber-400 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center
+                          flex items-center justify-center rounded-3xl
                           border-2 border-amber-500"
             >
               <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Frontend Developer</h3>
@@ -316,7 +291,7 @@ export default function AboutPage() {
             </div>
             <div className="team-card w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-r from-amber-300 to-amber-400 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center
+                          flex items-center justify-center rounded-3xl
                           border-2 border-amber-500"
             >
               <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Backend Developer</h3>
@@ -338,7 +313,7 @@ export default function AboutPage() {
             </div>
             <div className="team-card w-full md:w-[963px] h-64 md:h-96 bg-gradient-to-l from-amber-300 to-amber-400 
                           shadow-[20px_20px_40px_rgba(0,0,0,0.4),inset_-8px_-8px_20px_rgba(0,0,0,0.2),inset_8px_8px_20px_rgba(255,255,255,0.3)] 
-                          flex items-center justify-center
+                          flex items-center justify-center rounded-3xl
                           border-2 border-amber-500"
             >
               <h3 className="text-black text-2xl md:text-4xl font-black font-['Inter'] drop-shadow-md">Backend Developer</h3>
