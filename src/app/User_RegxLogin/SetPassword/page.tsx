@@ -59,7 +59,7 @@ const SetPassword = () => {
         return;
       }
 
-      // First, try to sign up the user
+      // Try to sign up the user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email!,
         password: formData.password,
@@ -71,9 +71,23 @@ const SetPassword = () => {
       });
 
       if (signUpError) {
-        if (signUpError.message.includes('User already registered') || 
-            signUpError.message.includes('User already exists')) {
-          // User already exists, try to sign in with the new password
+        // If user already exists, show alert and stop
+        if (
+          signUpError.message.includes('User already registered') ||
+          signUpError.message.includes('User already exists') ||
+          signUpError.message.includes('duplicate key value violates unique constraint')
+        ) {
+          alert('User already registered. Please log in or use a different email.');
+          setIsLoading(false);
+          return;
+        }
+        // If user already exists, try to sign in
+        if (
+          signUpError.message.includes('User already registered') ||
+          signUpError.message.includes('User already exists') ||
+          signUpError.message.includes('duplicate key value violates unique constraint')
+        ) {
+          // Try to sign in with the new password
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: email!,
             password: formData.password,
@@ -85,7 +99,6 @@ const SetPassword = () => {
             return;
           }
 
-          // Successfully signed in
           if (signInData.user) {
             setSuccess('Password updated and logged in successfully! Redirecting to dashboard...');
             setTimeout(() => router.push(`/dashboard?email=${encodeURIComponent(email!)}`), 2000);
@@ -118,7 +131,6 @@ const SetPassword = () => {
         }
       }
 
-      // Fallback - just redirect to login
       setSuccess('Password set successfully! Please log in with your new password.');
       setTimeout(() => router.push('/User_RegxLogin'), 2000);
     } catch (err) {
