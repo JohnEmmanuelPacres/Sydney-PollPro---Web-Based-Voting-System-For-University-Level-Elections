@@ -236,15 +236,25 @@ const SIGNIN: NextPage = () => {
           >
             {isLoading ? 'VERIFYING...' : 'SIGN IN'}
           </motion.button>
-        </motion.div>
 
-      {/* Sign up */}
-        <button 
-          onClick={handleSignUp}
-          className="absolute top-[calc(50%+220px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black"
+          {/* Sign up */}
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleSignUp}
+            className="absolute top-[calc(50%+220px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black transform-gpu"
+          >
+            SIGN UP
+          </motion.button>
+
+          <motion.button
+          onClick={handleAdminLogin}
+          className="absolute top-[calc(50%+280px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl cursor-pointer rounded-lg transition-colors duration-200 hover:text-[#fac36b] underline underline-offset-4"
         >
-          SIGN UP
-        </button>
+          Login as Admin
+        </motion.button>
+
+        </motion.div>
       </div>
 
       {/* Error Message */}
