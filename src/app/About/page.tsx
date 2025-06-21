@@ -151,7 +151,7 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-yellow-600 via-orange-500 to-red-800 overflow-hidden">
+    <div className="w-full min-h-screen bg-gradient-to-t from-yellow-900 to-red-900 overflow-hidden">
       <Header />
 
       {/* Hero Section */}

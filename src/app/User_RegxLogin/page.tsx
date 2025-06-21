@@ -130,30 +130,22 @@ const SIGNIN: NextPage = () => {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#c31d1d] to-[#b38308] overflow-hidden text-left text-xl text-white font-['Actor'] pt-24 md:pt-32">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-yellow-900 to-red-900 overflow-hidden text-left text-xl text-white font-['Actor'] pt-24 md:pt-32">
       <AuthPageHeader />
-      <div className="flex-1 flex flex-col items-center justify-center gap-y-8">
+      <div className="flex-1 flex flex-col items-center justify-center gap-y-8 px-4 sm:px-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-[790px] h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79 mt-8"
+          className="w-full max-w-[790px] h-auto min-h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79 mt-8 p-6 md:p-8"
         >
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="absolute top-[calc(50%-274px)] left-[calc(50%-251.5px)] font-semibold text-[38px] font-['Baloo_Da_2']"
+            className="text-center md:text-left text-3xl sm:text-4xl font-semibold font-['Baloo_Da_2'] mb-8"
           >
             Login
-          </motion.div>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="absolute top-[calc(50%+188px)] left-[calc(50%-87.5px)] text-lg"
-          >
-            Don't have an account yet?
           </motion.div>
 
           {/* Form Container */}
@@ -161,14 +153,14 @@ const SIGNIN: NextPage = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4, duration: 0.5 }}
-            className="absolute top-[calc(50%-172px)] left-[calc(50%-251.5px)] w-[500px] h-[225px] text-sm"
+            className="w-full max-w-[500px] mx-auto"
           >
             <div className="text-xl mb-4">Institutional Email</div>
             <motion.input
               whileFocus={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
               type="email"
-              className="w-[500px] h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black transform-gpu"
+              className="w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black transform-gpu"
               placeholder="username@cit.edu"
               value={email}
               onChange={e => {
@@ -193,12 +185,12 @@ const SIGNIN: NextPage = () => {
               )}
             </AnimatePresence>
             
-            <div className="text-xl mt-4">PIN or Password</div>
+            <div className="text-xl mt-6">PIN or Password</div>
             <motion.input
               whileFocus={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
               type={showCredential ? "text" : "password"}
-              className="w-[500px] h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black mt-2 transform-gpu"
+              className="w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black mt-2 transform-gpu"
               placeholder="Enter 6-digit PIN or your password"
               value={credential}
               onChange={e => {
@@ -220,40 +212,48 @@ const SIGNIN: NextPage = () => {
                 onChange={() => setShowCredential(!showCredential)}
                 className="mr-2"
               />
-              <label htmlFor="showCredential" className="text-black text-sm">
+              <label htmlFor="showCredential" className="text-white text-sm">
                 Show {/^\d{6}$/.test(credential) ? 'PIN' : 'Password'}
               </label>
             </motion.div>
+
+            {/* Sign in */}
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSignIn}
+              disabled={isLoading}
+              className="w-full h-[50px] mt-8 flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black disabled:opacity-50 disabled:cursor-not-allowed transform-gpu"
+            >
+              {isLoading ? 'VERIFYING...' : 'SIGN IN'}
+            </motion.button>
+
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-center mt-4 text-lg"
+            >
+              Don't have an account yet?
+            </motion.div>
+
+            {/* Sign up */}
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSignUp}
+              className="w-full h-[50px] mt-4 flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black transform-gpu"
+            >
+              SIGN UP
+            </motion.button>
+
+            <motion.button
+              onClick={handleAdminLogin}
+              className="w-full h-[50px] mt-4 flex items-center justify-center text-white text-xl cursor-pointer rounded-lg transition-colors duration-200 hover:text-[#fac36b] underline underline-offset-4"
+            >
+              Login as Admin
+            </motion.button>
           </motion.div>
-
-          {/* Sign in */}
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleSignIn}
-            disabled={isLoading}
-            className="absolute top-[calc(50%+120px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black disabled:opacity-50 disabled:cursor-not-allowed transform-gpu"
-          >
-            {isLoading ? 'VERIFYING...' : 'SIGN IN'}
-          </motion.button>
-
-          {/* Sign up */}
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleSignUp}
-            className="absolute top-[calc(50%+220px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black transform-gpu"
-          >
-            SIGN UP
-          </motion.button>
-
-          <motion.button
-          onClick={handleAdminLogin}
-          className="absolute top-[calc(50%+280px)] left-[calc(50%-251.5px)] w-[500px] h-[50px] flex items-center justify-center text-white text-xl cursor-pointer rounded-lg transition-colors duration-200 hover:text-[#fac36b] underline underline-offset-4"
-        >
-          Login as Admin
-        </motion.button>
-
         </motion.div>
       </div>
 
