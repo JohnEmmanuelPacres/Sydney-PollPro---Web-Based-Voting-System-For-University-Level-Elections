@@ -72,24 +72,24 @@ const Results: NextPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-gradient-to-t from-[#8b0000] to-[#b38308] text-white font-inter">
+    <div className="flex flex-col min-h-screen w-full bg-gradient-to-t from-yellow-900 to-red-900 text-white font-inter">
       {/* Header */}
       <Header />
 
       {/* Main Content */}
-      <main className="flex-1 w-full px-[35px]">
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8">
         <h1 
           ref={titleRef}
-          className="mt-[198px] ml-[40px] text-[48px] font-semibold tracking-[-0.02em]"
+          className="mt-24 md:mt-32 lg:mt-40 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-center md:text-left mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
         >
           Election Results
         </h1>
 
-        <div className="mt-[100px] flex flex-col items-center gap-[32px] text-[32px] font-jaldi pb-[160px]">
+        <div className="mt-12 md:mt-16 lg:mt-20 flex flex-col items-center gap-6 md:gap-8 lg:gap-10 pb-20 md:pb-24 lg:pb-32 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {pollsData.map((poll, index) => (
             <div 
               key={index} 
-              className="w-[1280px]"
+              className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl"
               ref={(el) => addToRefs(el, index)}
             >
               <PollCard position={poll.position} candidates={poll.candidates} />
