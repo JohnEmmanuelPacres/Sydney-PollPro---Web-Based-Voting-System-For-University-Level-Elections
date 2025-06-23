@@ -1,11 +1,21 @@
+'use client';
 import React from "react";
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
 
 export default function VotingDashboard() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/User_RegxLogin');
+  };
+
   return (
-    <div className="w-screen min-h-screen relative bg-gradient-to-l from-yellow-600 to-red-950 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-y-auto">
+    <div className="w-full min-h-screen relative bg-gradient-to-l from-yellow-600 to-red-950 shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] overflow-y-auto overflow-x-hidden">
   <div className="w-[1440px] px-20 left-0 top-[901px] absolute inline-flex flex-col justify-start items-start gap-2.5">
     <div className="self-stretch h-80 inline-flex justify-start items-start gap-6">
-      <div className="w-96 h-64 px-7 py-14 bg-black/20 rounded-lg outline outline-4 outline-offset-[-4px] outline-orange-400 inline-flex flex-col justify-start items-start gap-1">
+      <div className="w-96 h-64 px-7 py-14 bg-black/20 rounded-lg outline outline-4 outline-offset-[-4px] outline-orange-400 inline-flex flex-col justify-start items-start gap-1 mx-auto">
         <div className="self-stretch justify-start text-stone-50 text-3xl font-['Baloo_2'] leading-10">Total Registered Voters</div>
         <div className="self-stretch h-20 text-center justify-start text-white text-5xl font-['Baloo_2'] leading-[81px]">2, 847</div>
         <div className="self-stretch justify-center text-zinc-500 text-2xl font-normal font-['Inter'] leading-9">Active Student Voters</div>
@@ -24,11 +34,11 @@ export default function VotingDashboard() {
   </div>
   <div className="w-[703px] left-[38px] top-[749px] absolute justify-start text-white text-5xl font-semibold font-['Inter']">Current Election Stats</div>
   <div className="w-[703px] left-[39px] top-[1299px] absolute justify-start text-white text-5xl font-semibold font-['Inter']">Realtime Updates</div>
-  <div className="w-[1440px] h-32 left-0 top-[543px] absolute bg-gradient-to-r from-red-900 to-stone-950 rounded-md shadow-[0px_7px_4px_0px_rgba(0,0,0,0.25)] outline outline-[3px] outline-offset-[-3px] outline-orange-400 overflow-hidden">
+  <div className="w-screen h-32 left-0 top-[543px] absolute bg-gradient-to-r from-red-900 to-stone-950 rounded-md shadow-[0px_7px_4px_0px_rgba(0,0,0,0.25)] outline outline-[3px] outline-offset-[-3px] outline-orange-400 overflow-hidden">
     <div className="left-[22px] top-[66px] absolute justify-center text-white text-2xl font-normal font-['Baloo_Bhai_2'] leading-10">Session Status: </div>
     <div className="left-[22px] top-[25px] absolute justify-center text-white text-2xl font-normal font-['Baloo_Bhai_2'] leading-10">Voting Session: </div>
   </div>
-  <div className="w-[1440px] h-40 left-0 top-[2331px] absolute bg-rose-950 shadow-[0px_-5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
+  <div className="w-full h-40 left-0 top-[2331px] absolute bg-rose-950 shadow-[0px_-5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
     <div className="left-[312px] top-[39px] absolute inline-flex justify-center items-center gap-2.5">
       <div className="w-14 h-7 relative" />
     </div>
@@ -46,27 +56,31 @@ export default function VotingDashboard() {
     </div>
     <div className="text-center justify-center text-color-grey-95 text-lg font-semibold font-['Geist'] leading-7">VOTE NOW</div>
   </div>
-  <div className="w-[1386px] h-[751px] left-[27px] top-[1386px] absolute bg-gradient-to-b from-red-900 outline outline-[6px] outline-yellow-700" />
-  <div className="w-[1433px] h-32 left-[4px] top-0 absolute bg-rose-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
-    <div className="w-[637px] px-5 py-2.5 left-[437px] top-[47px] absolute inline-flex justify-start items-center gap-11">
+  <div className="w-full min-h-screen left-[27px] top-[1386px] absolute bg-gradient-to-b from-red-900 outline outline-[6px] outline-yellow-700" />
+  <div className="w-full h-32 left-[4px] top-0 absolute bg-rose-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] overflow-hidden">
+    <div className="absolute left-1/2 top-[47px] w-[637px] px-5 py-2.5 flex justify-start items-center gap-11 -translate-x-1/2">
       <div className="w-14 h-7 relative">
-        <div className="left-0 top-0 absolute justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Home</div>
+        <div className="w-14 h-7 flex items-center justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Home</div>
       </div>
       <div className="w-28 h-9 relative">
-        <div className="w-28 h-9 left-0 top-0 absolute justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Candidates</div>
+        <div className="w-28 h-9 flex items-center justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Candidates</div>
       </div>
       <div className="w-16 h-7 relative">
-        <div className="left-0 top-0 absolute justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Results</div>
+        <div className="w-16 h-7 flex items-center justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Results</div>
       </div>
       <div data-property-1="Updates" className="w-20 h-7 relative">
-        <div className="left-0 top-0 absolute justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Updates</div>
+        <div className="w-20 h-7 flex items-center justify-center text-white text-xl font-medium font-['Inter'] leading-loose">Updates</div>
       </div>
     </div>
     <div className="left-[213px] top-[35px] absolute justify-center text-white text-5xl font-normal font-['Abyssinica_SIL'] leading-[67.50px]">UniVote</div>
-    <img className="w-36 h-28 left-[38px] top-[7px] absolute" src="https://placehold.co/146x120" />
-    <div data-property-1="SIGN IN BUTTON" className="w-32 px-6 py-3.5 left-[1085px] top-[47px] absolute bg-gradient-to-br from-stone-600 to-orange-300 rounded-[999px] shadow-[1px_2px_6px_0px_rgba(0,0,0,0.40)] shadow-[2px_4px_18px_0px_rgba(0,0,0,0.20)] shadow-[-1px_-2px_6px_0px_rgba(250,195,107,0.40)] shadow-[-2px_-4px_18px_0px_rgba(250,195,107,0.10)] outline outline-[3px] outline-offset-[-3px] outline-orange-300 inline-flex justify-center items-center gap-2">
-      <div className="justify-center text-white text-xl font-normal font-['Jaldi'] leading-loose">LOGOUT</div>
-    </div>
+    <img className="w-28 h-28 left-[38px] top-[7px] absolute" src="/Website Logo.png" />
+    <button
+      onClick={handleLogout}
+      data-property-1="SIGN IN BUTTON"
+      className="w-32 px-6 py-3.5 left-[1085px] top-[47px] absolute bg-gradient-to-br from-stone-600 to-orange-300 rounded-[999px] shadow-[1px_2px_6px_0px_rgba(0,0,0,0.40)] shadow-[2px_4px_18px_0px_rgba(0,0,0,0.20)] shadow-[-1px_-2px_6px_0px_rgba(250,195,107,0.40)] shadow-[-2px_-4px_18px_0px_rgba(250,195,107,0.10)] outline outline-[3px] outline-offset-[-3px] outline-orange-300 inline-flex justify-center items-center gap-2 transition-all duration-300 ease-in-out hover:scale-105"
+    >
+      <div className="w-20 h-7 flex items-center justify-center text-white text-xl font-normal font-['Jaldi'] leading-loose bg-transparent glow-hover">LOGOUT</div>
+    </button>
   </div>
   <div className="w-[783px] h-[733px] p-px left-[37px] top-[1395px] absolute bg-red-950/60 rounded-lg shadow-[0px_2px_4px_-2px_rgba(0,0,0,0.10)] shadow-md outline outline-1 outline-offset-[-1px] outline-color-yellow-64 inline-flex flex-col justify-start items-start overflow-hidden">
     <div className="self-stretch px-6 py-6 border-b border-color-yellow-77 flex flex-col justify-start items-start">
