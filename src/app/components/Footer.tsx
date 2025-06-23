@@ -3,7 +3,7 @@ import { FaFacebook, FaTwitter, FaInstagram } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="w-full bg-red-900 shadow-[0px_-5px_4px_0px_rgba(0,0,0,0.50)] py-8 px-4 sm:px-6 md:px-8">
+    <footer className="w-full bg-red-950 shadow-[0px_-5px_4px_0px_rgba(0,0,0,0.50)] py-8 px-4 sm:px-6 md:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 md:gap-8">
           {/* Footer content sections */}
