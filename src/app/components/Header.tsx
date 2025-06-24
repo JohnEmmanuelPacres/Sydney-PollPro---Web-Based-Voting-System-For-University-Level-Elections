@@ -32,10 +32,10 @@ const Header: React.FC = () => {
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
             <NavButton href="/">Home</NavButton>
             <NavButton href="/Election_Results">Results</NavButton>
-            <NavButton href="/dashboard">Updates</NavButton>
+            <NavButton href="/Update_Section">Updates</NavButton>
             <NavButton href="/About">About</NavButton>
             <SignInButton href="/User_RegxLogin">
-            SIGN IN
+              SIGN IN
             </SignInButton>
           </nav>
         </div>
@@ -65,7 +65,7 @@ const Header: React.FC = () => {
           <div className="flex flex-col space-y-4 p-6">
             <MobileNavButton href="/" onClick={() => setIsMenuOpen(false)}>Home</MobileNavButton>
             <MobileNavButton href="/Election_Results" onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
-            <MobileNavButton href="/dashboard" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
+            <MobileNavButton href="/Update_Section" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
             <MobileNavButton href="/About" onClick={() => setIsMenuOpen(false)}>About</MobileNavButton>
           </div>
         </div>
