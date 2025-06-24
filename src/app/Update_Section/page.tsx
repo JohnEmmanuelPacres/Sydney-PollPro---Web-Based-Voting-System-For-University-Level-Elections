@@ -193,7 +193,6 @@ const UpdatesPage = () => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {/* Use the same Header component as About page */}
       <Header />
 
       {/* Main Content */}
@@ -276,7 +275,6 @@ const UpdatesPage = () => {
         </div>
       </div>
 
-      {/* Use the same Footer component as About page */}
       <Footer />
     </div>
   );
