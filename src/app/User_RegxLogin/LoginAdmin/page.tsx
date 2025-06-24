@@ -43,6 +43,7 @@ const SIGNIN_ADMIN: NextPage = () => {
         });
 
         const data = await response.json();
+        console.log('API Response:', data);
 
         if (!response.ok) {
           setSignInError(data.error || 'Invalid PIN');
@@ -81,7 +82,7 @@ const SIGNIN_ADMIN: NextPage = () => {
           return;
         }
 
-        router.push('/dashboard');
+        router.push('/dashboard/Admin');
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
         console.error('Login error:', err);
@@ -124,11 +125,11 @@ const SIGNIN_ADMIN: NextPage = () => {
             }}
           />
           {emailError && <div className="mt-1 text-[#d90429] text-base font-bold">{emailError}</div>}
-          <div className="text-xl mt-4">Organization ID</div>
+          <div className="text-xl mt-4">PIN or Password</div>
           <input
             type={showCredential ? "text" : "password"}
             className="w-[500px] h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black mt-2"
-            placeholder="Enter Organization ID"
+            placeholder="Enter 6-digit PIN or your password"
             value={credential}
             onChange={e => {
               const value = e.target.value;
@@ -149,7 +150,7 @@ const SIGNIN_ADMIN: NextPage = () => {
               className="mr-2"
             />
             <label htmlFor="showCredential" className="text-black text-sm">
-              Show {/^[\d]{6}$/.test(credential) ? 'PIN' : 'ID'}
+              Show {/^[\d]{6}$/.test(credential) ? 'PIN' : 'Password'}
             </label>
           </div>
         </div>

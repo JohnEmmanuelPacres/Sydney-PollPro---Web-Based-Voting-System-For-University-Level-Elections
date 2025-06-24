@@ -65,7 +65,8 @@ const SetPassword = () => {
         password: formData.password,
         options: {
           data: {
-            course_year: courseYear || '',
+            course_year: courseYear || '', //auth.users.user_metadata
+            user_type: 'voter',
           }
         }
       });

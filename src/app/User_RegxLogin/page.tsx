@@ -46,6 +46,7 @@ const SIGNIN: NextPage = () => {
         });
 
         const data = await response.json();
+        console.log('API Response:', data);
 
         if (!response.ok) {
           setSignInError(data.error || 'Invalid PIN');
