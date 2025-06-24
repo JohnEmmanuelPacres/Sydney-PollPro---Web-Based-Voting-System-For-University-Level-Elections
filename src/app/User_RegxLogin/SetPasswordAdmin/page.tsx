@@ -60,7 +60,7 @@ const SetPassword = () => {
         password: formData.password,
         options: {
           data: {
-            organization_name: organizationName || '',  //auth.users.user_metadata
+            organization_name: organizationName || '',  //auth_user_metadata
             user_type: 'admin'
           }
         }
@@ -81,7 +81,7 @@ const SetPassword = () => {
 
           if (signInData.user) {
             setSuccess('Password updated and logged in successfully! Redirecting to dashboard...');
-            setTimeout(() => router.push('/dashboard'), 2000);
+            setTimeout(() => router.push('/dashboard/Admin'), 2000);
             return;
           }
         } else {
@@ -105,7 +105,7 @@ const SetPassword = () => {
 
         if (signInData.user) {
           setSuccess('Account created and logged in successfully! Redirecting to dashboard...');
-          setTimeout(() => router.push('/Admin_Dashboard'), 2000);
+          setTimeout(() => router.push(`/dashboard?email=${encodeURIComponent(email!)}`), 2000);
           return;
         }
       }

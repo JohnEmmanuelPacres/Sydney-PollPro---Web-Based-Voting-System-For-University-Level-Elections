@@ -2,10 +2,12 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
 
 type FormData = {
   email: string;
   organizationName: string;
+  orgID: string;
 };
 
 const CreateAccount = () => {
@@ -13,6 +15,7 @@ const CreateAccount = () => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     organizationName: '',
+    orgID: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -83,28 +86,40 @@ const CreateAccount = () => {
         return;
       }
 
-      // Send temporary PIN
-      const response = await fetch('/api/send-pin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          email: formData.email,
-          organizationName: formData.organizationName
-        }),
-      });
+      const { data: orgMatch, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('organization_name', formData.organizationName)
+        .eq('org_id', formData.orgID)
+        .single();
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to send temporary PIN');
-        setTimeout(() => setError(null), 5000);
+      if (!orgMatch || error) {
+        setError('Invalid Organization Code.');
         return;
       }
+      else {
+        // Send temporary PIN
+        const response = await fetch('/api/send-pin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            email: formData.email,
+            organizationName: formData.organizationName
+          }),
+        });
+        const data = await response.json();
 
-      setSuccess('Temporary PIN sent to your email! Please check your inbox and use the PIN to log in.');
-      setTimeout(() => router.push('/User_RegxLogin/LoginAdmin'), 8000);
+        if (!response.ok) {
+          setError(data.error || 'Failed to send temporary PIN');
+          setTimeout(() => setError(null), 5000);
+          return;
+        }
+
+        setSuccess('Temporary PIN sent to your email! Please check your inbox and use the PIN to log in.');
+        setTimeout(() => router.push('/User_RegxLogin/LoginAdmin'), 8000);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during registration';
       setError(errorMessage);
@@ -167,6 +182,18 @@ const CreateAccount = () => {
           <h2 className="text-[40px] text-[#f3e2e2] mb-12 text-center">Register</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <div>
+              <input
+                type="email"
+                name="email"
+                placeholder="University Email (@cit.edu)"
+                className={inputClasses}
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+              />
+            </div>
 
             <div className="relative" ref={dropdownRef}>
               <div
@@ -214,14 +241,13 @@ const CreateAccount = () => {
 
             <div>
               <input
-                type="email"
-                name="email"
-                placeholder="University Email (@cit.edu)"
+                type="text"
+                name="orgID"
+                placeholder="Organization Code"
                 className={inputClasses}
-                value={formData.email}
+                value={formData.orgID}
                 onChange={handleChange}
                 required
-                autoComplete="email"
               />
             </div>
 
