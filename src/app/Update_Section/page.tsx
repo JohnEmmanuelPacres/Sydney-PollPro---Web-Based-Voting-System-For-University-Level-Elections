@@ -60,16 +60,10 @@ const UpdatesPage = () => {
   // Initialize animations
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Page entrance animation
-      gsap.fromTo(pageRef.current, 
+      // Content animation (excluding header)
+      gsap.fromTo(contentRef.current, 
         { opacity: 0, y: 30 },
         { opacity: 1, y: 0, duration: 1, ease: "power2.out" }
-      );
-
-      // Content animation
-      gsap.fromTo(contentRef.current, 
-        { opacity: 0 },
-        { opacity: 1, duration: 0.8, delay: 0.3 }
       );
 
       // Articles animation
