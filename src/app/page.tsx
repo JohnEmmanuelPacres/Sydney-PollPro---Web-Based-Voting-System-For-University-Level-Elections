@@ -7,7 +7,7 @@ import Threads from "./components/Threads";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-t from-yellow-900 to-red-900">
+    <div className="min-h-screen flex flex-col bg-gradient-to-t from-yellow-950 to-red-950">
       <Header />
       
       <main className="flex-1 relative">

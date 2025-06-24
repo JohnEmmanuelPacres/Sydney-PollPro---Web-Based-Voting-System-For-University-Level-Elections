@@ -102,7 +102,7 @@ const SetPassword = () => {
 
           if (signInData.user) {
             setSuccess('Password updated and logged in successfully! Redirecting to dashboard...');
-            setTimeout(() => router.push(`/dashboard?email=${encodeURIComponent(email!)}`), 2000);
+            setTimeout(() => router.push(`/Voterdashboard?email=${encodeURIComponent(email!)}`), 2000);
             return;
           }
         } else {
@@ -127,7 +127,7 @@ const SetPassword = () => {
 
         if (signInData.user) {
           setSuccess('Account created and logged in successfully! Redirecting to dashboard...');
-          setTimeout(() => router.push(`/dashboard?email=${encodeURIComponent(email!)}`), 2000);
+          setTimeout(() => router.push(`/Voterdashboard?email=${encodeURIComponent(email!)}`), 2000);
           return;
         }
       }

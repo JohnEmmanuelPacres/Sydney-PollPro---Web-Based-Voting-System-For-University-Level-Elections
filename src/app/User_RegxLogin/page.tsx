@@ -92,7 +92,7 @@ const SIGNIN: NextPage = () => {
         if (data.user) {
           // Store the session in localStorage
           localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-          router.push(`/dashboard?email=${encodeURIComponent(email)}`);
+          router.push(`/Voterdashboard?email=${encodeURIComponent(email)}`);
         }
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
@@ -123,7 +123,7 @@ const SIGNIN: NextPage = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push('/dashboard');
+        router.push('/Voterdashboard');
       }
     };
     

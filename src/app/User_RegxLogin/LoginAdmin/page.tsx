@@ -103,7 +103,7 @@ const SIGNIN_ADMIN: NextPage = () => {
   }, [signInError]);
 
   return (
-    <div className="w-full h-[1024px] relative bg-gradient-to-b from-[#c31d1d] to-[#b38308] overflow-hidden text-left text-xl text-white font-['Actor']">
+    <div className="w-full h-[1024px] relative bg-red-950 overflow-hidden text-left text-xl text-white font-['Actor']">
       <AuthPageHeader />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[790px] h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79">
         <div className="absolute top-[calc(50%-274px)] left-[calc(50%-251.5px)] font-semibold text-[38px] font-['Baloo_Da_2']">Login</div>
