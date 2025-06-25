@@ -214,27 +214,27 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
           <div className="absolute inset-2 border-2 border-white/10 border-b-amber-300 rounded-full animate-ping"></div>
         </div>
 
-        {/* Text */}
-        <div ref={textRef} className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-white tracking-wide">
-            Loading UniVote
-          </h2>
-          <p className="text-sm text-amber-100">
-            Preparing your secure voting experience
-          </p>
-        </div>
+          {/* Text */}
+          <div ref={textRef} className="text-center space-y-4 mb-6">  {/* Added mb-6 for margin-bottom */}
+            <h2 className="text-xl font-semibold text-white tracking-wide">
+              Loading UniVote
+            </h2>
+            <p className="text-sm text-amber-100">
+              Preparing your secure voting experience
+            </p>
+          </div>
 
-        {/* Progress Bar */}
-        <div
-          ref={progressBarRef}
-          className="w-80 h-2 bg-white/20 rounded-full overflow-hidden shadow-inner backdrop-blur-sm"
-        >
+          {/* Progress Bar - Added mt-4 for margin-top */}
           <div
-            ref={progressFillRef}
-            className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-lg"
-            style={{ width: '0%' }}
-          />
-        </div>
+            ref={progressBarRef}
+            className="w-80 h-2 bg-white/20 rounded-full overflow-hidden shadow-inner backdrop-blur-sm mt-4"
+          >
+            <div
+              ref={progressFillRef}
+              className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-lg"
+              style={{ width: '0%' }}
+            />
+          </div>
 
         {/* Bouncing Dots */}
         <div className="flex space-x-2">
