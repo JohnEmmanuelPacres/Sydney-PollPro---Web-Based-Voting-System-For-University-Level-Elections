@@ -55,7 +55,7 @@ const SIGNIN: NextPage = () => {
         }
 
         // Redirect to password setup page
-        router.push(`/User_RegxLogin/SetPasswordVoter?email=${encodeURIComponent(email)}${data.courseYear ? `&courseYear=${encodeURIComponent(data.courseYear)}` : ''}`);
+        router.push(`/User_RegxLogin/SetPasswordVoter?email=${encodeURIComponent(email)}${data.courseYear ? `&courseYear=${encodeURIComponent(data.courseYear)}` : ''}${data.department_org ? `&department_org=${encodeURIComponent(data.department_org)}` : ''}`);
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
         console.error('Login error:', err);

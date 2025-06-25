@@ -7,6 +7,7 @@ import Image from 'next/image';
 type FormData = {
   email: string;
   courseYear: string;
+  department_org: string;
 };
 
 const CreateAccount = () => {
@@ -14,12 +15,24 @@ const CreateAccount = () => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     courseYear: '',
+    department_org: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+
+  const organizations = [
+    'Supreme Student Government',
+    'Philippine Institute of Civil Engineers',
+    'Philippine Society of Mechanical Engineers',
+    'Institute of Integrated Electrical Engineers of the Philippines',
+    'Institute of Computer Engineers of the Philippines',
+    'Junior Philippine Institute of Accountants',
+    'Young Entrepreneurs Society',
+    'Young Educators Society',
+  ];
 
   const courseYearOptions = [
     // Architecture
@@ -298,14 +311,20 @@ const CreateAccount = () => {
     });
   }, [searchTerm, selectedCategory, courseYearOptions]);
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownOpenCourseYear, setDropdownOpenCourseYear] = useState(false);
+  const [dropdownOpenDepartment, setDropdownOpenDepartment] = useState(false);
+
+  const dropdownRefCourseYear = useRef<HTMLDivElement>(null);
+  const dropdownRefDepartment = useRef<HTMLDivElement>(null);
   
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
+      if (dropdownRefCourseYear.current && !dropdownRefCourseYear.current.contains(event.target as Node)) {
+        setDropdownOpenCourseYear(false);
+      }
+      if (dropdownRefDepartment.current && !dropdownRefDepartment.current.contains(event.target as Node)) {
+        setDropdownOpenDepartment(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -316,24 +335,46 @@ const CreateAccount = () => {
     };
   }, []);
 
-  // Keyboard navigation
-  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+  // Keyboard navigation for course year dropdown
+  const [highlightedIndexCourseYear, setHighlightedIndexCourseYear] = useState(-1);
   const handleDropdownKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!dropdownOpen) return;
+    if (!dropdownOpenCourseYear) return;
     if (e.key === 'ArrowDown') {
-      setHighlightedIndex((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : 0));
+      setHighlightedIndexCourseYear((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : 0));
       e.preventDefault();
     } else if (e.key === 'ArrowUp') {
-      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : filteredOptions.length - 1));
+      setHighlightedIndexCourseYear((prev) => (prev > 0 ? prev - 1 : filteredOptions.length - 1));
       e.preventDefault();
-    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-      setFormData((prev) => ({ ...prev, courseYear: filteredOptions[highlightedIndex] }));
-      setDropdownOpen(false);
-      setHighlightedIndex(-1);
+    } else if (e.key === 'Enter' && highlightedIndexCourseYear >= 0) {
+      setFormData((prev) => ({ ...prev, courseYear: filteredOptions[highlightedIndexCourseYear] }));
+      setDropdownOpenCourseYear(false);
+      setHighlightedIndexCourseYear(-1);
       e.preventDefault();
     } else if (e.key === 'Escape') {
-      setDropdownOpen(false);
-      setHighlightedIndex(-1);
+      setDropdownOpenCourseYear(false);
+      setHighlightedIndexCourseYear(-1);
+      e.preventDefault();
+    }
+  };
+
+  // Keyboard navigation for department_org dropdown
+  const [highlightedIndexDepartment, setHighlightedIndexDepartment] = useState(-1);
+  const handleDepartmentKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!dropdownOpenDepartment) return;
+    if (e.key === 'ArrowDown') {
+      setHighlightedIndexDepartment((prev) => (prev < organizations.length - 1 ? prev + 1 : 0));
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      setHighlightedIndexDepartment((prev) => (prev > 0 ? prev - 1 : organizations.length - 1));
+      e.preventDefault();
+    } else if (e.key === 'Enter' && highlightedIndexDepartment >= 0) {
+      setFormData((prev) => ({ ...prev, department_org: organizations[highlightedIndexDepartment] }));
+      setDropdownOpenDepartment(false);
+      setHighlightedIndexDepartment(-1);
+      e.preventDefault();
+    } else if (e.key === 'Escape') {
+      setDropdownOpenDepartment(false);
+      setHighlightedIndexDepartment(-1);
       e.preventDefault();
     }
   };
@@ -381,7 +422,8 @@ const CreateAccount = () => {
         },
         body: JSON.stringify({ 
           email: formData.email,
-          courseYear: formData.courseYear 
+          courseYear: formData.courseYear,
+          department_org: formData.department_org
         }),
       });
 
@@ -495,17 +537,17 @@ const CreateAccount = () => {
                 />
               </div>
 
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative" ref={dropdownRefCourseYear}>
                 <div className="text-lg sm:text-xl mb-2 sm:mb-4">Course & Year</div>
                 <motion.div
                   whileFocus={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
                   tabIndex={0}
                   className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
-                  onClick={() => setDropdownOpen((open) => !open)}
+                  onClick={() => setDropdownOpenCourseYear((open) => !open)}
                   onKeyDown={handleDropdownKeyDown}
                   aria-haspopup="listbox"
-                  aria-expanded={dropdownOpen}
+                  aria-expanded={dropdownOpenCourseYear}
                   aria-label="Select Course and Year"
                 >
                   <span className={`truncate ${formData.courseYear ? 'text-black' : 'text-gray-400'}`}>
@@ -515,7 +557,7 @@ const CreateAccount = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </motion.div>
-                {dropdownOpen && (
+                {dropdownOpenCourseYear && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -560,13 +602,13 @@ const CreateAccount = () => {
                             whileHover={{ scale: 1.02 }}
                             className={`px-4 sm:px-6 py-2 cursor-pointer text-sm sm:text-base text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
                               formData.courseYear === option ? 'bg-[#fac36b] text-white' : ''
-                            } ${highlightedIndex === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
+                            } ${highlightedIndexCourseYear === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
                             onClick={() => {
                               setFormData((prev) => ({ ...prev, courseYear: option }));
-                              setDropdownOpen(false);
-                              setHighlightedIndex(-1);
+                              setDropdownOpenCourseYear(false);
+                              setHighlightedIndexDepartment(-1);
                             }}
-                            onMouseEnter={() => setHighlightedIndex(idx)}
+                            onMouseEnter={() => setHighlightedIndexDepartment(idx)}
                             role="option"
                             aria-selected={formData.courseYear === option}
                           >
@@ -580,6 +622,51 @@ const CreateAccount = () => {
                       )}
                     </div>
                   </motion.div>
+                )}
+              </div>
+
+              <div className="relative" ref={dropdownRefDepartment}>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Department Organization</div>
+                <div
+                  tabIndex={0}
+                  className={`${inputClasses} flex items-center justify-between cursor-pointer focus:border-[#fac36b] focus:ring-2 focus:ring-[#fac36b] transition-all duration-200 hover:border-[#fac36b] pr-3 bg-white text-black`}
+                  onClick={() => setDropdownOpenDepartment((open) => !open)}
+                  onKeyDown={handleDepartmentKeyDown}
+                  aria-haspopup="listbox"
+                  aria-expanded={dropdownOpenDepartment}
+                  aria-label="Select your Department's Organization"
+                >
+                  <span className={formData.department_org ? 'text-black' : 'text-gray-400'}>
+                    {formData.department_org || 'Select your Department\'s Organization'}
+                  </span>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {dropdownOpenDepartment && (
+                  <ul
+                    className="absolute left-0 mt-2 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-60 overflow-auto"
+                    role="listbox"
+                  >
+                    {organizations.map((option, idx) => (
+                      <li
+                        key={option}
+                        className={`px-6 py-2 cursor-pointer text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
+                          formData.department_org === option ? 'bg-[#fac36b] text-white' : ''
+                        } ${highlightedIndexDepartment === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, department_org: option }));
+                          setDropdownOpenDepartment(false);
+                          setHighlightedIndexDepartment(-1);
+                        }}
+                        onMouseEnter={() => setHighlightedIndexDepartment(idx)}
+                        role="option"
+                        aria-selected={formData.department_org === option}
+                      >
+                        {option}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
 

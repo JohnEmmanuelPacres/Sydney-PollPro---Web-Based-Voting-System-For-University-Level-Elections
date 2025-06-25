@@ -14,6 +14,7 @@ const SetPassword = () => {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
   const courseYear = searchParams.get('courseYear');
+  const department_org = searchParams.get('department_org'); // Added for department/org
   
   const [formData, setFormData] = useState<FormData>({
     password: '',
@@ -65,11 +66,22 @@ const SetPassword = () => {
         password: formData.password,
         options: {
           data: {
-            course_year: courseYear || '', //auth.users.user_metadata
+            //course_year: courseYear || '', //auth.users.user_metadata
             user_type: 'voter',
           }
         }
       });
+
+      const user_id = signUpData?.user?.id;
+
+      if (signUpData?.user?.user_metadata.user_type === 'voter' || signUpData?.user?.user_metadata.user_type === 'admin-voter') {
+        await supabase.from('voter_profiles').insert({
+          id: user_id,
+          email: email!,
+          course_year: courseYear || '',
+          department_org: department_org || '',
+        });
+      }
 
       if (signUpError) {
         // If user already exists, show alert and stop

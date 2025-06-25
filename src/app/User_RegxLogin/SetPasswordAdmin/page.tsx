@@ -13,7 +13,9 @@ const SetPassword = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
-  const organizationName = searchParams.get('organizationName');  //FEEL NAKO NAA DIRI ANG SAYUP MAO EMPTY ANG ORG NAME
+  const courseYear = searchParams.get('courseYear');
+  const department_org = searchParams.get('department_org');
+  const administered_Org = searchParams.get('administered_Org'); 
 
   const [formData, setFormData] = useState<FormData>({
     password: '',
@@ -60,11 +62,24 @@ const SetPassword = () => {
         password: formData.password,
         options: {
           data: {
-            organization_name: organizationName || '',  //auth_user_metadata
+            //orgaadministered_Org || '',  //auth_user_metadata
             user_type: 'admin'
           }
         }
       });
+
+      const user_id = signUpData?.user?.id;
+
+      if (signUpData?.user?.user_metadata.user_type === 'admin' || signUpData?.user?.user_metadata.user_type === 'admin-voter') {
+        await supabase.from('admin_profiles').insert({
+          id: user_id,
+          email: email!,
+          course_year: courseYear || '',
+          department_org: department_org || '',
+          administered_org: administered_Org || '',
+          can_vote: true // optional
+        });
+      }
 
       if (signUpError) {
         if (signUpError.message.includes('User already registered') || signUpError.message.includes('User already exists')) {
@@ -105,7 +120,7 @@ const SetPassword = () => {
 
         if (signInData.user) {
           setSuccess('Account created and logged in successfully! Redirecting to dashboard...');
-          setTimeout(() => router.push(`/dashboard?email=${encodeURIComponent(email!)}`), 2000);
+          setTimeout(() => router.push(`/dashboard/Admin?email=${encodeURIComponent(email!)}`), 2000);
           return;
         }
       }
@@ -119,7 +134,7 @@ const SetPassword = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, email, organizationName, router]);
+  }, [formData, email, administered_Org, router]);
 
   const inputClasses = useMemo(() => (
     "w-full h-[50px] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] rounded-[10px] bg-white border border-[#bcbec0] box-border text-base pl-6 text-black"
@@ -139,7 +154,7 @@ const SetPassword = () => {
           <p className="text-xl font-bold mb-8">Create a secure password for your account</p>
           <div className="text-lg">
             <p className="mb-4">Email: {email}</p>
-            {organizationName && <p className="mb-2">Organization: {organizationName}</p>}
+            {administered_Org && <p className="mb-2">Organization: {administered_Org}</p>}
             <p className="text-sm opacity-80">PIN verified successfully</p>
           </div>
         </div>
