@@ -9,7 +9,7 @@ const Header: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isLoginPage = pathname === '/User_RegxLogin';
+  const isLoginPage = pathname === '/User_RegxLogin' || pathname === '/User_RegxLogin/LoginAdmin';
 
   return (
     <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">

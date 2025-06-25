@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react'
 import type { NextPage } from 'next';
-import AuthPageHeader from '../../components/AuthPageHeader';
+import Header from '../../components/Header';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 
@@ -104,7 +104,7 @@ const SIGNIN_ADMIN: NextPage = () => {
 
   return (
     <div className="w-full h-[1024px] relative bg-red-950 overflow-hidden text-left text-xl text-white font-['Actor']">
-      <AuthPageHeader />
+      <Header />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[790px] h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79">
         <div className="absolute top-[calc(50%-274px)] left-[calc(50%-251.5px)] font-semibold text-[38px] font-['Baloo_Da_2']">Login</div>
         <div className="absolute top-[calc(50%+188px)] left-[calc(50%-87.5px)] text-lg">Don't have an account yet?</div>
