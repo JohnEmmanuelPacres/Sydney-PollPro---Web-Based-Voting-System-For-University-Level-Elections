@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react'
 import type { NextPage } from 'next';
-import AuthPageHeader from '../components/AuthPageHeader';
+import Header from '../components/Header';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -132,7 +132,7 @@ const SIGNIN: NextPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-yellow-900 to-red-900 overflow-hidden text-left text-xl text-white font-['Actor'] pt-24 md:pt-32">
-      <AuthPageHeader />
+      <Header />
       <div className="flex-1 flex flex-col items-center justify-center gap-y-8 px-4 sm:px-6">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}

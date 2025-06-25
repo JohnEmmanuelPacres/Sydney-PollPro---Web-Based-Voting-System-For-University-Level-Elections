@@ -60,10 +60,10 @@ const VoterHeader: React.FC = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex flex-grow justify-center items-center">
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
-            <NavButton href="/">Home</NavButton>
+            <NavButton href="/Voterdashboard">Home</NavButton>
             <NavButton href="/">Candidates</NavButton>
-            <NavButton href="/dashboard">Results</NavButton>
-            <NavButton href="/About">Updates</NavButton>
+            <NavButton href="/Election_Results">Results</NavButton>
+            <NavButton href="/Update_Section">Updates</NavButton>
             <LogOutButton onClick={handleLogout}>LOGOUT</LogOutButton>
           </nav>
         </div>
@@ -90,10 +90,10 @@ const VoterHeader: React.FC = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg z-40">
           <div className="flex flex-col space-y-4 p-6">
-            <MobileNavButton href="/">Home</MobileNavButton>
-            <MobileNavButton href="/Election_Results">Candidates</MobileNavButton>
-            <MobileNavButton href="/dashboard">Results</MobileNavButton>
-            <MobileNavButton href="/About">Updates</MobileNavButton>
+            <MobileNavButton href="/Voterdashboard">Home</MobileNavButton>
+            <MobileNavButton href="/">Candidates</MobileNavButton>
+            <MobileNavButton href="/Election_Results">Results</MobileNavButton>
+            <MobileNavButton href="/Update_Section">Updates</MobileNavButton>
             <div className="px-4 py-3">
               <LogOutButton onClick={handleLogout}>Log Out</LogOutButton>
             </div>

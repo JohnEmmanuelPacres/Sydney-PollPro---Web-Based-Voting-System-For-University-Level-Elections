@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import NavButton from './NavButton';
 import SignInButton from './SignInButton';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const isLoginPage = pathname === '/User_RegxLogin';
 
   return (
     <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">
@@ -34,9 +37,11 @@ const Header: React.FC = () => {
             <NavButton href="/Election_Results">Results</NavButton>
             <NavButton href="/Update_Section">Updates</NavButton>
             <NavButton href="/About">About</NavButton>
-            <SignInButton href="/User_RegxLogin">
-              SIGN IN
-            </SignInButton>
+            {!isLoginPage && (
+              <SignInButton href="/User_RegxLogin">
+                SIGN IN
+              </SignInButton>
+            )}
           </nav>
         </div>
 
