@@ -215,7 +215,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
         </div>
 
           {/* Text */}
-          <div ref={textRef} className="text-center space-y-4 mb-6">  {/* Added mb-6 for margin-bottom */}
+          <div ref={textRef} className="text-center space-y-4 mb-6">  
             <h2 className="text-xl font-semibold text-white tracking-wide">
               Loading UniVote
             </h2>
@@ -224,7 +224,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
             </p>
           </div>
 
-          {/* Progress Bar - Added mt-4 for margin-top */}
+          {/* Progress Bar */}
           <div
             ref={progressBarRef}
             className="w-80 h-2 bg-white/20 rounded-full overflow-hidden shadow-inner backdrop-blur-sm mt-4"
