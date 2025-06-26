@@ -70,19 +70,21 @@ const SIGNIN_ADMIN: NextPage = () => {
           return;
         }
 
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('user_type')
+        const { data: adminProfile, error: adminError } = await supabase
+          .from('admin_profiles')
+          .select('administered_org')
           .eq('id', data.user.id)
           .single();
 
-        if (profileError || profile?.user_type !== 'admin') {
+        if (adminError || !adminProfile) {
           setSignInError('Access denied. This account is not an admin.');
           setIsLoading(false);
           return;
         }
 
-        router.push('/dashboard/Admin');
+        router.push(`/dashboard/Admin?administered_Org=${encodeURIComponent(adminProfile.administered_org)}`);
+        console.log('administered_org:', adminProfile.administered_org);
+
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
         console.error('Login error:', err);

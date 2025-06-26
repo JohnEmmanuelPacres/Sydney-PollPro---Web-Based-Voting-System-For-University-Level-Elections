@@ -506,8 +506,8 @@ const CreateAccount = () => {
           },
           body: JSON.stringify({ 
             email: formData.email,
-            courseYear: formData.courseYear, // Optional, can be added later
-            department_org: formData.department_org, // Optional, can be added later
+            courseYear: formData.courseYear,
+            department_org: formData.department_org, 
             administered_Org: formData.administered_Org,
           }),
         });
