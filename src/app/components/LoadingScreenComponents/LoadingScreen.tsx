@@ -40,7 +40,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
       // Reset all elements to initial state
       gsap.set(containerRef.current, { 
         display: 'flex', 
-        zIndex: 9999,
+        zIndex: 99999999, // Much higher than Next.js loader
         opacity: 1
       });
       
@@ -167,7 +167,10 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
     <div
       ref={containerRef}
       className="fixed inset-0 flex items-center justify-center"
-      style={{ display: 'none', zIndex: -1 }}
+      style={{ 
+        display: 'none', 
+        zIndex: 99999999 // Ensure it's above Next.js loader
+      }}
     >
       {/* Animated Background */}
       <div
