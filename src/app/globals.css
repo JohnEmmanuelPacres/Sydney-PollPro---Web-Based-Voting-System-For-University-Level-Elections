@@ -135,42 +135,34 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-  /* Hide the default Next.js loading indicator - Multiple selectors for different versions */
 [data-nextjs-loader] {
   display: none !important;
 }
 
-/* Target the Next.js development loader */
 div[data-nextjs-loader="true"] {
   display: none !important;
 }
 
-/* Alternative selector for fixed positioned loader */
 div[style*="position: fixed"][style*="z-index: 99999"] {
   display: none !important;
 }
 
-/* Target the specific Next.js loader with bottom positioning */
 div[style*="position: fixed"][style*="bottom"][style*="left"] {
   display: none !important;
 }
 
-/* Hide any loading spinner with the Next.js favicon */
 div[style*="background-image: url('data:image/svg+xml;base64,"] {
   display: none !important;
 }
 
-/* More specific selector for Next.js 13+ loader */
 div[style*="position:fixed"][style*="bottom:0"][style*="left:0"] {
   display: none !important;
 }
 
-/* Target any div with high z-index at bottom-left */
 div[style*="z-index: 99999"][style*="bottom: 0px"][style*="left: 0px"] {
   display: none !important;
 }
 
-/* Catch-all for any element with nextjs-loader attribute */
 *[data-nextjs-loader],
 *[data-nextjs-loader="true"] {
   display: none !important;
