@@ -51,7 +51,16 @@ const SIGNIN_ADMIN: NextPage = () => {
           return;
         }
 
-        router.push(`/User_RegxLogin/SetPasswordAdmin?email=${encodeURIComponent(email)}${data.courseYear ? `&courseYear=${encodeURIComponent(data.courseYear)}` : ''}${data.department_org ? `&department_org=${encodeURIComponent(data.department_org)}` : ''}${data.administered_Org ? `&administered_Org=${encodeURIComponent(data.administered_Org)}` : ''}`);
+        // Include organizationName in the redirect URL
+        const params = new URLSearchParams({
+          email: email,
+          ...(data.organizationName && { organizationName: data.organizationName }),
+          ...(data.courseYear && { courseYear: data.courseYear }),
+          ...(data.department_org && { department_org: data.department_org }),
+          ...(data.administered_Org && { administered_Org: data.administered_Org })
+        });
+
+        router.push(`/User_RegxLogin/SetPasswordAdmin?${params.toString()}`);
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
         console.error('Login error:', err);
@@ -133,13 +142,15 @@ const SIGNIN_ADMIN: NextPage = () => {
             value={credential}
             onChange={e => {
               const value = e.target.value;
-              if (/^\d*$/.test(value)) {
-                setCredential(value.slice(0, 6));
-              } else {
+              // Only restrict length for PIN (6 digits), not for passwords
+              if (/^\d+$/.test(value) && value.length <= 6) {
+                setCredential(value);
+              } else if (!/^\d+$/.test(value)) {
+                // Allow full password input (no length restriction)
                 setCredential(value);
               }
             }}
-            maxLength={credential.match(/^\d*$/) ? 6 : undefined}
+            maxLength={/^\d*$/.test(credential) ? 6 : undefined}
           />
           <div className="flex items-center mt-4">
             <input

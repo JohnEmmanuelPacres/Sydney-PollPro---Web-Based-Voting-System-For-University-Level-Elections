@@ -13,7 +13,7 @@ const SetPassword = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
-  const organizationName = searchParams.get('organizationName');  //FEEL NAKO NAA DIRI ANG SAYUP MAO EMPTY ANG ORG NAME
+  const organizationName = searchParams.get('organizationName');
 
   const [formData, setFormData] = useState<FormData>({
     password: '',
@@ -55,63 +55,66 @@ const SetPassword = () => {
         return;
       }
 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // First, check if user already exists by attempting to sign in with a dummy password
+      const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
         email: email!,
-        password: formData.password,
-        options: {
-          data: {
-            organization_name: organizationName || '',  //auth_user_metadata
-            user_type: 'admin'
-          }
-        }
+        password: 'dummy-password-check', // This will fail but tells us if user exists
       });
 
-      if (signUpError) {
-        if (signUpError.message.includes('User already registered') || signUpError.message.includes('User already exists')) {
+      // If user doesn't exist (Invalid login credentials), create new account
+      if (checkError && checkError.message.includes('Invalid login credentials')) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: email!,
+          password: formData.password,
+          options: {
+            data: {
+              organization_name: organizationName || '',
+              user_type: 'admin'
+            }
+          }
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setIsLoading(false);
+          return;
+        }
+
+        if (signUpData.user) {
+          // Try to sign in with new credentials
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: email!,
             password: formData.password,
           });
 
           if (signInError) {
-            setError('Failed to log in. Please try again or contact support.');
+            setError('Account created but login failed. Please try logging in manually.');
             setIsLoading(false);
             return;
           }
 
-          if (signInData.user) {
-            setSuccess('Password updated and logged in successfully! Redirecting to dashboard...');
-            setTimeout(() => router.push('/dashboard/Admin'), 2000);
-            return;
-          }
-        } else {
-          setError(signUpError.message);
-          setIsLoading(false);
+          setSuccess('Account created and logged in successfully! Redirecting to dashboard...');
+          setTimeout(() => router.push('/dashboard/Admin'), 2000);
           return;
         }
-      }
-
-      if (signUpData.user) {
+      } else {
+        // User exists, try to sign in with the new password (this might fail if password is different)
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: email!,
           password: formData.password,
         });
 
-        if (signInError) {
-          setError('Account created but login failed. Please try logging in manually.');
-          setIsLoading(false);
+        if (!signInError && signInData.user) {
+          setSuccess('Logged in successfully! Redirecting to dashboard...');
+          setTimeout(() => router.push('/dashboard/Admin'), 2000);
           return;
-        }
-
-        if (signInData.user) {
-          setSuccess('Account created and logged in successfully! Redirecting to dashboard...');
-          setTimeout(() => router.push(`/dashboard?email=${encodeURIComponent(email!)}`), 2000);
+        } else {
+          setError('An account with this email already exists. Please try logging in with your existing password or contact support to reset it.');
+          setIsLoading(false);
           return;
         }
       }
 
-      setSuccess('Password set successfully! Please log in with your new password.');
-      setTimeout(() => router.push('/User_RegxLogin'), 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while setting password';
       setError(errorMessage);
