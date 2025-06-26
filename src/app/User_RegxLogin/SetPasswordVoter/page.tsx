@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
+import { extractFirstAndLastNameFromEmail, prettifyFirstName } from '@/utils/emailUtils';
 
 type FormData = {
   password: string;
@@ -75,11 +76,15 @@ const SetPassword = () => {
       const user_id = signUpData?.user?.id;
 
       if (signUpData?.user?.user_metadata.user_type === 'voter' || signUpData?.user?.user_metadata.user_type === 'admin-voter') {
+        const { first_name, last_name } = extractFirstAndLastNameFromEmail(email!);
+        const prettyFirstName = prettifyFirstName(first_name);
         await supabase.from('voter_profiles').insert({
           id: user_id,
           email: email!,
           course_year: courseYear || '',
           department_org: department_org || '',
+          first_name: prettyFirstName,
+          last_name,
         });
       }
 
