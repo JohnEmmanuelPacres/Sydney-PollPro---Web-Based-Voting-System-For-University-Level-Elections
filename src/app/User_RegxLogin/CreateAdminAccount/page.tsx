@@ -537,9 +537,23 @@ const CreateAccount = () => {
   ), []);
 
   return (
-    <div className="h-screen flex bg-gradient-to-b from-[#bb8b1b] to-[#b01818] text-white font-['Actor']">
-      {/* Left Content Section */}
-      <div className="w-1/2 flex flex-col items-center justify-center p-8 relative">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-yellow-900 to-red-900 overflow-hidden text-left text-xl text-white font-['Actor']">
+      
+      {/* Mobile Header */}
+      <div className="lg:hidden flex flex-col items-center p-4 pt-8">
+        <Image
+          width={100}
+          height={100}
+          alt="Website Logo"
+          src="/Website Logo.png"
+          className="mb-4"
+          priority
+        />
+        <h1 className="text-3xl font-black text-center mb-4">JOIN THE POLLS</h1>
+      </div>
+
+      {/* Left Content Section - Hidden on mobile */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-8 relative">
         <div className="mb-8 flex flex-col items-center">
           <Image
             width={147}
@@ -547,7 +561,7 @@ const CreateAccount = () => {
             alt="Website Logo"
             src="/Website Logo.png"
             className="mb-4"
-            priority // Important for LCP
+            priority
           />
           <h1 className="text-[50px] font-black">JOIN THE POLLS</h1>
         </div>
@@ -556,268 +570,289 @@ const CreateAccount = () => {
           <p className="text-xl font-bold mb-8">
             For more information, click the button below!
           </p>
-          <button 
+          <motion.a 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="rounded-[40px] bg-[#222121] px-8 py-4 text-[26px] font-bold hover:bg-[#333] transition-colors"
             aria-label="About Us"
+            href="/About"
           >
             About Us
-          </button>
+          </motion.a>
         </div>
       </div>
 
-      {/* Right Form Section */}
-      <div className="w-1/2 relative flex items-center justify-center">
-        {/* Form Content */}
+      {/* Right Form Section - Full width on mobile */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
         <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="w-full max-w-[500px] mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-[790px] h-auto min-h-[auto] lg:min-h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79 p-4 sm:p-6 md:p-8"
         >
-          <h2 className="text-center md:text-center text-2xl sm:text-3xl md:text-4xl font-semibold font-['Baloo_Da_2'] mb-6 md:mb-8">Register</h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            <div>
-              <input
-                type="email"
-                name="email"
-                placeholder="University Email (@cit.edu)"
-                className={inputClasses}
-                value={formData.email}
-                onChange={handleChange}
-                required
-                autoComplete="email"
-              />
-            </div>
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="text-center md:text-left text-2xl sm:text-3xl md:text-4xl font-semibold font-['Baloo_Da_2'] mb-6 md:mb-8"
+          >
+            Admin Registration
+          </motion.div>
 
-            <div className="relative" ref={dropdownRefCourseYear}>
-              <motion.div
-                whileFocus={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-                tabIndex={0}
-                className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
-                onClick={() => {
-                  setDropdownOpenCourseYear(!dropdownOpenCourseYear);
-                  setDropdownOpenDepartment(false);
-                  setDropdownOpenAdminOrg(false);
-                }}
-                onKeyDown={handleCourseYearKeyDown}
-                aria-haspopup="listbox"
-                aria-expanded={dropdownOpenCourseYear}
-                aria-label="Select Course and Year"
-              >
-                <span className={`truncate ${formData.courseYear ? 'text-black' : 'text-gray-400'}`}>
-                  {formData.courseYear || 'Select Course & Year'}
-                </span>
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </motion.div>
-              {dropdownOpenCourseYear && (
+          {/* Form Container */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="w-full max-w-[500px] mx-auto"
+          >
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6" noValidate>
+              <div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Institutional Email</div>
+                <motion.input
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                  type="email"
+                  name="email"
+                  placeholder="username@cit.edu"
+                  className={inputClasses}
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+
+              {/* Course Year Dropdown (same as CreateAccount) */}
+              <div className="relative" ref={dropdownRefCourseYear}>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Course & Year</div>
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute left-0 mt-1 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-96 overflow-hidden"
-                  role="listbox"
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                  tabIndex={0}
+                  className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
+                  onClick={() => setDropdownOpenCourseYear((open) => !open)}
+                  onKeyDown={handleCourseYearKeyDown}
+                  aria-haspopup="listbox"
+                  aria-expanded={dropdownOpenCourseYear}
+                  aria-label="Select Course and Year"
                 >
-                  {/* Search input */}
-                  <div className="p-2 border-b border-gray-200">
-                    <input
-                      type="text"
-                      placeholder="Search programs..."
-                      className="w-full p-2 border border-gray-300 rounded-md text-black"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  
-                  {/* Category filter */}
-                  <div className="p-2 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
-                    {categories.map(category => (
-                      <button
-                        key={category}
-                        className={`mx-1 px-3 py-1 rounded-full text-sm ${
-                          selectedCategory === category 
-                            ? 'bg-[#bb8b1b] text-white' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                        onClick={() => setSelectedCategory(category)}
-                      >
-                        {category}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {/* Options list */}
-                  <div className="max-h-60 overflow-auto">
-                    {filteredOptions.length > 0 ? (
-                      filteredOptions.map((option, idx) => (
-                        <motion.div
-                          key={option}
-                          whileHover={{ scale: 1.02 }}
-                          className={`px-4 sm:px-6 py-2 cursor-pointer text-sm sm:text-base text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
-                            formData.courseYear === option ? 'bg-[#fac36b] text-white' : ''
-                          } ${highlightedIndexCourseYear === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, courseYear: option }));
-                            setDropdownOpenCourseYear(false);
-                          }}
-                          onMouseEnter={() => setHighlightedIndexCourseYear(idx)}
-                          role="option"
-                          aria-selected={formData.courseYear === option}
-                        >
-                          {option}
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-2 text-sm text-gray-500 text-center">
-                        No programs found matching your search
-                      </div>
-                    )}
-                  </div>
+                  <span className={`truncate ${formData.courseYear ? 'text-black' : 'text-gray-400'}`}>
+                    {formData.courseYear || 'Select Course & Year'}
+                  </span>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
                 </motion.div>
-              )}
-            </div>
+                {dropdownOpenCourseYear && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute left-0 mt-1 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-96 overflow-hidden"
+                    role="listbox"
+                  >
+                    {/* Search and Category Filter (same as CreateAccount) */}
+                    <div className="p-2 border-b border-gray-200">
+                      <input
+                        type="text"
+                        placeholder="Search programs..."
+                        className="w-full p-2 border border-gray-300 rounded-md text-black"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
 
-            {/* Department Organization Dropdown */}
-            <div className="relative" ref={dropdownRefDepartment}>
-              <div
-                tabIndex={0}
-                className={`${inputClasses} flex items-center justify-between cursor-pointer focus:border-[#fac36b] focus:ring-2 focus:ring-[#fac36b] transition-all duration-200 hover:border-[#fac36b] pr-3 bg-white text-black`}
-                onClick={() => {
-                  setDropdownOpenDepartment(!dropdownOpenDepartment);
-                  setDropdownOpenCourseYear(false);
-                  setDropdownOpenAdminOrg(false);
-                }}
-                onKeyDown={handleDepartmentKeyDown}
-                aria-haspopup="listbox"
-                aria-expanded={dropdownOpenDepartment}
-                aria-label="Select your Department's Organization"
-              >
-                <span className={formData.department_org ? 'text-black' : 'text-gray-400'}>
-                  {formData.department_org || 'Select your Department\'s Organization'}
-                </span>
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
+                    <div className="p-2 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
+                      {categories.map(category => (
+                        <button
+                          key={category}
+                          className={`mx-1 px-3 py-1 rounded-full text-sm ${
+                            selectedCategory === category 
+                              ? 'bg-[#bb8b1b] text-white' 
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                          onClick={() => setSelectedCategory(category)}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Options list */}
+                    <div className="max-h-60 overflow-auto">
+                      {filteredOptions.length > 0 ? (
+                        filteredOptions.map((option, idx) => (
+                          <motion.div
+                            key={option}
+                            whileHover={{ scale: 1.02 }}
+                            className={`px-4 sm:px-6 py-2 cursor-pointer text-sm sm:text-base text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
+                              formData.courseYear === option ? 'bg-[#fac36b] text-white' : ''
+                            } ${highlightedIndexCourseYear === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, courseYear: option }));
+                              setDropdownOpenCourseYear(false);
+                            }}
+                            role="option"
+                            aria-selected={formData.courseYear === option}
+                          >
+                            {option}
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-2 text-sm text-gray-500 text-center">
+                          No programs found matching your search
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
               </div>
-              {dropdownOpenDepartment && (
-                <ul
-                  className="absolute left-0 mt-2 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-60 overflow-auto"
-                  role="listbox"
-                >
-                  {organizations.map((option, idx) => (
-                    <li
-                      key={option}
-                      className={`px-6 py-2 cursor-pointer text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
-                        formData.department_org === option ? 'bg-[#fac36b] text-white' : ''
-                      } ${highlightedIndexDepartment === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
-                      onClick={() => {
-                        setFormData(prev => ({ ...prev, department_org: option }));
-                        setDropdownOpenDepartment(false);
-                      }}
-                      onMouseEnter={() => setHighlightedIndexDepartment(idx)}
-                      role="option"
-                      aria-selected={formData.department_org === option}
-                    >
-                      {option}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
 
-            {/* Administered Organization Dropdown */}
-            <div className="relative" ref={dropdownRefAdminOrg}>
-              <div
-                tabIndex={0}
-                className={`${inputClasses} flex items-center justify-between cursor-pointer focus:border-[#fac36b] focus:ring-2 focus:ring-[#fac36b] transition-all duration-200 hover:border-[#fac36b] pr-3 bg-white text-black`}
-                onClick={() => {
-                  setDropdownOpenAdminOrg(!dropdownOpenAdminOrg);
-                  setDropdownOpenCourseYear(false);
-                  setDropdownOpenDepartment(false);
-                }}
-                onKeyDown={handleAdminOrgKeyDown}
-                aria-haspopup="listbox"
-                aria-expanded={dropdownOpenAdminOrg}
-                aria-label="Select Administered Organization"
-              >
-                <span className={formData.administered_Org ? 'text-black' : 'text-gray-400'}>
-                  {formData.administered_Org || 'Select Administered Organization'}
-                </span>
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
+              {/* Department Organization Dropdown */}
+              <div className="relative" ref={dropdownRefDepartment}>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Department Organization</div>
+                <div
+                  tabIndex={0}
+                  className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
+                  onClick={() => setDropdownOpenDepartment(!dropdownOpenDepartment)}
+                  onKeyDown={handleDepartmentKeyDown}
+                  aria-haspopup="listbox"
+                  aria-expanded={dropdownOpenDepartment}
+                >
+                  <span className={formData.department_org ? 'text-black' : 'text-gray-400'}>
+                    {formData.department_org || 'Select Department Organization'}
+                  </span>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {dropdownOpenDepartment && (
+                  <ul className="absolute left-0 mt-2 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-60 overflow-auto">
+                    {organizations.map((org, idx) => (
+                      <li
+                        key={org}
+                        className={`px-6 py-2 cursor-pointer hover:bg-[#fac36b] hover:text-white ${
+                          highlightedIndexDepartment === idx ? 'bg-[#bb8b1b] text-white' : 'text-black'
+                        }`}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, department_org: org }));
+                          setDropdownOpenDepartment(false);
+                        }}
+                      >
+                        {org}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              {dropdownOpenAdminOrg && (
-                <ul
-                  className="absolute left-0 mt-2 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-60 overflow-auto"
-                  role="listbox"
+
+              {/* Administered Organization Dropdown */}
+              <div className="relative" ref={dropdownRefAdminOrg}>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Administered Organization</div>
+                <div
+                  tabIndex={0}
+                  className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
+                  onClick={() => setDropdownOpenAdminOrg(!dropdownOpenAdminOrg)}
+                  onKeyDown={handleAdminOrgKeyDown}
+                  aria-haspopup="listbox"
+                  aria-expanded={dropdownOpenAdminOrg}
                 >
-                  {organizations.map((option, idx) => (
-                    <li
-                      key={option}
-                      className={`px-6 py-2 cursor-pointer text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
-                        formData.administered_Org === option ? 'bg-[#fac36b] text-white' : ''
-                      } ${highlightedIndexAdminOrg === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
-                      onClick={() => {
-                        setFormData(prev => ({ ...prev, administered_Org: option }));
-                        setDropdownOpenAdminOrg(false);
-                      }}
-                      onMouseEnter={() => setHighlightedIndexAdminOrg(idx)}
-                      role="option"
-                      aria-selected={formData.administered_Org === option}
-                    >
-                      {option}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                  <span className={formData.administered_Org ? 'text-black' : 'text-gray-400'}>
+                    {formData.administered_Org || 'Select Administered Organization'}
+                  </span>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {dropdownOpenAdminOrg && (
+                  <ul className="absolute left-0 mt-2 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-60 overflow-auto">
+                    {organizations.map((org, idx) => (
+                      <li
+                        key={org}
+                        className={`px-6 py-2 cursor-pointer hover:bg-[#fac36b] hover:text-white ${
+                          highlightedIndexAdminOrg === idx ? 'bg-[#bb8b1b] text-white' : 'text-black'
+                        }`}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, administered_Org: org }));
+                          setDropdownOpenAdminOrg(false);
+                        }}
+                      >
+                        {org}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-            <div>
-              <input
-                type="text"
-                name="orgID"
-                placeholder="Organization Code"
-                className={inputClasses}
-                value={formData.orgID}
-                onChange={handleChange}
-                required
-              />
-            </div>
+              <div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Organization Code</div>
+                <motion.input
+                  whileFocus={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                  type="text"
+                  name="orgID"
+                  placeholder="Enter organization code"
+                  className={inputClasses}
+                  value={formData.orgID}
+                  onChange={(e) => setFormData(prev => ({ ...prev, orgID: e.target.value }))}
+                  required
+                />
+              </div>
 
-            <div className="pt-2">
-              <a 
-                href="/User_RegxLogin" 
-                className="text-xl text-white font-bold hover:text-[#fac36b] block mb-6 transition-colors"
-                aria-label="Login page"
-              >
-                Log in here
-              </a>
+              <div className="pt-2">
+                <motion.a 
+                  href="/User_RegxLogin/LoginAdmin" 
+                  className="text-lg sm:text-xl text-white font-bold hover:text-[#fac36b] block mb-4 sm:mb-6 transition-colors"
+                  aria-label="Login page"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  Already have an account? Log in here
+                </motion.a>
 
-              <button 
-                type="submit"
-                disabled={isLoading}
-                className="w-[184px] h-[50px] text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Register account"
-              >
-                {isLoading ? 'Sending...' : 'Register'}
-              </button>
-            </div>
-          </form>
+                <motion.button 
+                  type="submit"
+                  disabled={isLoading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full h-[50px] text-white text-lg sm:text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Register account"
+                >
+                  {isLoading ? 'SENDING...' : 'REGISTER'}
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
+
+          {/* Mobile About Us Button */}
+          <div className="lg:hidden mt-8 text-center">
+            <motion.a 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="rounded-[40px] bg-[#222121] px-6 py-3 text-lg font-bold hover:bg-[#333] transition-colors"
+              aria-label="About Us"
+              href="/About"
+            >
+              About Us
+            </motion.a>
+          </div>
         </motion.div>
       </div>
 
       {/* Toast Notifications */}
-      {(error || success) && (
-        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
-          error ? 'bg-white text-red-500' : 'bg-[#e6ffe6] text-green-500'
-        }`}>
-          {error || success}
-        </div>
-      )}
+      <AnimatePresence>
+        {(error || success) && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className={`fixed top-0 left-0 w-full ${
+              error ? 'bg-[#d90429]' : 'bg-green-600'
+            } text-white font-bold text-base sm:text-lg p-3 sm:p-4 text-center rounded-b-[10px] z-[1000]`}
+          >
+            {error || success}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

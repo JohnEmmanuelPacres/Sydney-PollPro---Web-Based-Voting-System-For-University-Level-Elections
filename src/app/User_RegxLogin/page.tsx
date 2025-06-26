@@ -131,7 +131,7 @@ const SIGNIN: NextPage = () => {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-yellow-900 to-red-900 overflow-hidden text-left text-xl text-white font-['Actor'] pt-24 md:pt-32">
+    <div className="min-h-screen flex flex-col bg-red-950 overflow-hidden text-left text-xl text-white font-['Actor'] pt-24 md:pt-32">
       <Header />
       <div className="flex-1 flex flex-col items-center justify-center gap-y-8 px-4 sm:px-6">
         <motion.div 
@@ -146,7 +146,7 @@ const SIGNIN: NextPage = () => {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="text-center md:text-left text-3xl sm:text-4xl font-semibold font-['Baloo_Da_2'] mb-8"
           >
-            Login
+            Log In as Voter
           </motion.div>
 
           {/* Form Container */}
