@@ -1,6 +1,7 @@
 import React from "react";
 
 interface ElectionCardProps {
+  id: number;
   title: string;
   description: string;
   status: string;
@@ -8,6 +9,9 @@ interface ElectionCardProps {
   candidates: string;
   participation: string;
   participationWidth: string;
+  viewed: boolean;
+  expanded: boolean;
+  onViewStatus: () => void;
 }
 
 export default function ElectionCard({
@@ -17,14 +21,22 @@ export default function ElectionCard({
   endDate,
   candidates,
   participation,
-  participationWidth
+  participationWidth,
+  viewed,
+  expanded,
+  onViewStatus,
 }: ElectionCardProps) {
   const statusClass = status === "Active" 
     ? "bg-yellow-500 text-red-900" 
     : "bg-red-600 text-gray-200";
 
+  const buttonBaseClass = "flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-medium transition-all";
+  const viewButtonClass = viewed 
+    ? "bg-yellow-400 border-yellow-900 text-red-900 hover:bg-yellow-300"
+    : "bg-white border-yellow-900 text-red-800 hover:bg-yellow-500";
+
   return (
-    <div className="w-full p-4 bg-red-600/20 rounded-lg border border-yellow-400 space-y-3">
+    <div className={`w-full p-4 bg-red-600/20 rounded-lg border border-yellow-900 space-y-3 transition-all duration-200 ${expanded ? "ring-2 ring-yellow-400" : ""}`}>
       {/* Header Section */}
       <div className="flex justify-between items-start">
         <div className="space-y-1">
@@ -64,15 +76,38 @@ export default function ElectionCard({
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Expanded Content (visible when expanded) */}
+      {expanded && (
+        <div className="pt-2 animate-fadeIn">
+          <div className="p-3 bg-red-900/30 rounded-lg border border-yellow-900/50">
+            <h5 className="text-yellow-300 text-sm font-semibold mb-2">Election Details</h5>
+            <ul className="text-white text-sm space-y-1">
+              <li className="flex justify-between">
+                <span>Voting Method:</span>
+                <span>Online Ballot</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Eligibility:</span>
+                <span>All registered students</span>
+              </li>
+              <li className="flex justify-between">
+                <span>Current Leader:</span>
+                <span>John Doe (42%)</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Action Button */}
       <div className="flex flex-wrap gap-2 pt-2">
-        <button className="flex items-center gap-2 px-3 py-2 bg-white rounded-md border border-yellow-400 text-red-800 text-sm font-medium">
+        <button 
+          onClick={onViewStatus}
+          className={`${buttonBaseClass} ${viewButtonClass}`}
+          aria-label={`${expanded ? "Hide" : "View"} details for ${title}`}
+        >
           <ViewIcon />
-          View Status
-        </button>
-        <button className="flex items-center gap-2 px-3 py-2 bg-white rounded-md border border-yellow-400 text-red-800 text-sm font-medium">
-          <ManageIcon />
-          Manage
+          {expanded ? "Hide Details" : viewed ? "View Again" : "View Status"}
         </button>
       </div>
     </div>
@@ -96,12 +131,5 @@ const ViewIcon = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-  </svg>
-);
-
-const ManageIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
 );
