@@ -9,6 +9,7 @@ const Header: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Check if current path is either login or admin login page
   const isLoginPage = pathname === '/User_RegxLogin' || pathname === '/User_RegxLogin/LoginAdmin';
 
   return (
@@ -47,7 +48,6 @@ const Header: React.FC = () => {
 
         {/* Mobile Menu Button - Right Side */}
         <div className="md:hidden flex items-center gap-4">
-          <MobileSignInButton href="/User_RegxLogin">SIGN IN</MobileSignInButton>
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="text-white focus:outline-none"
@@ -72,6 +72,10 @@ const Header: React.FC = () => {
             <MobileNavButton href="/Election_Results" onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
             <MobileNavButton href="/Update_Section" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
             <MobileNavButton href="/About" onClick={() => setIsMenuOpen(false)}>About</MobileNavButton>
+            {/* Only show MobileSignInButton if not on login page */}
+            {!isLoginPage && (
+              <MobileSignInButton href="/User_RegxLogin">SIGN IN</MobileSignInButton>
+            )}
           </div>
         </div>
       )}

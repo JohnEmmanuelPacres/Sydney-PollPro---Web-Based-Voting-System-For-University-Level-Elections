@@ -5,11 +5,11 @@ export default function CurrentElections() {
   const [elections, setElections] = useState([
     {
       id: 1,
-      title: "Student Government President",
-      description: "Annual election for student body president",
+      title: "VOTING 2025: ICPEP",
+      description: "Department",
       status: "Active",
       endDate: "June 30, 2025",
-      candidates: "3 candidates",
+      candidates: "50 candidates",
       participation: "41%",
       participationWidth: "w-[72px]",
       viewed: false,
