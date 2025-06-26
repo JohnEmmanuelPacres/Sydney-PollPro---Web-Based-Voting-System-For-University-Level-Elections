@@ -176,7 +176,6 @@ export default function NavigationInterceptor({
       const result = originalPushState.call(this, state, title, url);
       
       if (!isNavigatingRef.current && url && url !== window.location.pathname + window.location.search) {
-        // Defer state update to avoid useInsertionEffect conflicts
         requestAnimationFrame(() => {
           isNavigatingRef.current = true;
           onNavigationStart();
@@ -190,7 +189,6 @@ export default function NavigationInterceptor({
       const result = originalReplaceState.call(this, state, title, url);
       
       if (!isNavigatingRef.current && url && url !== window.location.pathname + window.location.search) {
-        // Defer state update to avoid useInsertionEffect conflicts
         requestAnimationFrame(() => {
           isNavigatingRef.current = true;
           onNavigationStart();
@@ -240,7 +238,6 @@ export default function NavigationInterceptor({
 
     document.addEventListener('submit', handleFormSubmit, true);
 
-    // Also monitor for any elements with Next.js loader characteristics being added
     const checkForLoader = () => {
       const loaderElements = document.querySelectorAll('[data-nextjs-loader], div[style*="position: fixed"][style*="bottom"][style*="left"]');
       if (loaderElements.length > 0 && !isNavigatingRef.current) {
@@ -251,7 +248,6 @@ export default function NavigationInterceptor({
       }
     };
 
-    // Check periodically for loader elements (fallback)
     const loaderCheckInterval = setInterval(checkForLoader, 100);
 
     return () => {
