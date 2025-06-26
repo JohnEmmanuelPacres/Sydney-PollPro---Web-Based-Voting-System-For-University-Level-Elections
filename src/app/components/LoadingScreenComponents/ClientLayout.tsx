@@ -1,3 +1,4 @@
+// ClientLayout.tsx
 'use client';
 
 import { useNavigationLoading } from './NavigationLoading';
@@ -13,16 +14,21 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   const { isLoading, startLoading, stopLoading } = useNavigationLoading();
   const [initialLoad, setInitialLoad] = useState(true);
 
-  // Handle initial page load
   useEffect(() => {
-    // Show loading screen briefly on initial mount
     const timer = setTimeout(() => {
       setInitialLoad(false);
       stopLoading();
-    }, 800); // Show for 800ms on initial load
+    }, 800);
 
     return () => clearTimeout(timer);
   }, [stopLoading]);
+
+  // Ensure loading screen stays visible during navigation
+  useEffect(() => {
+    if (isLoading) {
+      setInitialLoad(false);
+    }
+  }, [isLoading]);
 
   const showLoading = isLoading || initialLoad;
 
