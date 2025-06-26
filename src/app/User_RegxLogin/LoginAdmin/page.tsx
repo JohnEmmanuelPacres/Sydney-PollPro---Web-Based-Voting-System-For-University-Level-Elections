@@ -51,7 +51,6 @@ const SIGNIN_ADMIN: NextPage = () => {
           return;
         }
 
-        // Include organizationName in the redirect URL
         const params = new URLSearchParams({
           email: email,
           ...(data.organizationName && { organizationName: data.organizationName }),
@@ -141,16 +140,8 @@ const SIGNIN_ADMIN: NextPage = () => {
             placeholder="Enter 6-digit PIN or your password"
             value={credential}
             onChange={e => {
-              const value = e.target.value;
-              // Only restrict length for PIN (6 digits), not for passwords
-              if (/^\d+$/.test(value) && value.length <= 6) {
-                setCredential(value);
-              } else if (!/^\d+$/.test(value)) {
-                // Allow full password input (no length restriction)
-                setCredential(value);
-              }
+              setCredential(e.target.value);
             }}
-            maxLength={/^\d*$/.test(credential) ? 6 : undefined}
           />
           <div className="flex items-center mt-4">
             <input
@@ -161,7 +152,7 @@ const SIGNIN_ADMIN: NextPage = () => {
               className="mr-2"
             />
             <label htmlFor="showCredential" className="text-black text-sm">
-              Show {/^[\d]{6}$/.test(credential) ? 'PIN' : 'Password'}
+              Show {/^\d{6}$/.test(credential) ? 'PIN' : 'Password'}
             </label>
           </div>
         </div>
