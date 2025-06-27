@@ -135,38 +135,4 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-[data-nextjs-loader] {
-  display: none !important;
-}
-
-div[data-nextjs-loader="true"] {
-  display: none !important;
-}
-
-div[style*="position: fixed"][style*="z-index: 99999"] {
-  display: none !important;
-}
-
-div[style*="position: fixed"][style*="bottom"][style*="left"] {
-  display: none !important;
-}
-
-div[style*="background-image: url('data:image/svg+xml;base64,"] {
-  display: none !important;
-}
-
-div[style*="position:fixed"][style*="bottom:0"][style*="left:0"] {
-  display: none !important;
-}
-
-div[style*="z-index: 99999"][style*="bottom: 0px"][style*="left: 0px"] {
-  display: none !important;
-}
-
-*[data-nextjs-loader],
-*[data-nextjs-loader="true"] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
 }
