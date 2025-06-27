@@ -1,14 +1,21 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { NextPage } from 'next';
-import Image from "next/image";
 import AdminHeader from '../../components/AdminHeader'; // Adjusted path
 import ReviewElectionPanel from '../../components/ReviewElections'; // Adjusted path
 import CreateElectionSection from '../../components/CreateElectionSection';
 import YearDropdown from '../../components/YearDropDown';
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useAdminOrg } from './AdminedOrgContext';
 
 const AdminDashboardNoSession: NextPage = () => {
-  const router = useRouter();
+	const searchParams = useSearchParams();
+	const { setAdministeredOrg } = useAdminOrg();
+
+	useEffect(() => {
+	  const org = searchParams.get('administered_Org');
+	  if (org) setAdministeredOrg(org);
+	}, [searchParams, setAdministeredOrg]);
 
   	return (
     		<div style={{width: "100%", position: "relative", backgroundColor: "#52100d", height: "1717px", overflow: "hidden", textAlign: "left", fontSize: "20px", color: "#fef2f2", fontFamily: "Inter",}}>

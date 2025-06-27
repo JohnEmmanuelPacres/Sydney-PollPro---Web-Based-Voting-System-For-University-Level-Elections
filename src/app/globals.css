@@ -51,6 +51,14 @@
 }
 
 @tailwind utilities;
+@tailwind utilities;
+
+/* Your custom styles if any */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #52100d;
+  color: #fef2f2;
+}
 
 /* Your custom styles if any */
 body {

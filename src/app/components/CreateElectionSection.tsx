@@ -1,8 +1,11 @@
 'use Client';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 const CreateElectionSection = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const administered_Org = searchParams.get('administered_Org');
     return (
         <section>
             <b className="absolute top-[438px] left-[475px] text-[26px] leading-[150%] text-center">
@@ -10,7 +13,7 @@ const CreateElectionSection = () => {
             </b>
 
             <button
-                onClick={() => router.push('/dashboard/Admin/CreateElectionPage')}
+                onClick={() => router.push(`/dashboard/Admin/CreateElectionPage?administered_Org=${encodeURIComponent(administered_Org || '')}`)}
                 className="absolute top-[503px] left-[530px] w-[305px] h-[73px] 
                             bg-gradient-to-b from-[#5f1916] to-[#3b0e0c] 
                             border border-white text-white text-left 

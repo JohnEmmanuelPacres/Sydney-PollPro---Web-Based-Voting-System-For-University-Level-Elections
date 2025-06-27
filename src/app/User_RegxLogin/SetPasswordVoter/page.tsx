@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
+import { extractFirstAndLastNameFromEmail, prettifyFirstName } from '@/utils/emailUtils';
 
 type FormData = {
   password: string;
@@ -14,6 +15,7 @@ const SetPassword = () => {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
   const courseYear = searchParams.get('courseYear');
+  const department_org = searchParams.get('department_org'); // Added for department/org
   
   const [formData, setFormData] = useState<FormData>({
     password: '',
@@ -65,11 +67,26 @@ const SetPassword = () => {
         password: formData.password,
         options: {
           data: {
-            course_year: courseYear || '', //auth.users.user_metadata
+            //course_year: courseYear || '', //auth.users.user_metadata
             user_type: 'voter',
           }
         }
       });
+
+      const user_id = signUpData?.user?.id;
+
+      if (signUpData?.user?.user_metadata.user_type === 'voter' || signUpData?.user?.user_metadata.user_type === 'admin-voter') {
+        const { first_name, last_name } = extractFirstAndLastNameFromEmail(email!);
+        const prettyFirstName = prettifyFirstName(first_name);
+        await supabase.from('voter_profiles').insert({
+          id: user_id,
+          email: email!,
+          course_year: courseYear || '',
+          department_org: department_org || '',
+          first_name: prettyFirstName,
+          last_name,
+        });
+      }
 
       if (signUpError) {
         // If user already exists, show alert and stop
