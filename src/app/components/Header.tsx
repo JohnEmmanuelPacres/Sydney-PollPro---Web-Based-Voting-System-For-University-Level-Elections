@@ -9,7 +9,6 @@ const Header: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Check if current path is either login or admin login page
   const isLoginPage = pathname === '/User_RegxLogin' || pathname === '/User_RegxLogin/LoginAdmin';
 
   return (

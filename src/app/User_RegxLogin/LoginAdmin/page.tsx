@@ -52,6 +52,7 @@ const SIGNIN_ADMIN: NextPage = () => {
         }
 
         router.push(`/User_RegxLogin/SetPasswordAdmin?email=${encodeURIComponent(email)}${data.courseYear ? `&courseYear=${encodeURIComponent(data.courseYear)}` : ''}${data.department_org ? `&department_org=${encodeURIComponent(data.department_org)}` : ''}${data.administered_Org ? `&administered_Org=${encodeURIComponent(data.administered_Org)}` : ''}`);
+
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
         console.error('Login error:', err);
@@ -129,6 +130,7 @@ const SIGNIN_ADMIN: NextPage = () => {
                 }
               }}
             />
+
             {emailError && <div className="mt-1 text-[#d90429] text-base font-bold">{emailError}</div>}
             
             <div className="text-xl mt-6">PIN or Password</div>
