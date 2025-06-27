@@ -1,4 +1,3 @@
-// ClientLayout.tsx
 'use client';
 
 import { useNavigationLoading } from './NavigationLoading';
@@ -13,24 +12,39 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const { isLoading, startLoading, stopLoading } = useNavigationLoading();
   const [initialLoad, setInitialLoad] = useState(true);
+  const [nextJsLoading, setNextJsLoading] = useState(false);
 
   useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      const loader = document.querySelector('[data-nextjs-router-state-elements]');
+      setNextJsLoading(!!loader);
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
     const timer = setTimeout(() => {
       setInitialLoad(false);
       stopLoading();
     }, 800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
   }, [stopLoading]);
 
-  // Ensure loading screen stays visible during navigation
   useEffect(() => {
-    if (isLoading) {
-      setInitialLoad(false);
+    if (nextJsLoading && !isLoading) {
+      startLoading();
+    } else if (!nextJsLoading && isLoading) {
+      stopLoading();
     }
-  }, [isLoading]);
+  }, [nextJsLoading, isLoading, startLoading, stopLoading]);
 
-  const showLoading = isLoading || initialLoad;
+  const showLoading = isLoading || initialLoad || nextJsLoading;
 
   return (
     <>

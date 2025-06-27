@@ -21,7 +21,26 @@ export default function NavigationInterceptor({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const fallbackTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Enhanced route change detection
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          const nextjsLoader = document.querySelector('[data-nextjs-router-state-elements]');
+          if (nextjsLoader && !isNavigatingRef.current) {
+            onNavigationStart();
+          }
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    return () => observer.disconnect();
+  }, [onNavigationStart]);
+
   useEffect(() => {
     const currentPathname = pathname;
     const currentSearchParams = searchParams?.toString();
@@ -33,12 +52,10 @@ export default function NavigationInterceptor({
       return;
     }
     
-    // Only consider it a navigation if the path or query params actually changed
     const isSamePath = currentPathname === previousPathnameRef.current;
     const isSameParams = currentSearchParams === previousSearchParamsRef.current;
     
     if (isNavigatingRef.current) {
-      // Clear any existing timers
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
@@ -49,13 +66,11 @@ export default function NavigationInterceptor({
       }
 
       if (!isSamePath || !isSameParams) {
-        // Actual navigation occurred
         timerRef.current = setTimeout(() => {
           onNavigationComplete();
           isNavigatingRef.current = false;
         }, 150);
       } else {
-        // Same path navigation - complete immediately
         onNavigationComplete();
         isNavigatingRef.current = false;
       }
@@ -79,7 +94,6 @@ export default function NavigationInterceptor({
     previousSearchParamsRef.current = currentSearchParams;
   }, [pathname, searchParams, onNavigationComplete]);
 
-  // Comprehensive navigation interception
   useEffect(() => {
     const handleNavigationStart = () => {
       if (!isNavigatingRef.current) {
@@ -88,15 +102,12 @@ export default function NavigationInterceptor({
           onNavigationStart();
         });
 
-        // Set a fallback timer to prevent infinite loading
-        // This will trigger if no route change occurs within 500ms
         if (fallbackTimerRef.current) {
           clearTimeout(fallbackTimerRef.current);
         }
         
         fallbackTimerRef.current = setTimeout(() => {
           if (isNavigatingRef.current) {
-            console.log('Navigation fallback timer triggered');
             onNavigationComplete();
             isNavigatingRef.current = false;
           }
@@ -104,11 +115,9 @@ export default function NavigationInterceptor({
       }
     };
 
-    // Next.js router events
     const handleRouteChangeStart = () => handleNavigationStart();
     window.addEventListener('routeChangeStart', handleRouteChangeStart);
 
-    // Link clicks
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const anchor = target.closest('a');
@@ -119,7 +128,6 @@ export default function NavigationInterceptor({
           const currentUrl = new URL(window.location.href);
           
           if (url.origin === currentUrl.origin) {
-            // Normalize URLs by removing trailing slashes and hash fragments
             const normalizeUrl = (urlString: string) => {
               const u = new URL(urlString);
               return u.pathname.replace(/\/$/, '') + u.search;
@@ -129,25 +137,21 @@ export default function NavigationInterceptor({
             const currentPath = normalizeUrl(currentUrl.href);
             
             if (targetPath !== currentPath) {
-              // Only trigger loading for actual navigation to different pages
               handleNavigationStart();
             }
-            // If same page - do nothing, don't trigger loading
           }
         } catch (error) {
-          // Invalid URL, ignore
+          // Ignore invalid URLs
         }
       }
     };
     document.addEventListener('click', handleClick, true);
 
-    // History API - properly typed wrapper
     const wrapHistoryMethod = <T extends (...args: any[]) => void>(
       originalMethod: T
     ): T => {
       return ((...args: Parameters<T>) => {
         const result = originalMethod.apply(window.history, args);
-        // Only trigger if it's a different path
         const [state, , url] = args;
         if (!isNavigatingRef.current && url && url !== window.location.href) {
           handleNavigationStart();
@@ -162,7 +166,6 @@ export default function NavigationInterceptor({
     window.history.pushState = wrapHistoryMethod(originalPushState);
     window.history.replaceState = wrapHistoryMethod(originalReplaceState);
 
-    // Popstate (back/forward)
     const handlePopState = () => {
       if (!isNavigatingRef.current) {
         handleNavigationStart();
@@ -170,7 +173,6 @@ export default function NavigationInterceptor({
     };
     window.addEventListener('popstate', handlePopState);
 
-    // Form submissions
     const handleSubmit = (e: SubmitEvent) => {
       const form = e.target as HTMLFormElement;
       if (form?.action) {
@@ -183,7 +185,7 @@ export default function NavigationInterceptor({
             handleNavigationStart();
           }
         } catch (error) {
-          // Invalid URL, ignore
+          // Ignore invalid URLs
         }
       }
     };
@@ -195,11 +197,9 @@ export default function NavigationInterceptor({
       window.removeEventListener('popstate', handlePopState);
       document.removeEventListener('submit', handleSubmit, true);
       
-      // Restore original history methods
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
       
-      // Clear any pending timers
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
