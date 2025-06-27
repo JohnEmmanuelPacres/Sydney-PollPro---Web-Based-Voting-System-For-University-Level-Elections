@@ -1,6 +1,7 @@
 "use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { supabase } from "@/utils/supabaseClient"
+import { useAdminOrg } from '../AdminedOrgContext'; //React Context
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -27,6 +28,7 @@ interface Position {
   title: string
   description: string
   maxCandidates: number
+  maxWinners?: number
   isRequired: boolean
 }
 
@@ -46,22 +48,19 @@ interface Candidate {
 }
 
 interface Election {
-  name: string
-  description: string
-  startDate: string
-  startTime: string
-  endDate: string
-  endTime: string
-  positions: Position[]
-  candidates: Candidate[]
+  name: string;
+  description: string;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  positions: Position[];
+  candidates: Candidate[];
   settings: {
-    allowMultipleVotes: boolean
-    requireVerification: boolean
-    showResults: boolean
-    allowAbstain: boolean
-    eligibleYears: string[]
-    eligibleCourses: string[]
-  }
+    isUniLevel: boolean;
+    allowAbstain: boolean;
+    eligibleCourseYear: string[];
+  };
 }
 
 const defaultPositions: Position[] = [
@@ -70,6 +69,7 @@ const defaultPositions: Position[] = [
     title: "President",
     description: "Chief executive of the student body",
     maxCandidates: 5,
+    maxWinners: 1, // Typically only one president
     isRequired: true,
   },
   {
@@ -77,6 +77,7 @@ const defaultPositions: Position[] = [
     title: "Vice President",
     description: "Second in command and legislative leader",
     maxCandidates: 5,
+    maxWinners: 1, // Typically only one vice president
     isRequired: true,
   },
   {
@@ -84,6 +85,7 @@ const defaultPositions: Position[] = [
     title: "Secretary",
     description: "Records keeper and communications officer",
     maxCandidates: 3,
+    maxWinners: 1, // Typically only one secretary
     isRequired: true,
   },
   {
@@ -91,24 +93,252 @@ const defaultPositions: Position[] = [
     title: "Treasurer",
     description: "Financial officer and budget manager",
     maxCandidates: 3,
+    maxWinners: 1, // Typically only one treasurer
     isRequired: true,
   },
 ]
+const courseYearOptions = [
+// Architecture
+'BS Architecture - 1st Year',
+'BS Architecture - 2nd Year',
+'BS Architecture - 3rd Year',
+'BS Architecture - 4th Year',
+'BS Architecture - 5th Year',
 
-const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Graduate"]
-const courses = [
-  "Computer Science",
-  "Business Administration",
-  "Engineering",
-  "Education",
-  "Liberal Arts",
-  "Nursing",
-  "Medicine",
-  "Law",
-  "Architecture",
-]
+// Engineering Programs
+'BS Chemical Engineering - 1st Year',
+'BS Chemical Engineering - 2nd Year',
+'BS Chemical Engineering - 3rd Year',
+'BS Chemical Engineering - 4th Year',
+
+'BS Civil Engineering - 1st Year',
+'BS Civil Engineering - 2nd Year',
+'BS Civil Engineering - 3rd Year',
+'BS Civil Engineering - 4th Year',
+
+'BS Computer Engineering - 1st Year',
+'BS Computer Engineering - 2nd Year',
+'BS Computer Engineering - 3rd Year',
+'BS Computer Engineering - 4th Year',
+
+'BS Electrical Engineering - 1st Year',
+'BS Electrical Engineering - 2nd Year',
+'BS Electrical Engineering - 3rd Year',
+'BS Electrical Engineering - 4th Year',
+
+'BS Electronics Engineering - 1st Year',
+'BS Electronics Engineering - 2nd Year',
+'BS Electronics Engineering - 3rd Year',
+'BS Electronics Engineering - 4th Year',
+
+'BS Industrial Engineering - 1st Year',
+'BS Industrial Engineering - 2nd Year',
+'BS Industrial Engineering - 3rd Year',
+'BS Industrial Engineering - 4th Year',
+
+'BS Mechanical Engineering - 1st Year',
+'BS Mechanical Engineering - 2nd Year',
+'BS Mechanical Engineering - 3rd Year',
+'BS Mechanical Engineering - 4th Year',
+
+'BS Mechanical Engineering with Computational Science - 1st Year',
+'BS Mechanical Engineering with Computational Science - 2nd Year',
+'BS Mechanical Engineering with Computational Science - 3rd Year',
+'BS Mechanical Engineering with Computational Science - 4th Year',
+
+'BS Mechanical Engineering with Mechatronics - 1st Year',
+'BS Mechanical Engineering with Mechatronics - 2nd Year',
+'BS Mechanical Engineering with Mechatronics - 3rd Year',
+'BS Mechanical Engineering with Mechatronics - 4th Year',
+
+'BS Mining Engineering - 1st Year',
+'BS Mining Engineering - 2nd Year',
+'BS Mining Engineering - 3rd Year',
+'BS Mining Engineering - 4th Year',
+
+// Accountancy and Business Programs
+'BS Accountancy - 1st Year',
+'BS Accountancy - 2nd Year',
+'BS Accountancy - 3rd Year',
+'BS Accountancy - 4th Year',
+
+'BS Accounting Information Systems - 1st Year',
+'BS Accounting Information Systems - 2nd Year',
+'BS Accounting Information Systems - 3rd Year',
+'BS Accounting Information Systems - 4th Year',
+
+'BS Management Accounting - 1st Year',
+'BS Management Accounting - 2nd Year',
+'BS Management Accounting - 3rd Year',
+'BS Management Accounting - 4th Year',
+
+'BS Business Administration (Banking & Financial Management) - 1st Year',
+'BS Business Administration (Banking & Financial Management) - 2nd Year',
+'BS Business Administration (Banking & Financial Management) - 3rd Year',
+'BS Business Administration (Banking & Financial Management) - 4th Year',
+
+'BS Business Administration (Business Analytics) - 1st Year',
+'BS Business Administration (Business Analytics) - 2nd Year',
+'BS Business Administration (Business Analytics) - 3rd Year',
+'BS Business Administration (Business Analytics) - 4th Year',
+
+'BS Business Administration (General Business Management) - 1st Year',
+'BS Business Administration (General Business Management) - 2nd Year',
+'BS Business Administration (General Business Management) - 3rd Year',
+'BS Business Administration (General Business Management) - 4th Year',
+
+'BS Business Administration (Human Resource Management) - 1st Year',
+'BS Business Administration (Human Resource Management) - 2nd Year',
+'BS Business Administration (Human Resource Management) - 3rd Year',
+'BS Business Administration (Human Resource Management) - 4th Year',
+
+'BS Business Administration (Marketing Management) - 1st Year',
+'BS Business Administration (Marketing Management) - 2nd Year',
+'BS Business Administration (Marketing Management) - 3rd Year',
+'BS Business Administration (Marketing Management) - 4th Year',
+
+'BS Business Administration (Operations Management) - 1st Year',
+'BS Business Administration (Operations Management) - 2nd Year',
+'BS Business Administration (Operations Management) - 3rd Year',
+'BS Business Administration (Operations Management) - 4th Year',
+
+'BS Business Administration (Quality Management) - 1st Year',
+'BS Business Administration (Quality Management) - 2nd Year',
+'BS Business Administration (Quality Management) - 3rd Year',
+'BS Business Administration (Quality Management) - 4th Year',
+
+'BS Hospitality Management - 1st Year',
+'BS Hospitality Management - 2nd Year',
+'BS Hospitality Management - 3rd Year',
+'BS Hospitality Management - 4th Year',
+
+'BS Tourism Management - 1st Year',
+'BS Tourism Management - 2nd Year',
+'BS Tourism Management - 3rd Year',
+'BS Tourism Management - 4th Year',
+
+'BS Office Administration - 1st Year',
+'BS Office Administration - 2nd Year',
+'BS Office Administration - 3rd Year',
+'BS Office Administration - 4th Year',
+
+'Associate in Office Administration - 1st Year',
+'Associate in Office Administration - 2nd Year',
+
+'Bachelor in Public Administration - 1st Year',
+'Bachelor in Public Administration - 2nd Year',
+'Bachelor in Public Administration - 3rd Year',
+'Bachelor in Public Administration - 4th Year',
+
+// Arts and Humanities
+'AB Communication - 1st Year',
+'AB Communication - 2nd Year',
+'AB Communication - 3rd Year',
+'AB Communication - 4th Year',
+
+'AB English with Applied Linguistics - 1st Year',
+'AB English with Applied Linguistics - 2nd Year',
+'AB English with Applied Linguistics - 3rd Year',
+'AB English with Applied Linguistics - 4th Year',
+
+// Education
+'Bachelor of Elementary Education - 1st Year',
+'Bachelor of Elementary Education - 2nd Year',
+'Bachelor of Elementary Education - 3rd Year',
+'Bachelor of Elementary Education - 4th Year',
+
+'Bachelor of Secondary Education (English) - 1st Year',
+'Bachelor of Secondary Education (English) - 2nd Year',
+'Bachelor of Secondary Education (English) - 3rd Year',
+'Bachelor of Secondary Education (English) - 4th Year',
+
+'Bachelor of Secondary Education (Filipino) - 1st Year',
+'Bachelor of Secondary Education (Filipino) - 2nd Year',
+'Bachelor of Secondary Education (Filipino) - 3rd Year',
+'Bachelor of Secondary Education (Filipino) - 4th Year',
+
+'Bachelor of Secondary Education (Mathematics) - 1st Year',
+'Bachelor of Secondary Education (Mathematics) - 2nd Year',
+'Bachelor of Secondary Education (Mathematics) - 3rd Year',
+'Bachelor of Secondary Education (Mathematics) - 4th Year',
+
+'Bachelor of Secondary Education (Science) - 1st Year',
+'Bachelor of Secondary Education (Science) - 2nd Year',
+'Bachelor of Secondary Education (Science) - 3rd Year',
+'Bachelor of Secondary Education (Science) - 4th Year',
+
+'Bachelor of Multimedia Arts - 1st Year',
+'Bachelor of Multimedia Arts - 2nd Year',
+'Bachelor of Multimedia Arts - 3rd Year',
+'Bachelor of Multimedia Arts - 4th Year',
+
+// Sciences
+'BS Biology - 1st Year',
+'BS Biology - 2nd Year',
+'BS Biology - 3rd Year',
+'BS Biology - 4th Year',
+
+'BS Math with Applied Industrial Mathematics - 1st Year',
+'BS Math with Applied Industrial Mathematics - 2nd Year',
+'BS Math with Applied Industrial Mathematics - 3rd Year',
+'BS Math with Applied Industrial Mathematics - 4th Year',
+
+'BS Psychology - 1st Year',
+'BS Psychology - 2nd Year',
+'BS Psychology - 3rd Year',
+'BS Psychology - 4th Year',
+
+// Health Sciences
+'BS Nursing - 1st Year',
+'BS Nursing - 2nd Year',
+'BS Nursing - 3rd Year',
+'BS Nursing - 4th Year',
+
+'BS Pharmacy - 1st Year',
+'BS Pharmacy - 2nd Year',
+'BS Pharmacy - 3rd Year',
+'BS Pharmacy - 4th Year',
+
+'BS Medical Technology - 1st Year',
+'BS Medical Technology - 2nd Year',
+'BS Medical Technology - 3rd Year',
+'BS Medical Technology - 4th Year',
+
+// Computing
+'BS Computer Science - 1st Year',
+'BS Computer Science - 2nd Year',
+'BS Computer Science - 3rd Year',
+'BS Computer Science - 4th Year',
+
+'BS Information Technology - 1st Year',
+'BS Information Technology - 2nd Year',
+'BS Information Technology - 3rd Year',
+'BS Information Technology - 4th Year',
+
+// Criminology
+'BS Criminology - 1st Year',
+'BS Criminology - 2nd Year',
+'BS Criminology - 3rd Year',
+'BS Criminology - 4th Year'
+];
 
 export default function CreateElectionPage() {
+  const { administeredOrg } = useAdminOrg();
+  const [orgID, setOrgId] = useState('');
+  useEffect(() => {
+    const fetchOrgId = async () => {
+        const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('organization_name', administeredOrg || '')
+        .single();
+
+        if (org) setOrgId(org.id);
+    };
+    
+    fetchOrgId();
+    }, []);
+
   const [election, setElection] = useState<Election>({
     name: "",
     description: "",
@@ -119,12 +349,9 @@ export default function CreateElectionPage() {
     positions: defaultPositions,
     candidates: [],
     settings: {
-      allowMultipleVotes: false,
-      requireVerification: true,
-      showResults: false,
+      isUniLevel: false,
       allowAbstain: true,
-      eligibleYears: [],
-      eligibleCourses: [],
+      eligibleCourseYear: [],
     },
   })
 
@@ -162,13 +389,14 @@ export default function CreateElectionPage() {
         title: newPosition.title!,
         description: newPosition.description!,
         maxCandidates: newPosition.maxCandidates || 3,
+        maxWinners: newPosition.maxWinners || 1,
         isRequired: newPosition.isRequired || false,
       }
       setElection((prev) => ({
         ...prev,
         positions: [...prev.positions, position],
       }))
-      setNewPosition({ title: "", description: "", maxCandidates: 3, isRequired: false })
+      setNewPosition({ title: "", description: "", maxCandidates: 3, maxWinners: 1, isRequired: false })
       setIsAddPositionOpen(false)
     }
   }
@@ -226,9 +454,81 @@ export default function CreateElectionPage() {
     }))
   }
 
-  const handleCreateElection = () => {
-    console.log("Creating election:", election)
-    alert("Election created successfully!")
+  const validateElection = (election: Election): boolean => {
+    return (
+      election.name.trim() !== '' &&
+      election.description.trim() !== '' &&
+      !!election.startDate &&
+      !!election.endDate &&
+      election.positions.length > 0 &&
+      election.positions.every(
+        (pos) => pos.title.trim() !== '' && pos.description.trim() !== ''
+      ) &&
+      election.candidates.length > 0 &&
+      election.candidates.every(
+        (c) => c.name.trim() !== '' && c.email.trim() !== '' //&& c.positionId.trim() !== ''
+      )
+      // Add any other validation rules you need
+    );
+  };
+
+  const handleCreateElection = async () => {
+    if (!validateElection(election)) {
+        alert('Please complete all required fields before publishing');
+        return;
+    }
+    if (!orgID) {
+        alert('Organization ID is missing. Cannot create election.');
+        return;
+    }
+    // Map candidates to API shape
+    const mappedCandidates = election.candidates.map((c) => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      course_Year: c.course + (c.year ? ` - ${c.year}` : ''),
+      positionId: c.positionId,
+      status: c.status,
+      platform: c.platform,
+      detailed_achievements: c.credentials || '',
+    }));
+    const payload = {
+      electionData: {
+        name: election.name,
+        description: election.description,
+        startDate: election.startDate,
+        startTime: election.startTime,
+        endDate: election.endDate,
+        endTime: election.endTime,
+        positions: election.positions,
+        candidates: mappedCandidates,
+        settings: {
+          isUniLevel: election.settings.isUniLevel,
+          allowAbstain: election.settings.allowAbstain,
+          eligibleCourseYear: election.settings.eligibleCourseYear
+        }
+      },
+      orgID: orgID
+    };
+    console.log('Payload sent to /api/create-elections:', payload);
+    try {
+        const response = await fetch('/api/create-elections', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+        throw new Error('Failed to create election');
+        }
+        const result = await response.json();
+        console.log("Creating election:", election);
+        console.log("Result:", result);
+        alert('Election created successfully!');
+        // Redirect or reset form as needed
+    } catch (error) {
+        console.error('Error creating election:', error);
+        alert('Failed to create election. Please try again.');
+    }
   }
 
   const getPositionCandidates = (positionId: string) => {
@@ -284,8 +584,8 @@ export default function CreateElectionPage() {
                             </DialogHeader>
                             <div className="space-y-4">
                             <div>
-                                <Label htmlFor="position-title">Position Title</Label>
-                                <Input
+                                <Label htmlFor="position-title" className="text-black">Position Title</Label>
+                                <Input className="text-black"
                                 id="position-title"
                                 value={newPosition.title || ""}
                                 onChange={(e) => setNewPosition((prev) => ({ ...prev, title: e.target.value }))}
@@ -293,8 +593,8 @@ export default function CreateElectionPage() {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="position-description">Description</Label>
-                                <Textarea
+                                <Label htmlFor="position-description" className="text-black">Description</Label>
+                                <Textarea className="text-black"
                                 id="position-description"
                                 value={newPosition.description || ""}
                                 onChange={(e) => setNewPosition((prev) => ({ ...prev, description: e.target.value }))}
@@ -303,8 +603,8 @@ export default function CreateElectionPage() {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="max-candidates">Maximum Candidates</Label>
-                                <Input
+                                <Label htmlFor="max-candidates" className="text-black">Maximum Candidates</Label>
+                                <Input className="text-black"
                                 id="max-candidates"
                                 type="number"
                                 min="1"
@@ -312,6 +612,19 @@ export default function CreateElectionPage() {
                                 value={newPosition.maxCandidates || 3}
                                 onChange={(e) =>
                                     setNewPosition((prev) => ({ ...prev, maxCandidates: Number.parseInt(e.target.value) }))
+                                }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="max-winners" className="text-black">Maximum Winners</Label>
+                                <Input className="text-black"
+                                id="max-winners"
+                                type="number"
+                                min="1"
+                                max="10"
+                                value={newPosition.maxWinners || 1}
+                                onChange={(e) =>
+                                    setNewPosition((prev) => ({ ...prev, maxWinners: Number.parseInt(e.target.value) }))
                                 }
                                 />
                             </div>
@@ -323,7 +636,7 @@ export default function CreateElectionPage() {
                                     setNewPosition((prev) => ({ ...prev, isRequired: checked as boolean }))
                                 }
                                 />
-                                <Label htmlFor="is-required">Required position (voters must vote for this)</Label>
+                                <Label htmlFor="is-required" className="text-black">Required position (voters must vote for this)</Label>
                             </div>
                             <Button onClick={handleAddPosition} className="w-full bg-red-900 hover:bg-red-800">
                                 Add Position
@@ -372,8 +685,8 @@ export default function CreateElectionPage() {
                             </DialogHeader>
                             <div className="space-y-4">
                             <div>
-                                <Label htmlFor="candidate-name">Full Name</Label>
-                                <Input
+                                <Label htmlFor="candidate-name" className="text-black">Full Name</Label>
+                                <Input className="text-black"
                                 id="candidate-name"
                                 value={newCandidate.name || ""}
                                 onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
@@ -381,8 +694,8 @@ export default function CreateElectionPage() {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="candidate-email">Email</Label>
-                                <Input
+                                <Label htmlFor="candidate-email" className="text-black">Email</Label>
+                                <Input className="text-black"
                                 id="candidate-email"
                                 type="email"
                                 value={newCandidate.email || ""}
@@ -390,8 +703,8 @@ export default function CreateElectionPage() {
                                 placeholder="Enter email address"
                                 />
                             </div>
-                            <div>
-                                <Label htmlFor="candidate-position">Position</Label>
+                            <div className="text-black">
+                                <Label htmlFor="candidate-position" className="text-black">Position</Label>
                                 <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, positionId: value }))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select position" />
@@ -405,14 +718,14 @@ export default function CreateElectionPage() {
                                 </SelectContent>
                                 </Select>
                             </div>
-                            <div>
-                                <Label htmlFor="candidate-course">Course</Label>
+                            <div className="text-black">
+                                <Label htmlFor="candidate-course" className="text-black">Course and Year</Label>
                                 <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select course" />
+                                    <SelectValue placeholder="Select course and Year" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {courses.map((course) => (
+                                    {courseYearOptions.map((course) => (
                                     <SelectItem key={course} value={course}>
                                         {course}
                                     </SelectItem>
@@ -421,23 +734,8 @@ export default function CreateElectionPage() {
                                 </Select>
                             </div>
                             <div>
-                                <Label htmlFor="candidate-year">Year Level</Label>
-                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, year: value }))}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select year" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {yearLevels.map((year) => (
-                                    <SelectItem key={year} value={year}>
-                                        {year}
-                                    </SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label htmlFor="candidate-credentials">Credentials</Label>
-                                <Textarea
+                                <Label htmlFor="candidate-credentials" className="text-black">Credentials</Label>
+                                <Textarea className="text-black"
                                 id="candidate-credentials"
                                 value={newCandidate.credentials || ""}
                                 onChange={(e) => setNewCandidate((prev) => ({ ...prev, credentials: e.target.value }))}
@@ -446,8 +744,8 @@ export default function CreateElectionPage() {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="candidate-platform">Platform Summary</Label>
-                                <Textarea
+                                <Label htmlFor="candidate-platform" className="text-black">Platform Summary</Label>
+                                <Textarea className="text-black"
                                 id="candidate-platform"
                                 value={newCandidate.platform || ""}
                                 onChange={(e) => setNewCandidate((prev) => ({ ...prev, platform: e.target.value }))}
@@ -513,127 +811,58 @@ export default function CreateElectionPage() {
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold text-red-900">Voting Rules</h3>
                         <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                            <Label htmlFor="multiple-votes">Allow Multiple Votes per Position</Label>
-                            <p className="text-sm text-gray-600">
-                                Allow voters to select multiple candidates for each position
-                            </p>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                <Label htmlFor="allow-abstain">Allow Abstain Option</Label>
+                                <p className="text-sm text-gray-600">Voters can choose to abstain from voting on positions</p>
+                                </div>
+                                <Switch
+                                id="allow-abstain"
+                                checked={election.settings.allowAbstain}
+                                onCheckedChange={(checked) =>
+                                    setElection((prev) => ({
+                                    ...prev,
+                                    settings: { ...prev.settings, allowAbstain: checked },
+                                    }))
+                                }
+                                />
                             </div>
-                            <Switch
-                            id="multiple-votes"
-                            checked={election.settings.allowMultipleVotes}
-                            onCheckedChange={(checked) =>
-                                setElection((prev) => ({
-                                ...prev,
-                                settings: { ...prev.settings, allowMultipleVotes: checked },
-                                }))
-                            }
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                            <Label htmlFor="require-verification">Require Email Verification</Label>
-                            <p className="text-sm text-gray-600">Voters must verify their email before voting</p>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                <Label htmlFor="uni-level">University Level Election</Label>
+                                <p className="text-sm text-gray-600">This election applies to all university students</p>
+                                </div>
+                                <Switch
+                                id="uni-level"
+                                checked={election.settings.isUniLevel}
+                                onCheckedChange={(checked) =>
+                                    setElection((prev) => ({
+                                    ...prev,
+                                    settings: { ...prev.settings, isUniLevel: checked },
+                                    }))
+                                }
+                                />
                             </div>
-                            <Switch
-                            id="require-verification"
-                            checked={election.settings.requireVerification}
-                            onCheckedChange={(checked) =>
-                                setElection((prev) => ({
-                                ...prev,
-                                settings: { ...prev.settings, requireVerification: checked },
-                                }))
-                            }
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                            <Label htmlFor="show-results">Show Live Results</Label>
-                            <p className="text-sm text-gray-600">Display voting results in real-time</p>
-                            </div>
-                            <Switch
-                            id="show-results"
-                            checked={election.settings.showResults}
-                            onCheckedChange={(checked) =>
-                                setElection((prev) => ({
-                                ...prev,
-                                settings: { ...prev.settings, showResults: checked },
-                                }))
-                            }
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                            <Label htmlFor="allow-abstain">Allow Abstain Option</Label>
-                            <p className="text-sm text-gray-600">Voters can choose to abstain from voting on positions</p>
-                            </div>
-                            <Switch
-                            id="allow-abstain"
-                            checked={election.settings.allowAbstain}
-                            onCheckedChange={(checked) =>
-                                setElection((prev) => ({
-                                ...prev,
-                                settings: { ...prev.settings, allowAbstain: checked },
-                                }))
-                            }
-                            />
-                        </div>
                         </div>
                     </div>
 
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold text-red-900">Voter Eligibility</h3>
                         <div>
-                        <Label>Eligible Year Levels</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                            {yearLevels.map((year) => (
-                            <div key={year} className="flex items-center space-x-2">
-                                <Checkbox
-                                id={`year-${year}`}
-                                checked={election.settings.eligibleYears.includes(year)}
-                                onCheckedChange={(checked) => {
-                                    if (checked) {
-                                    setElection((prev) => ({
-                                        ...prev,
-                                        settings: {
-                                        ...prev.settings,
-                                        eligibleYears: [...prev.settings.eligibleYears, year],
-                                        },
-                                    }))
-                                    } else {
-                                    setElection((prev) => ({
-                                        ...prev,
-                                        settings: {
-                                        ...prev.settings,
-                                        eligibleYears: prev.settings.eligibleYears.filter((y) => y !== year),
-                                        },
-                                    }))
-                                    }
-                                }}
-                                />
-                                <Label htmlFor={`year-${year}`} className="text-sm">
-                                {year}
-                                </Label>
-                            </div>
-                            ))}
-                        </div>
-                        </div>
-                        <div>
-                        <Label>Eligible Courses</Label>
+                        <Label>Eligible Courses and Year</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                            {courses.map((course) => (
-                            <div key={course} className="flex items-center space-x-2">
+                            {courseYearOptions.map((courseYear) => (
+                            <div key={courseYear} className="flex items-center space-x-2">
                                 <Checkbox
-                                id={`course-${course}`}
-                                checked={election.settings.eligibleCourses.includes(course)}
+                                id={`course-${courseYear}`}
+                                checked={election.settings.eligibleCourseYear.includes(courseYear)}
                                 onCheckedChange={(checked) => {
                                     if (checked) {
                                     setElection((prev) => ({
                                         ...prev,
                                         settings: {
                                         ...prev.settings,
-                                        eligibleCourses: [...prev.settings.eligibleCourses, course],
+                                        eligibleCourseYear: [...prev.settings.eligibleCourseYear, courseYear],
                                         },
                                     }))
                                     } else {
@@ -641,14 +870,14 @@ export default function CreateElectionPage() {
                                         ...prev,
                                         settings: {
                                         ...prev.settings,
-                                        eligibleCourses: prev.settings.eligibleCourses.filter((c) => c !== course),
+                                        eligibleCourseYear: prev.settings.eligibleCourseYear.filter((c) => c !== courseYear),
                                         },
                                     }))
                                     }
                                 }}
                                 />
-                                <Label htmlFor={`course-${course}`} className="text-sm">
-                                {course}
+                                <Label htmlFor={`course-${courseYear}`} className="text-sm">
+                                {courseYear}
                                 </Label>
                             </div>
                             ))}
