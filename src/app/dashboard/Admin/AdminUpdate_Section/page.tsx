@@ -1,8 +1,10 @@
 'use client';
-import React, { useState, useRef } from 'react';
-import { Camera, FileText, Send, X, Plus, Clock, Eye, Tag, AlertCircle, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, FileText, Send, X, Plus, Clock, Eye, Tag, AlertCircle, Check, Globe } from 'lucide-react';
 import AdminHeader from '../../../components/AdminHeader';
 import Footer from '../../../components/Footer';
+import { supabase } from '@/utils/supabaseClient';
+import { useAdminOrg } from '../AdminedOrgContext';
 
 // Types
 type Category = 'Announcements' | 'System Updates' | 'Election News';
@@ -15,9 +17,11 @@ type Article = {
   images: File[];
   publishedAt?: Date;
   status: 'draft' | 'published';
+  isUniLevel: boolean;
 };
 
 const AdminUpdateSection = () => {
+  const { administeredOrg } = useAdminOrg();
   const [articles, setArticles] = useState<Article[]>([]);
   const [currentArticle, setCurrentArticle] = useState<Article>({
     id: '',
@@ -25,13 +29,87 @@ const AdminUpdateSection = () => {
     content: '',
     category: 'Announcements',
     images: [],
-    status: 'draft'
+    status: 'draft',
+    isUniLevel: false
   });
   const [showPreview, setShowPreview] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [activeTab, setActiveTab] = useState<'create' | 'manage'>('create');
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [orgId, setOrgId] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get current user and organization ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUser(user);
+
+        if (user && administeredOrg) {
+          // Get organization ID
+          const { data: org } = await supabase
+            .from('organizations')
+            .select('id')
+            .eq('organization_name', administeredOrg)
+            .single();
+
+          if (org) {
+            setOrgId(org.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error getting user:', error);
+      }
+    };
+
+    getCurrentUser();
+  }, [administeredOrg]);
+
+  // Load existing articles
+  useEffect(() => {
+    if (currentUser && orgId) {
+      loadArticles();
+    }
+  }, [currentUser, orgId]);
+
+  const loadArticles = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/get-admin-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_id: currentUser.id,
+          administered_org: administeredOrg
+        })
+      });
+
+      if (response.ok) {
+        const { posts } = await response.json();
+        
+        // Transform posts to articles format
+        const transformedArticles: Article[] = posts.map((post: any) => ({
+          id: post.id,
+          headline: post.title,
+          content: post.context,
+          category: post.category as Category,
+          images: [], // We'll handle images separately if needed
+          status: 'published',
+          publishedAt: new Date(post.created_at),
+          isUniLevel: post.is_uni_lev
+        }));
+
+        setArticles(transformedArticles);
+      }
+    } catch (error) {
+      console.error('Error loading articles:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
@@ -69,30 +147,88 @@ const AdminUpdateSection = () => {
     }));
   };
 
-  const publishArticle = () => {
+  const publishArticle = async () => {
     if (!currentArticle.headline.trim() || !currentArticle.content.trim()) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const newArticle: Article = {
-      ...currentArticle,
-      id: Date.now().toString(),
-      status: 'published',
-      publishedAt: new Date()
-    };
+    if (!currentUser || !orgId) {
+      alert('User or organization information is missing');
+      return;
+    }
 
-    setArticles(prev => [newArticle, ...prev]);
-    
-    // Reset form
-    setCurrentArticle({
-      id: '',
-      headline: '',
-      content: '',
-      category: 'Announcements',
-      images: [],
-      status: 'draft'
-    });
+    try {
+      // First upload images if there are any
+      let imageUrls: string[] = [];
+      if (currentArticle.images.length > 0) {
+        const formData = new FormData();
+        currentArticle.images.forEach(image => {
+          formData.append('images', image);
+        });
+
+        const uploadResponse = await fetch('/api/upload-images', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Image upload failed');
+        }
+
+        const { urls } = await uploadResponse.json();
+        imageUrls = urls;
+      }
+
+      // Then create the post
+      const postResponse = await fetch('/api/create-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: currentArticle.headline,
+          context: currentArticle.content,
+          category: currentArticle.category,
+          admin_id: currentUser.id,
+          org_id: currentArticle.isUniLevel ? null : orgId,
+          image_urls: imageUrls,
+          is_uni_lev: currentArticle.isUniLevel
+        })
+      });
+
+      if (!postResponse.ok) {
+        const errorData = await postResponse.json();
+        throw new Error(errorData.error || 'Failed to create post');
+      }
+
+      const { post } = await postResponse.json();
+
+      // Update local state
+      const newArticle: Article = {
+        ...currentArticle,
+        id: post.id,
+        status: 'published',
+        publishedAt: new Date()
+      };
+
+      setArticles(prev => [newArticle, ...prev]);
+      
+      // Reset form
+      setCurrentArticle({
+        id: '',
+        headline: '',
+        content: '',
+        category: 'Announcements',
+        images: [],
+        status: 'draft',
+        isUniLevel: false
+      });
+
+      alert('Article published successfully!');
+
+    } catch (error: any) {
+      console.error('Publish error:', error);
+      alert(`Failed to publish article: ${error.message}`);
+    }
   };
 
   const getCategoryColor = (category: Category) => {
@@ -302,8 +438,38 @@ const AdminUpdateSection = () => {
                     <Tag className="mr-2" size={20} />
                     Category Preview
                   </h3>
-                  <div className={`px-3 py-1 rounded-full text-white text-sm font-semibold tracking-wide shadow inline-block ${getCategoryColor(currentArticle.category)}`}>
-                    {currentArticle.category}
+                  <div className="space-y-3">
+                    <div className={`px-3 py-1 rounded-full text-white text-sm font-semibold tracking-wide shadow inline-block ${getCategoryColor(currentArticle.category)}`}>
+                      {currentArticle.category}
+                    </div>
+                    
+                    {/* University Level Toggle */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <div className="flex items-center space-x-2">
+                        <Globe size={16} className="text-gray-600" />
+                        <span className="text-gray-700 text-sm font-medium">University Level</span>
+                      </div>
+                      <button
+                        onClick={() => setCurrentArticle(prev => ({ ...prev, isUniLevel: !prev.isUniLevel }))}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+                          currentArticle.isUniLevel ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                            currentArticle.isUniLevel ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    
+                    {currentArticle.isUniLevel && (
+                      <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-blue-800 text-xs font-medium">
+                          🌐 This article will be visible to all users across the university
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -313,7 +479,11 @@ const AdminUpdateSection = () => {
             <div className="space-y-6">
               <h2 className="text-white text-2xl font-bold">Published Articles</h2>
               
-              {articles.length === 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700]"></div>
+                </div>
+              ) : articles.length === 0 ? (
                 <div className="bg-white rounded-[16px] border-2 border-[#FFD700] shadow-md p-20 text-center">
                   <FileText size={64} className="mx-auto text-gray-400 mb-4" />
                   <p className="text-gray-600 text-xl font-medium mb-2">No articles published yet</p>
@@ -329,6 +499,12 @@ const AdminUpdateSection = () => {
                             <div className={`px-3 py-1 rounded-full text-white text-sm font-semibold tracking-wide shadow ${getCategoryColor(article.category)}`}>
                               {article.category}
                             </div>
+                            {article.isUniLevel && (
+                              <div className="px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center">
+                                <Globe size={12} className="mr-1" />
+                                University
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center text-[#6B0000] text-sm font-semibold">
                             <Clock size={16} className="mr-1" />
@@ -385,9 +561,17 @@ const AdminUpdateSection = () => {
                 </div>
                 
                 <div className="p-6">
-                  {/* Category Tag */}
-                  <div className={`inline-block px-3 py-1 rounded-full text-white text-sm font-semibold tracking-wide shadow mb-4 ${getCategoryColor(currentArticle.category)}`}>
-                    {currentArticle.category}
+                  {/* Category Tag and University Level Badge */}
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className={`inline-block px-3 py-1 rounded-full text-white text-sm font-semibold tracking-wide shadow ${getCategoryColor(currentArticle.category)}`}>
+                      {currentArticle.category}
+                    </div>
+                    {currentArticle.isUniLevel && (
+                      <div className="px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center">
+                        <Globe size={12} className="mr-1" />
+                        University Level
+                      </div>
+                    )}
                   </div>
                   
                   {/* Time Stamp */}
