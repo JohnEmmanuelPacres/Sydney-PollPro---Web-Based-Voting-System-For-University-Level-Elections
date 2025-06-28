@@ -121,7 +121,7 @@ const AdminDashboardNoSession: NextPage = () => {
 
       {/* Create or Status Section */}
       {activeElection ? (
-        <ElectionStatusBar election={activeElection} />
+        <ElectionStatusBar election={activeElection}/>
       ) : (
         <CreateElectionSection />
       )}

@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
-import { supabase } from "@/utils/supabaseClient"
 import { useAdminOrg } from '../AdminedOrgContext'; //React Context
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -323,22 +323,68 @@ const courseYearOptions = [
 'BS Criminology - 4th Year'
 ];
 
-export default function CreateElectionPage() {
+export default function UpdateElectionPage() {
   const { administeredOrg } = useAdminOrg();
-  const [orgID, setOrgId] = useState('');
-  useEffect(() => {
-    const fetchOrgId = async () => {
-        const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('organization_name', administeredOrg || '')
-        .single();
+  const searchParams = useSearchParams();
+  const electionId = searchParams.get('electionId');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        if (org) setOrgId(org.id);
+  // Temporary: Add this line to see what electionId we're getting
+  console.log('URL electionId:', electionId);
+
+  // Fetch election data on component mount using API route
+  useEffect(() => {
+    const fetchElectionData = async () => {
+      console.log('Fetching election data for electionId:', electionId);
+      
+      if (!electionId) {
+        setError('No election ID provided');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Call the API route instead of direct Supabase query
+        const response = await fetch('/api/get-election-details', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ electionId }),
+        });
+
+        const result = await response.json();
+        console.log('API response:', result);
+
+        if (!response.ok) {
+          setError(result.error || 'Failed to fetch election data');
+          setLoading(false);
+          return;
+        }
+
+        if (!result.election) {
+          setError('No election data returned');
+          setLoading(false);
+          return;
+        }
+
+        setElection(result.election);
+        console.log('Set election data:', result.election);
+
+      } catch (err) {
+        setError('Unexpected error fetching election data');
+        console.error('Error fetching election data:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    fetchOrgId();
-  }, []);
+
+    fetchElectionData();
+  }, [electionId]);
 
   const [election, setElection] = useState<Election>({
     name: "",
@@ -347,7 +393,7 @@ export default function CreateElectionPage() {
     startTime: "",
     endDate: "",
     endTime: "",
-    positions: defaultPositions,
+    positions: [],
     candidates: [],
     settings: {
       isUniLevel: false,
@@ -521,68 +567,45 @@ export default function CreateElectionPage() {
       ) &&
       election.candidates.length > 0 &&
       election.candidates.every(
-        (c) => c.name.trim() !== '' && c.email.trim() !== '' //&& c.positionId.trim() !== ''
+        (c) => c.name.trim() !== '' && c.email.trim() !== ''
       )
-      // Add any other validation rules you need
     );
   };
 
-  const handleCreateElection = async () => {
+  const handleUpdateElection = async () => {
     if (!validateElection(election)) {
-        alert('Please complete all required fields before publishing');
+        alert('Please complete all required fields before updating');
         return;
     }
-    if (!orgID) {
-        alert('Organization ID is missing. Cannot create election.');
+    if (!electionId) {
+        alert('Election ID is missing. Cannot update election.');
         return;
     }
-    // Map candidates to API shape
-    const mappedCandidates = election.candidates.map((c) => ({
-      id: c.id,
-      name: c.name,
-      email: c.email,
-      course_Year: c.course + (c.year ? ` - ${c.year}` : ''),
-      positionId: c.positionId,
-      status: c.status,
-      platform: c.platform,
-      detailed_achievements: c.credentials || '',
-    }));
-    const payload = {
-      electionData: {
-        name: election.name,
-        description: election.description,
-        startDate: election.startDate,
-        startTime: election.startTime,
-        endDate: election.endDate,
-        endTime: election.endTime,
-        positions: election.positions,
-        candidates: mappedCandidates,
-        settings: {
-          isUniLevel: election.settings.isUniLevel,
-          allowAbstain: election.settings.allowAbstain,
-          eligibleCourseYear: election.settings.eligibleCourseYear
-        }
-      },
-      orgID: orgID
-    };
-    console.log('Payload sent to /api/create-elections:', payload);
+
     try {
-        const response = await fetch('/api/create-elections', {
+        const response = await fetch('/api/update-election', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                electionId,
+                electionData: election
+            }),
         });
-        if (!response.ok) {
-        throw new Error('Failed to create election');
-        }
+
         const result = await response.json();
-        console.log("Creating election:", election);
-        console.log("Result:", result);
-        alert('Election created successfully!');
-        // Redirect or reset form as needed
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to update election');
+        }
+
+        alert('Election updated successfully!');
+        console.log("Updated election:", election);
+
     } catch (error) {
-        console.error('Error creating election:', error);
-        alert('Failed to create election. Please try again.');
+        console.error('Error updating election:', error);
+        alert('Failed to update election. Please try again.');
     }
   }
 
@@ -594,6 +617,24 @@ export default function CreateElectionPage() {
     return election.positions.find((p) => p.id === positionId)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#52100D] flex flex-col items-center justify-center">
+        <div className="text-white text-xl">Loading election data...</div>
+        <div className="text-white text-sm mt-2">Election ID: {electionId || 'None'}</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#52100D] flex flex-col items-center justify-center">
+        <div className="text-red-400 text-xl">{error}</div>
+        <div className="text-white text-sm mt-2">Election ID: {electionId || 'None'}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#52100D]">
         <header className="fixed top-0 left-0 right-0 z-50">
@@ -602,8 +643,8 @@ export default function CreateElectionPage() {
         {/* Semantic Main Content */}
         <main className="pt-32"> {/* Adjust based on header height */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-3xl font-bold">Create New Election</h1>
-                <p className="text-red-100 mt-1">Set up a new election with positions, candidates, and voting rules</p>
+                <h1 className="text-3xl font-bold text-white">Update Election</h1>
+                <p className="text-red-100 mt-1">Update election with positions, candidates, and voting rules</p>
             </div>
             <div className="max-w-7xl mx-auto p-6">
                 {/* Navigation Tabs */}
@@ -1079,14 +1120,14 @@ export default function CreateElectionPage() {
 
                     <div className="flex justify-center pt-6">
                         <Button
-                        onClick={handleCreateElection}
+                        onClick={handleUpdateElection}
                         className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg"
                         disabled={
                             !election.name || !election.startDate || !election.endDate || election.positions.length === 0
                         }
                         >
                         <CheckCircle className="w-5 h-5 mr-2" />
-                        Create Election
+                        Update Election
                         </Button>
                     </div>
                     </CardContent>
