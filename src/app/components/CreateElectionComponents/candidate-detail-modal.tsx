@@ -13,15 +13,15 @@ interface CandidateDetailModalProps {
     name: string
     email: string
     positionId: string
+    positionName?: string
     status: "pending" | "approved" | "disqualified"
     credentials: string
     detailedCredentials?: string
     course: string
     year: string
     platform?: string
-    achievements?: string[]
-    experience?: string[]
     picture_url?: string
+
   } | null
   isOpen: boolean
   onClose: () => void
@@ -90,7 +90,7 @@ export function CandidateDetailModal({
               <DialogTitle className="text-2xl text-red-900">{candidate.name}</DialogTitle>
               <p className="text-red-600">{candidate.email}</p>
               <div className="flex items-center gap-2 mt-2">
-                <Badge className="bg-red-100 text-red-800">{candidate.positionId}</Badge>
+                <Badge className="bg-red-100 text-red-800">{candidate.positionName}</Badge>
                 <Badge className={getStatusColor(candidate.status)}>{candidate.status}</Badge>
               </div>
             </div>
@@ -120,16 +120,16 @@ export function CandidateDetailModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-red-50 p-4 rounded-lg">
               <h3 className="font-semibold text-red-900 mb-2">Academic Information</h3>
-              <p>
-                <span className="font-medium">Course:</span> {candidate.course}
+              <p className="text-gray-700 leading-relaxed">
+                <span className="font-medium text-red-900">Course:</span> {candidate.course}
               </p>
-              <p>
-                <span className="font-medium">Year Level:</span> {candidate.year}
+              <p className="text-gray-700 leading-relaxed">
+                <span className="font-medium text-red-900">Year Level:</span> {candidate.year}
               </p>
             </div>
             <div className="bg-yellow-50 p-4 rounded-lg">
               <h3 className="font-semibold text-yellow-800 mb-2">Running For</h3>
-              <p className="text-lg font-semibold text-yellow-900">{candidate.positionId}</p>
+              <p className="text-lg font-semibold text-yellow-900">{candidate.positionName}</p>
             </div>
           </div>
 
@@ -152,39 +152,6 @@ export function CandidateDetailModal({
             </h3>
             <p className="text-gray-700 leading-relaxed">{candidate.detailedCredentials || candidate.credentials}</p>
           </div>
-
-          {/* Achievements and Experience */}
-          {(candidate.achievements || candidate.experience) && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {candidate.achievements && (
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <h3 className="text-lg font-bold text-green-900 mb-4">🏆 Achievements</h3>
-                  <ul className="space-y-2">
-                    {candidate.achievements.map((achievement, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-green-800">{achievement}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {candidate.experience && (
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <h3 className="text-lg font-bold text-blue-900 mb-4">💼 Experience</h3>
-                  <ul className="space-y-2">
-                    {candidate.experience.map((exp, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                        <span className="text-blue-800">{exp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-red-100">

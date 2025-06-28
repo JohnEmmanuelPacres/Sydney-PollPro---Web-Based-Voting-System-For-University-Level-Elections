@@ -1,12 +1,16 @@
 "use client";
 import { NextPage } from 'next';
 import Header from '../components/Header';
+import VoterHeader from '../components/VoteDash_Header';
 import PollCard from '../components/PollCard';
 import Footer from '../components/Footer';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { usePathname } from 'next/navigation';
 
 const Results: NextPage = () => {
+  const pathname = usePathname();
+  const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Election_Results');
   const pollsData = [
     {
       position: 'Presidential',
@@ -74,7 +78,7 @@ const Results: NextPage = () => {
   return (
     <div className="flex flex-col min-h-screen w-full bg-gradient-to-t from-yellow-900 to-red-900 text-white font-inter">
       {/* Header */}
-      <Header />
+      {isVoterRoute ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <main className="flex-1 w-full px-4 sm:px-6 lg:px-8">

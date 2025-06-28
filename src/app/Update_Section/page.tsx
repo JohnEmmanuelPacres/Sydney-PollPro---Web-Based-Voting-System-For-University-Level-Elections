@@ -2,7 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import Header from '../components/Header';
+import VoterHeader from '../components/VoteDash_Header';
 import Footer from '../components/Footer';
+import { usePathname } from 'next/navigation';
 
 // Types
 type Article = {
@@ -47,6 +49,8 @@ const ARTICLES: Article[] = [
 ];
 
 const UpdatesPage = () => {
+  const pathname = usePathname();
+  const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Update_Section');
   const [activeFilter, setActiveFilter] = useState<Filter>('All Updates');
   const articlesRef = useRef<(HTMLDivElement | null)[]>([]);
   const filtersRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -187,7 +191,7 @@ const UpdatesPage = () => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      <Header />
+      {isVoterRoute ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-4 py-8">
