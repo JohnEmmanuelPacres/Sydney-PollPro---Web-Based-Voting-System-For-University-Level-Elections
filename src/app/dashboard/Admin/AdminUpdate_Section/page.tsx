@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useRef } from 'react';
 import { Camera, FileText, Send, X, Plus, Clock, Eye, Tag, AlertCircle, Check } from 'lucide-react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import AdminHeader from '../../../components/AdminHeader';
+import Footer from '../../../components/Footer';
 
 // Types
 type Category = 'Announcements' | 'System Updates' | 'Election News';
@@ -130,7 +130,7 @@ const AdminUpdateSection = () => {
 
   return (
     <div className="min-h-screen bg-red-950 font-inter">
-      <Header />
+      <AdminHeader />
 
       {/* Main Content */}
       <div className="flex flex-col items-center px-4 py-8 pt-32">

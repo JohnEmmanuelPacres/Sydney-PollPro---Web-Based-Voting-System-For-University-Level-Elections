@@ -46,7 +46,7 @@ const Header: React.FC = () => {
             <NavButton href={`/dashboard/Admin?administered_Org=${administeredOrg}`}>Home</NavButton>
             <NavButton href="/Candidates">Candidates</NavButton>
             <NavButton href="/Election_Results">Results</NavButton>
-            <NavButton href="/Updates">Update</NavButton>
+            <NavButton href="/dashboard/Admin/AdminUpdate_Section">Update</NavButton>
             <button
               onClick={handleLogout}
               className="w-24 md:w-32 px-3 md:px-6 py-2.5 md:py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-[999px] shadow-[1px_2px_6px_0px_rgba(0,0,0,0.40)] shadow-[2px_4px_18px_0px_rgba(0,0,0,0.20)] shadow-[-1px_-2px_6px_0px_rgba(250,195,107,0.40)] shadow-[-2px_-4px_18px_0px_rgba(250,195,107,0.10)] outline outline-[3px] outline-offset-[-3px] outline-orange-300 inline-flex justify-center items-center gap-2 transition-all duration-300 ease-in-out hover:scale-105"
@@ -84,7 +84,7 @@ const Header: React.FC = () => {
             <MobileNavButton href={`/dashboard/Admin?administered_Org=${administeredOrg}`} onClick={() => setIsMenuOpen(false)}>Home</MobileNavButton>
             <MobileNavButton href="/Candidates" onClick={() => setIsMenuOpen(false)}>Candidates</MobileNavButton>
             <MobileNavButton href="/Election_Results" onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
-            <MobileNavButton href="/Updates" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
+            <MobileNavButton href="/dashboard/Admin/AdminUpdate_Section" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
             <MobileNavButton href="/About" onClick={() => setIsMenuOpen(false)}>About</MobileNavButton>
           </div>
         </div>
