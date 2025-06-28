@@ -70,6 +70,16 @@ export function ScheduleSection({ election, onChange }: ScheduleSectionProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2 text-blue-800">
+            <Clock className="w-4 h-4" />
+            <span className="font-semibold">Timezone Information</span>
+          </div>
+          <p className="text-blue-700 mt-1 text-sm">
+            All times will be saved in Singapore timezone (UTC+8). Please ensure you select the correct local time.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-red-900">Voting Opens</h3>
@@ -84,7 +94,7 @@ export function ScheduleSection({ election, onChange }: ScheduleSectionProps) {
               />
             </div>
             <div>
-              <Label htmlFor="start-time">Start Time</Label>
+              <Label htmlFor="start-time">Start Time (SGT)</Label>
               <Input
                 id="start-time"
                 type="time"
@@ -107,7 +117,7 @@ export function ScheduleSection({ election, onChange }: ScheduleSectionProps) {
               />
             </div>
             <div>
-              <Label htmlFor="end-time">End Time</Label>
+              <Label htmlFor="end-time">End Time (SGT)</Label>
               <Input
                 id="end-time"
                 type="time"
@@ -122,10 +132,10 @@ export function ScheduleSection({ election, onChange }: ScheduleSectionProps) {
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
             <div className="flex items-center gap-2 text-yellow-800">
               <Clock className="w-4 h-4" />
-              <span className="font-semibold">Election Duration</span>
+              <span className="font-semibold">Election Duration (Singapore Time)</span>
             </div>
             <p className="text-yellow-700 mt-1">
-              From {election.startDate} {election.startTime} to {election.endDate} {election.endTime}
+              From {election.startDate} {election.startTime} to {election.endDate} {election.endTime} (UTC+8)
             </p>
           </div>
         )}

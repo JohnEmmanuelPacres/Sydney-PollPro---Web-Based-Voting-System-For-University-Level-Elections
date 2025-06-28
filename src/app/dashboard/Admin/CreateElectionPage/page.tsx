@@ -1039,15 +1039,18 @@ export default function CreateElectionPage() {
                         <div>
                             <span className="font-semibold text-red-900">Voting Opens:</span>
                             <p>
-                            {election.startDate} {election.startTime}
+                            {election.startDate} {election.startTime} (SGT)
                             </p>
                         </div>
                         <div>
                             <span className="font-semibold text-red-900">Voting Closes:</span>
                             <p>
-                            {election.endDate} {election.endTime}
+                            {election.endDate} {election.endTime} (SGT)
                             </p>
                         </div>
+                        </div>
+                        <div className="mt-2 text-xs text-blue-600">
+                            <p>All times are in Singapore timezone (UTC+8)</p>
                         </div>
                     </div>
 

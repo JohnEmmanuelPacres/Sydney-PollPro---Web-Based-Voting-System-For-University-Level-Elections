@@ -1,6 +1,7 @@
 // app/api/create-elections/route.ts
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { convertLocalToSingaporeTime } from '@/utils/dateUtils';
 
 // Add these interfaces to match your frontend
 interface Position {
@@ -35,14 +36,27 @@ export async function POST(request: Request) {
     console.log('Received payload in /api/create-elections:', JSON.stringify(body, null, 2));
     const { electionData, orgID } = body;
 
+    // Convert dates to Singapore timezone with +08:00 offset
+    const startDateSingapore = `${electionData.startDate}T${electionData.startTime}:00+08:00`;
+    const endDateSingapore = `${electionData.endDate}T${electionData.endTime}:00+08:00`;
+
+    console.log('Original dates:', {
+      start: `${electionData.startDate}T${electionData.startTime}:00`,
+      end: `${electionData.endDate}T${electionData.endTime}:00`
+    });
+    console.log('Singapore timezone dates:', {
+      start: startDateSingapore,
+      end: endDateSingapore
+    });
+
     // 1. Create election
     const { data: election, error: electionError } = await supabaseAdmin
       .from('elections')
       .insert({
         name: electionData.name,
         description: electionData.description,
-        start_date: `${electionData.startDate}T${electionData.startTime}:00`,
-        end_date: `${electionData.endDate}T${electionData.endTime}:00`,
+        start_date: startDateSingapore,
+        end_date: endDateSingapore,
         is_uni_level: electionData.settings.isUniLevel,
         allow_abstain: electionData.settings.allowAbstain,
         eligible_courseYear: electionData.settings.eligibleCourseYear, // Fixed column name
