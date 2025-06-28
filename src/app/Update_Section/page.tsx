@@ -12,6 +12,7 @@ type Article = {
   category: string;
   timeAgo: string;
   bgColor: string;
+  image: string;
 };
 
 type Filter = 'All Updates' | 'Announcements' | 'System Updates' | 'Election News';
@@ -22,29 +23,50 @@ const FILTERS: Filter[] = ['All Updates', 'Announcements', 'System Updates', 'El
 const ARTICLES: Article[] = [
   {
     id: 1,
-    headline: "System Maintenance Scheduled",
-    details: "UniVote platform will undergo scheduled maintenance this weekend to improve performance and security.",
-    category: "System Updates",
-    timeAgo: "2 Hours ago",
-    bgColor: "bg-green-500"
+    headline: "Election Day Is Approaching",
+    details: "With the election just around the corner, it's crucial to be prepared. Ensure you know your polling location and the candidates on your ballot. Remember, every vote counts in shaping our campus community's future. Stay informed and make your voice heard!",
+    category: "Election News",
+    timeAgo: "Posted 2 hours ago",
+    bgColor: "bg-blue-100",
+    image: "https://images.unsplash.com/photo-1541872718-0b1c8b2d9afa?w=400&h=250&fit=crop"
   },
   {
     id: 2,
-    headline: "New Candidate Registration Open",
-    details: "Registration for new candidates is now open for the upcoming university elections. Submit your applications before the deadline.",
-    category: "Announcements",
-    timeAgo: "5 Hours ago",
-    bgColor: "bg-cyan-400"
+    headline: "Candidate Debate Recap",
+    details: "The candidate debate provided valuable insights into each candidate's vision for our university. Key topics included academic reforms, student support services, and campus sustainability. If you missed it, a full recap is available on our website. Understanding the candidates' platforms is essential for making an informed decision.",
+    category: "Election News",
+    timeAgo: "Posted 1 day ago",
+    bgColor: "bg-purple-100",
+    image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=250&fit=crop"
   },
   {
     id: 3,
-    headline: "Election Results Announcement",
-    details: "Final results for the student council elections have been verified and will be published tomorrow morning.",
-    category: "Election News",
-    timeAgo: "4 hours ago",
-    bgColor: "bg-amber-300"
+    headline: "Important Election Dates",
+    details: "Mark your calendar! Early voting begins on March 15th and runs through March 22nd. Election Day is March 25th. Don't miss the opportunity to cast your vote and influence the direction of our university. Check our website for detailed voting hours and locations.",
+    category: "Announcements",
+    timeAgo: "Posted 2 days ago",
+    bgColor: "bg-yellow-100",
+    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop"
+  },
+  {
+    id: 4,
+    headline: "System Maintenance Scheduled",
+    details: "UniVote platform will undergo scheduled maintenance this weekend to improve performance and security. The system will be temporarily unavailable on Saturday from 2 AM to 6 AM. We apologize for any inconvenience.",
+    category: "System Updates",
+    timeAgo: "Posted 3 days ago",
+    bgColor: "bg-green-100",
+    image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=250&fit=crop"
   }
 ];
+
+const getCategoryColor = (category: string) => {
+  const colors: Record<string, string> = {
+    'Election News': 'bg-blue-500',
+    'Announcements': 'bg-orange-500',
+    'System Updates': 'bg-green-500'
+  };
+  return colors[category] || 'bg-gray-500';
+};
 
 const UpdatesPage = () => {
   const [activeFilter, setActiveFilter] = useState<Filter>('All Updates');
@@ -190,18 +212,18 @@ const UpdatesPage = () => {
       <Header />
 
       {/* Main Content */}
-      <div ref={contentRef} className="flex flex-col items-center px-4 py-8">
+      <div ref={contentRef} className="flex flex-col items-center px-4 py-8 pt-32">
         {/* Title Section */}
-        <div className="w-full max-w-[1280px] mb-8">
-          <h1 className="text-white text-3xl font-bold font-['Geist'] mb-2">News and Updates</h1>
-          <p className="text-gray-300 text-base font-normal font-['Geist']">
+        <div className="w-full max-w-4xl mb-8">
+          <h1 className="text-white text-4xl font-bold font-['Geist'] mb-2">Updates</h1>
+          <p className="text-gray-300 text-lg font-normal font-['Geist']">
             Stay informed with the latest news and announcements from UniVote.
           </p>
         </div>
 
         {/* Filter Section */}
-        <div className="w-full max-w-[1165px] h-16 bg-red-900 rounded-[20px] outline outline-[3px] outline-offset-[-3px] outline-red-50/95 mb-8 relative">
-          <div className="flex justify-between items-center h-full px-10">
+        <div className="w-full max-w-4xl mb-8">
+          <div className="bg-red-900 rounded-[20px] outline outline-[3px] outline-offset-[-3px] outline-red-50/95 p-2 inline-flex gap-2">
             {FILTERS.map((filter, index) => (
               <button
                 key={filter}
@@ -209,64 +231,75 @@ const UpdatesPage = () => {
                 onClick={() => handleFilterClick(filter, index)}
                 onMouseEnter={() => handleFilterHover(index, true)}
                 onMouseLeave={() => handleFilterHover(index, false)}
-                className={`px-6 py-2 rounded-3xl outline outline-4 outline-offset-[-4px] outline-stone-500 backdrop-blur-[2px] transition-all duration-300 cursor-pointer
-                  ${activeFilter === filter 
+                className={`px-6 py-2 rounded-xl font-medium transition-all duration-200 ${
+                  activeFilter === filter 
                     ? 'bg-orange-300 text-black shadow-lg' 
-                    : 'bg-white text-red-800 hover:bg-gray-100'
-                  }`}
+                    : 'text-white hover:bg-red-800'
+                }`}
               >
-                <span className="text-xl font-medium font-['Inter']">{filter}</span>
+                {filter}
               </button>
             ))}
           </div>
         </div>
 
         {/* Articles Section */}
-        <div className="w-full max-w-[1165px] bg-red-900 rounded-[20px] outline outline-[3px] outline-offset-[-3px] outline-red-50/95 p-10">
-          <div className="space-y-8">
-            {filteredArticles.map((article, index) => (
-              <div
-                key={article.id}
-                ref={el => { articlesRef.current[index] = el; }}
-                onMouseEnter={() => handleArticleHover(index, true)}
-                onMouseLeave={() => handleArticleHover(index, false)}
-                className="bg-white rounded-2xl outline outline-4 outline-offset-[-4px] outline-stone-500 backdrop-blur-[2px] p-10 cursor-pointer transition-all duration-300 relative"
-              >
-                {/* Category Tag */}
-                <div className={`category-tag absolute top-6 right-10 px-6 py-2 ${article.bgColor} rounded-3xl outline outline-4 outline-offset-[-4px] outline-stone-500 backdrop-blur-[2px]`}>
-                  <span className="text-black text-xl font-medium font-['Inter']">{article.category}</span>
+        <div className="w-full max-w-4xl space-y-6">
+          {filteredArticles.map((article, index) => (
+            <div
+              key={article.id}
+              ref={el => { articlesRef.current[index] = el; }}
+              onMouseEnter={() => handleArticleHover(index, true)}
+              onMouseLeave={() => handleArticleHover(index, false)}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
+            >
+              <div className="flex">
+                {/* Image Section */}
+                <div className="w-80 h-64 flex-shrink-0">
+                  <img 
+                    src={article.image} 
+                    alt={article.headline}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-
-                {/* Headline */}
-                <h2 className="text-red-800 text-4xl font-medium font-['Baloo_2'] leading-[51px] mb-6 max-w-[70%]">
-                  {article.headline}
-                </h2>
-
-                {/* Details */}
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="text-red-800 text-2xl font-medium font-['Inter'] mb-4">Details:</div>
-                    <p className="text-gray-700 text-lg font-['Inter'] leading-relaxed max-w-[80%]">
-                      {article.details}
-                    </p>
+                
+                {/* Content Section */}
+                <div className="flex-1 p-6 relative">
+                  {/* Category Tag */}
+                  <div className={`category-tag absolute top-4 right-4 px-3 py-1 rounded-full text-white text-sm font-medium ${getCategoryColor(article.category)}`}>
+                    {article.category}
                   </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-200">
-                  <span className="text-red-800 text-xl font-medium font-['Inter']">{article.timeAgo}</span>
-                  <span className="text-red-800 text-xl font-medium font-['Inter']">Tap the article for full details</span>
+                  
+                  {/* Time Stamp */}
+                  <p className="text-blue-500 text-sm font-medium mb-2">
+                    {article.timeAgo}
+                  </p>
+                  
+                  {/* Headline */}
+                  <h2 className="text-xl font-bold text-gray-900 mb-3 pr-24">
+                    {article.headline}
+                  </h2>
+                  
+                  {/* Details */}
+                  <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                    {article.details}
+                  </p>
+                  
+                  {/* View Post Button */}
+                  <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">
+                    View Post
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {filteredArticles.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-white text-2xl font-medium">No updates found for this category.</p>
             </div>
-          )}
+          ))}
         </div>
+
+        {filteredArticles.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-white text-2xl font-medium">No updates found for this category.</p>
+          </div>
+        )}
       </div>
 
       <Footer />
