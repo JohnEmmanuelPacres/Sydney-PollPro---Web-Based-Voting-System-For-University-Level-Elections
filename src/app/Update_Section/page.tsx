@@ -61,9 +61,9 @@ const ARTICLES: Article[] = [
 
 const getCategoryColor = (category: string) => {
   const colors: Record<string, string> = {
-    'Election News': 'bg-blue-500',
-    'Announcements': 'bg-orange-500',
-    'System Updates': 'bg-green-500'
+    'Election News': 'bg-blue-600',
+    'Announcements': 'bg-orange-500', 
+    'System Updates': 'bg-green-600'
   };
   return colors[category] || 'bg-gray-500';
 };
@@ -212,18 +212,18 @@ const UpdatesPage = () => {
       <Header />
 
       {/* Main Content */}
-      <div ref={contentRef} className="flex flex-col items-center px-4 py-8 pt-32">
+      <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
         {/* Title Section */}
-        <div className="w-full max-w-4xl mb-8">
-          <h1 className="text-white text-4xl font-bold font-['Geist'] mb-2">Updates</h1>
-          <p className="text-gray-300 text-lg font-normal font-['Geist']">
+        <div className="w-full max-w-4xl mb-6 sm:mb-8 px-2 sm:px-0">
+          <h1 className="text-white text-2xl sm:text-4xl font-bold font-['Geist'] mb-2">Updates</h1>
+          <p className="text-orange-100 text-base sm:text-lg font-normal font-['Geist']">
             Stay informed with the latest news and announcements from UniVote.
           </p>
         </div>
 
         {/* Filter Section */}
-        <div className="w-full max-w-4xl mb-8">
-          <div className="bg-red-900 rounded-[20px] outline outline-[3px] outline-offset-[-3px] outline-red-50/95 p-2 inline-flex gap-2">
+        <div className="w-full max-w-4xl mb-6 sm:mb-8 px-0">
+          <div className="bg-[#7A1B1B] rounded-[16px] border-2 border-[#FFD700] p-1 flex gap-1">
             {FILTERS.map((filter, index) => (
               <button
                 key={filter}
@@ -231,10 +231,10 @@ const UpdatesPage = () => {
                 onClick={() => handleFilterClick(filter, index)}
                 onMouseEnter={() => handleFilterHover(index, true)}
                 onMouseLeave={() => handleFilterHover(index, false)}
-                className={`px-6 py-2 rounded-xl font-medium transition-all duration-200 ${
+                className={`flex-1 px-2 sm:px-4 py-2 rounded-[12px] font-semibold transition-all duration-200 text-xs sm:text-sm shadow-none border-none outline-none focus:ring-2 focus:ring-[#FFD700] focus:z-10 ${
                   activeFilter === filter 
-                    ? 'bg-orange-300 text-black shadow-lg' 
-                    : 'text-white hover:bg-red-800'
+                    ? 'bg-[#FFD700] text-[#6B0000] shadow-lg' 
+                    : 'text-white hover:bg-[#8B2323]'
                 }`}
               >
                 {filter}
@@ -251,45 +251,38 @@ const UpdatesPage = () => {
               ref={el => { articlesRef.current[index] = el; }}
               onMouseEnter={() => handleArticleHover(index, true)}
               onMouseLeave={() => handleArticleHover(index, false)}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200 cursor-pointer"
+              className="bg-white rounded-[16px] border-2 border-[#FFD700] shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer flex flex-col sm:flex-row"
             >
-              <div className="flex">
-                {/* Image Section */}
-                <div className="w-80 h-64 flex-shrink-0">
-                  <img 
-                    src={article.image} 
-                    alt={article.headline}
-                    className="w-full h-full object-cover"
-                  />
+              {/* Image Section */}
+              <div className="w-full sm:w-80 h-48 sm:h-64 flex-shrink-0">
+                <img 
+                  src={article.image} 
+                  alt={article.headline}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Content Section */}
+              <div className="flex-1 p-4 sm:p-6 relative">
+                {/* Category Tag */}
+                <div className={`category-tag absolute top-3 right-3 sm:top-4 sm:right-4 px-2 sm:px-3 py-1 rounded-full text-white text-xs font-semibold tracking-wide shadow ${getCategoryColor(article.category)}`}>
+                  {article.category}
                 </div>
-                
-                {/* Content Section */}
-                <div className="flex-1 p-6 relative">
-                  {/* Category Tag */}
-                  <div className={`category-tag absolute top-4 right-4 px-3 py-1 rounded-full text-white text-sm font-medium ${getCategoryColor(article.category)}`}>
-                    {article.category}
-                  </div>
-                  
-                  {/* Time Stamp */}
-                  <p className="text-blue-500 text-sm font-medium mb-2">
-                    {article.timeAgo}
-                  </p>
-                  
-                  {/* Headline */}
-                  <h2 className="text-xl font-bold text-gray-900 mb-3 pr-24">
-                    {article.headline}
-                  </h2>
-                  
-                  {/* Details */}
-                  <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                    {article.details}
-                  </p>
-                  
-                  {/* View Post Button */}
-                  <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">
-                    View Post
-                  </button>
-                </div>
+                {/* Time Stamp */}
+                <p className="text-[#6B0000] text-xs font-semibold mb-1 sm:mb-2">
+                  {article.timeAgo}
+                </p>
+                {/* Headline */}
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 pr-12 sm:pr-24">
+                  {article.headline}
+                </h2>
+                {/* Details */}
+                <p className="text-gray-700 text-sm leading-relaxed mb-3 sm:mb-4">
+                  {article.details}
+                </p>
+                {/* View Post Button */}
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold shadow transition-colors duration-200 w-full sm:w-auto">
+                  View Post
+                </button>
               </div>
             </div>
           ))}
@@ -297,7 +290,7 @@ const UpdatesPage = () => {
 
         {filteredArticles.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-white text-2xl font-medium">No updates found for this category.</p>
+            <p className="text-white text-xl sm:text-2xl font-medium">No updates found for this category.</p>
           </div>
         )}
       </div>
