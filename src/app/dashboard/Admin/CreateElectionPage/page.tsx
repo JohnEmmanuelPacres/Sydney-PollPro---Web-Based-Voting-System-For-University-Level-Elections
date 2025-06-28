@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { supabase } from "@/utils/supabaseClient"
 import { useAdminOrg } from '../AdminedOrgContext'; //React Context
 import { Button } from "@/components/ui/button"
@@ -45,6 +45,8 @@ interface Candidate {
   year: string
   platform: string
   detailedCredentials?: string
+  picture_url?: string
+
 }
 
 interface Election {
@@ -378,7 +380,11 @@ export default function CreateElectionPage() {
     year: "",
     platform: "",
     status: "pending",
+    picture_url: "",
   })
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
@@ -455,6 +461,7 @@ export default function CreateElectionPage() {
         course: course, // Use parsed course
         year: year, // Use parsed year
         platform: newCandidate.platform || "",
+        picture_url: newCandidate.picture_url || "",
       }
       setElection((prev) => ({
         ...prev,
@@ -469,6 +476,7 @@ export default function CreateElectionPage() {
         year: "",
         platform: "",
         status: "pending",
+        picture_url: "",
       })
       setIsAddCandidateOpen(false)
     }
@@ -485,6 +493,7 @@ export default function CreateElectionPage() {
       year: candidate.year,
       platform: candidate.platform,
       status: candidate.status,
+      picture_url: candidate.picture_url || "",
     })
     setIsEditCandidateOpen(true)
   }
@@ -508,6 +517,7 @@ export default function CreateElectionPage() {
                 year: year, // Use parsed year
                 platform: newCandidate.platform || "",
                 status: newCandidate.status || "pending",
+                picture_url: newCandidate.picture_url || c.picture_url || "",
               }
             : c
         ),
@@ -523,6 +533,7 @@ export default function CreateElectionPage() {
         year: "",
         platform: "",
         status: "pending",
+        picture_url: "",
       })
       setEditingCandidate(null)
       setIsEditCandidateOpen(false)
@@ -588,6 +599,7 @@ export default function CreateElectionPage() {
       status: c.status,
       platform: c.platform,
       detailed_achievements: c.credentials || '',
+      picture_url: c.picture_url || null,
     }));
     const payload = {
       electionData: {
@@ -635,6 +647,30 @@ export default function CreateElectionPage() {
   const getPositionById = (positionId: string) => {
     return election.positions.find((p) => p.id === positionId)
   }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Only accept image files
+    const acceptedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!acceptedTypes.includes(file.type)) {
+      alert('Only image files (png, jpg, jpeg, gif, webp) are allowed.');
+      return;
+    }
+    setImageUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const filePath = `candidate1/candidate-${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from('election').upload(filePath, file, { upsert: true });
+    if (uploadError) {
+      alert('Failed to upload image: ' + uploadError.message);
+      setImageUploading(false);
+      return;
+    }
+    const { data } = supabase.storage.from('election').getPublicUrl(filePath);
+    setImageUrl(data.publicUrl);
+    setNewCandidate((prev) => ({ ...prev, picture_url: data.publicUrl }));
+    setImageUploading(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#52100D]">
@@ -781,14 +817,36 @@ export default function CreateElectionPage() {
                             <DialogTitle className="text-red-900">Add New Candidate</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
+                            <div className="flex flex-col items-center">
+                                <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
+                                {imageUrl ? (
+                                    <img src={imageUrl} alt="Candidate" className="w-full h-full object-cover" />
+                                ) : (
+                                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                )}
+                                </div>
+                                <input
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                style={{ display: 'none' }}
+                                onChange={handleImageChange}
+                                disabled={imageUploading}
+                                />
+                                <Button
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="mt-1 bg-gray-200 text-red-900 hover:bg-gray-100 focus:bg-gray-100 border border-gray-300"
+                                disabled={imageUploading}
+                                >
+                                {imageUploading ? 'Uploading...' : (imageUrl ? 'Change Picture' : 'Upload Picture')}
+                                </Button>
+                            </div>
                             <div>
                                 <Label htmlFor="candidate-name" className="text-black">Full Name</Label>
-                                <Input className="text-black"
-                                id="candidate-name"
-                                value={newCandidate.name || ""}
-                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
-                                placeholder="Enter full name"
-                                />
+                                <Input className="text-black focus:ring-2 focus:ring-red-200 hover:bg-gray-50" id="candidate-name" value={newCandidate.name || ""} onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))} placeholder="Enter full name" />
                             </div>
                             <div>
                                 <Label htmlFor="candidate-email" className="text-black">Email</Label>
@@ -850,7 +908,7 @@ export default function CreateElectionPage() {
                                 rows={4}
                                 />
                             </div>
-                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800">
+                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-700 focus:bg-red-700">
                                 Add Candidate
                             </Button>
                             </div>
@@ -874,6 +932,7 @@ export default function CreateElectionPage() {
                                 candidate={{
                                 ...candidate,
                                 position: position.title,
+                                picture_url: candidate.picture_url || "",
                                 }}
                                 onDelete={handleDeleteCandidate}
                                 onApprove={(id) => handleStatusChange(id, "approved")}

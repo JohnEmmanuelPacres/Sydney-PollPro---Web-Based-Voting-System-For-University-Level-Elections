@@ -22,6 +22,7 @@ interface Candidate {
   status: "pending" | "approved" | "disqualified";
   platform: string;
   detailed_achievements: string;
+  picture_url?: string;
 }
 
 // Use the Supabase service role key for server-side operations (bypasses RLS)
@@ -103,7 +104,8 @@ export async function POST(request: Request) {
         election_id: election.id,
         status: candidate.status,
         platform: candidate.platform,
-        detailed_achievements: candidate.detailed_achievements
+        detailed_achievements: candidate.detailed_achievements,
+        picture_url: candidate.picture_url || null,
       };
     });
 
