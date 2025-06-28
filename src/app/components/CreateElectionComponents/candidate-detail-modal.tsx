@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { User, Award, FileText, Check, X, Edit } from "lucide-react"
+import { useRef, useState } from 'react';
+import { supabase } from '@/utils/supabaseClient';
 
 interface CandidateDetailModalProps {
   candidate: {
@@ -19,6 +21,7 @@ interface CandidateDetailModalProps {
     platform?: string
     achievements?: string[]
     experience?: string[]
+    picture_url?: string
   } | null
   isOpen: boolean
   onClose: () => void
@@ -37,6 +40,29 @@ export function CandidateDetailModal({
 }: CandidateDetailModalProps) {
   if (!candidate) return null
 
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState(candidate.picture_url || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const filePath = `candidates/candidate-${candidate.id}-${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage.from('election').upload(filePath, file, { upsert: true });
+    if (error) {
+      alert('Failed to upload image');
+      setUploading(false);
+      return;
+    }
+    const { data } = supabase.storage.from('election').getPublicUrl(filePath);
+    setImageUrl(data.publicUrl);
+    setUploading(false);
+    // Optionally, update the candidate object with the new image URL
+    onEdit?.({ ...candidate, picture_url: data.publicUrl });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
@@ -53,8 +79,12 @@ export function CandidateDetailModal({
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b border-red-100 pb-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-red-900 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-red-900 rounded-full flex items-center justify-center overflow-hidden">
+              {imageUrl ? (
+                <img src={imageUrl} alt="Candidate" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-8 h-8 text-white" />
+              )}
             </div>
             <div className="flex-1">
               <DialogTitle className="text-2xl text-red-900">{candidate.name}</DialogTitle>
@@ -64,6 +94,24 @@ export function CandidateDetailModal({
                 <Badge className={getStatusColor(candidate.status)}>{candidate.status}</Badge>
               </div>
             </div>
+          </div>
+          <div className="mt-2">
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+            <Button
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-2"
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading...' : (imageUrl ? 'Change Picture' : 'Upload Picture')}
+            </Button>
           </div>
         </DialogHeader>
 
