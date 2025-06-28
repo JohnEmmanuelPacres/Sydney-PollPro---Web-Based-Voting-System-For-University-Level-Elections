@@ -38,14 +38,13 @@ interface Candidate {
   name: string
   email: string
   positionId: string
+  positionName?: string // Optional for displaying in detail view
   status: "pending" | "approved" | "disqualified"
   credentials: string
   course: string
   year: string
   platform: string
   detailedCredentials?: string
-  achievements?: string[]
-  experience?: string[]
 }
 
 interface Election {
@@ -373,7 +372,7 @@ export default function CreateElectionPage() {
   const [newCandidate, setNewCandidate] = useState<Partial<Candidate>>({
     name: "",
     email: "",
-    positionId: "",
+    positionName: "",
     credentials: "",
     course: "",
     year: "",
@@ -404,8 +403,48 @@ export default function CreateElectionPage() {
     }
   }
 
+  // Helper function to parse course_year string (same as in API route)
+  const parseCourseYear = (courseYearString: string | null | undefined): { course: string; year: string } => {
+    if (!courseYearString || typeof courseYearString !== 'string') {
+      return { course: '', year: '' };
+    }
+
+    const trimmed = courseYearString.trim();
+    
+    // Handle the format "BS Civil Engineering - 1st Year"
+    if (trimmed.includes(' - ')) {
+      const parts = trimmed.split(' - ');
+      if (parts.length >= 2) {
+        return {
+          course: parts[0].trim(),
+          year: parts[1].trim()
+        };
+      }
+    }
+    
+    // Handle alternative formats like "BS Civil Engineering-1st Year" (no spaces around dash)
+    if (trimmed.includes('-')) {
+      const parts = trimmed.split('-');
+      if (parts.length >= 2) {
+        return {
+          course: parts[0].trim(),
+          year: parts[1].trim()
+        };
+      }
+    }
+    
+    // If no separator found, treat the whole string as course
+    return {
+      course: trimmed,
+      year: ''
+    };
+  };
+
   const handleAddCandidate = () => {
     if (newCandidate.name && newCandidate.email && newCandidate.positionId) {
+      // Parse the course-year input
+      const { course, year } = parseCourseYear(newCandidate.course);
+      
       const candidate: Candidate = {
         id: Date.now().toString(),
         name: newCandidate.name!,
@@ -413,8 +452,8 @@ export default function CreateElectionPage() {
         positionId: newCandidate.positionId!,
         status: "pending",
         credentials: newCandidate.credentials || "",
-        course: newCandidate.course || "",
-        year: newCandidate.year || "",
+        course: course, // Use parsed course
+        year: year, // Use parsed year
         platform: newCandidate.platform || "",
       }
       setElection((prev) => ({
@@ -442,7 +481,7 @@ export default function CreateElectionPage() {
       email: candidate.email,
       positionId: candidate.positionId,
       credentials: candidate.credentials,
-      course: candidate.course,
+      course: candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : candidate.course || '',
       year: candidate.year,
       platform: candidate.platform,
       status: candidate.status,
@@ -452,6 +491,9 @@ export default function CreateElectionPage() {
 
   const handleUpdateCandidate = () => {
     if (editingCandidate && newCandidate.name && newCandidate.email && newCandidate.positionId) {
+      // Parse the course-year input
+      const { course, year } = parseCourseYear(newCandidate.course);
+      
       setElection((prev) => ({
         ...prev,
         candidates: prev.candidates.map((c) =>
@@ -462,8 +504,8 @@ export default function CreateElectionPage() {
                 email: newCandidate.email!,
                 positionId: newCandidate.positionId!,
                 credentials: newCandidate.credentials || "",
-                course: newCandidate.course || "",
-                year: newCandidate.year || "",
+                course: course, // Use parsed course
+                year: year, // Use parsed year
                 platform: newCandidate.platform || "",
                 status: newCandidate.status || "pending",
               }
@@ -1098,11 +1140,17 @@ export default function CreateElectionPage() {
 
                 {/* Candidate Detail Modal */}
                 <CandidateDetailModal
-                candidate={detailViewCandidate}
+                candidate={
+                  detailViewCandidate? {
+                    ...detailViewCandidate,
+                    positionName: getPositionById(detailViewCandidate.positionId)?.title || "Unknown Position"
+                  } : null
+                }
                 isOpen={!!detailViewCandidate}
                 onClose={() => setDetailViewCandidate(null)}
                 onApprove={(id) => handleStatusChange(id, "approved")}
                 onDisqualify={(id) => handleStatusChange(id, "disqualified")}
+                onEdit={handleEditCandidate}
                 />
             </div>
         </main>
