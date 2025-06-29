@@ -69,33 +69,76 @@ const AdminUpdateSection = () => {
 
   // Load existing articles
   useEffect(() => {
-    if (currentUser && orgId) {
-      loadArticles();
-    }
-  }, [currentUser, orgId]);
+    const loadArticlesWithRetry = async () => {
+      if (currentUser?.id) {
+        console.log('Loading articles for user:', currentUser.id, 'org:', orgId); // Debug log
+        
+        // If we don't have orgId yet, wait a bit and try again
+        if (!orgId) {
+          console.log('No orgId yet, waiting...');
+          setTimeout(() => {
+            if (currentUser?.id) {
+              loadArticles();
+            }
+          }, 1000);
+        } else {
+          loadArticles();
+        }
+      }
+    };
+
+    loadArticlesWithRetry();
+  }, [currentUser?.id, orgId]); // Use specific properties instead of objects
 
   const loadArticles = async () => {
     setIsLoading(true);
     try {
-      const { data: posts, error } = await supabase
+      console.log('Loading articles for user:', currentUser?.id, 'org:', orgId); // Debug log
+
+      // First, let's try a simpler query to see what we can access
+      let query = supabase
         .from('posts')
         .select('*')
-        .or(`org_id.eq.${orgId},and(admin_id.eq.${currentUser?.id},is_uni_lev.eq.true)`)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      // Add filters based on what we have
+      if (orgId && currentUser?.id) {
+        // If we have both orgId and user, filter by organization OR university level posts by this admin
+        query = query.or(`org_id.eq.${orgId},and(admin_id.eq.${currentUser.id},is_uni_lev.eq.true)`);
+      } else if (currentUser?.id) {
+        // If no orgId but we have user, just get university level posts by this admin
+        query = query.eq('admin_id', currentUser.id).eq('is_uni_lev', true);
+      }
 
-      const transformedArticles: Article[] = posts.map((post: any) => ({
-        id: post.id,
-        headline: post.title,
-        content: post.content,
-        category: post.category as Category,
-        images: Array.isArray(post.image_urls) ? post.image_urls.map(() => new File([], 'image')) : [],
-        publishedAt: new Date(post.created_at),
-        status: 'published',
-        isUniLevel: post.is_uni_lev,
-      }));
+      const { data: posts, error } = await query;
 
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Fetched posts:', posts); // Debug log
+
+      const transformedArticles: Article[] = (posts || []).map((post: any) => {
+        // Safely handle image_urls - it could be null, undefined, or an array
+        let images: File[] = [];
+        if (post.image_urls && Array.isArray(post.image_urls) && post.image_urls.length > 0) {
+          images = post.image_urls.map(() => new File([], 'image'));
+        }
+
+        return {
+          id: post.id,
+          headline: post.title,
+          content: post.content,
+          category: post.category as Category,
+          images: images,
+          publishedAt: new Date(post.created_at),
+          status: 'published',
+          isUniLevel: post.is_uni_lev,
+        };
+      });
+
+      console.log('Transformed articles:', transformedArticles); // Debug log
       setArticles(transformedArticles);
     } catch (error) {
       console.error('Error loading articles:', error);
@@ -191,7 +234,7 @@ const AdminUpdateSection = () => {
       }
 
       // Update local state and reset form
-      setArticles(prev => [{
+      const newArticle: Article = {
         id: post.id,
         headline: post.title,
         content: post.content,
@@ -200,7 +243,10 @@ const AdminUpdateSection = () => {
         publishedAt: new Date(post.created_at),
         status: 'published',
         isUniLevel: post.is_uni_lev
-      }, ...prev]);
+      };
+
+      console.log('Adding new article to state:', newArticle); // Debug log
+      setArticles(prev => [newArticle, ...prev]);
       
       setCurrentArticle({
         id: '',
@@ -239,6 +285,20 @@ const AdminUpdateSection = () => {
     return 'Posted just now';
   };
 
+  const handleTabChange = (tab: 'create' | 'manage') => {
+    setActiveTab(tab);
+    if (tab === 'manage') {
+      // Force reload articles when switching to manage tab
+      console.log('Switching to manage tab, reloading articles...');
+      loadArticles();
+    }
+  };
+
+  const refreshArticles = () => {
+    console.log('Manual refresh triggered');
+    loadArticles();
+  };
+
   return (
     <div className="min-h-screen bg-red-950 font-inter">
       <AdminHeader />
@@ -258,7 +318,7 @@ const AdminUpdateSection = () => {
           <div className="bg-[#7A1B1B] rounded-[16px] border-2 border-[#FFD700] p-1 mb-8">
             <div className="flex gap-1">
               <button
-                onClick={() => setActiveTab('create')}
+                onClick={() => handleTabChange('create')}
                 className={`flex-1 px-4 py-3 rounded-[12px] font-semibold transition-all duration-200 text-sm ${
                   activeTab === 'create' 
                     ? 'bg-[#FFD700] text-[#6B0000] shadow-lg' 
@@ -271,7 +331,7 @@ const AdminUpdateSection = () => {
                 </div>
               </button>
               <button
-                onClick={() => setActiveTab('manage')}
+                onClick={() => handleTabChange('manage')}
                 className={`flex-1 px-4 py-3 rounded-[12px] font-semibold transition-all duration-200 text-sm ${
                   activeTab === 'manage' 
                     ? 'bg-[#FFD700] text-[#6B0000] shadow-lg' 
@@ -465,7 +525,19 @@ const AdminUpdateSection = () => {
           ) : (
             /* Manage Articles */
             <div className="space-y-6">
-              <h2 className="text-white text-2xl font-bold">Published Articles</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-white text-2xl font-bold">Published Articles</h2>
+                <button
+                  onClick={refreshArticles}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-[#FFD700] text-[#6B0000] rounded-lg font-semibold hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Refresh</span>
+                </button>
+              </div>
               
               {isLoading ? (
                 <div className="flex justify-center items-center py-20">

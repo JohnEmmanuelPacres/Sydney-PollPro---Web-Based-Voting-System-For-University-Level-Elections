@@ -105,23 +105,41 @@ const UpdatesPage = () => {
         }),
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', response.status, errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      const { posts } = await response.json();
+      const { posts, error: apiError } = await response.json();
+      
+      if (apiError) {
+        console.error('API returned error:', apiError);
+        throw new Error(apiError);
+      }
 
-      const transformedArticles: Article[] = posts.map((post: any) => ({
-        id: post.id,
-        headline: post.title,
-        details: post.content,
-        category: post.category,
-        timeAgo: formatTimeAgo(new Date(post.created_at)),
-        bgColor: getCategoryBgColor(post.category),
-        image: Array.isArray(post.image_urls) && post.image_urls.length > 0 
-          ? post.image_urls[0]  // Use first image if array exists
-          : '/default-news.jpg', // Fallback if no images
-        isUniLevel: post.is_uni_lev,
-      }));
+      console.log('Fetched posts from API:', posts); // Debug log
 
+      const transformedArticles: Article[] = (posts || []).map((post: any) => {
+        // Safely handle image_urls - it could be null, undefined, or an array
+        let imageUrl = '/default-news.jpg'; // Default fallback
+        if (post.image_urls && Array.isArray(post.image_urls) && post.image_urls.length > 0) {
+          imageUrl = post.image_urls[0];
+        }
+
+        return {
+          id: post.id,
+          headline: post.title,
+          details: post.content,
+          category: post.category,
+          timeAgo: formatTimeAgo(new Date(post.created_at)),
+          bgColor: getCategoryBgColor(post.category),
+          image: imageUrl,
+          isUniLevel: post.is_uni_lev,
+        };
+      });
+
+      console.log('Transformed articles for voter:', transformedArticles); // Debug log
       setArticles(transformedArticles);
     } catch (error) {
       console.error('Error loading articles:', error);
