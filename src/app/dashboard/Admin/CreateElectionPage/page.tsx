@@ -23,6 +23,7 @@ import { CandidateDetailModal } from "../../../components/CreateElectionComponen
 import { EmptyState } from "../../../components/CreateElectionComponents/empty-state"
 import { MultiSelectDropdown } from "../../../components/CreateElectionComponents/multi-select-dropdown"
 import AdminHeader from "../../../components/AdminHeader"
+import { useSearchParams } from "next/navigation";
 
 interface Position {
   id: string
@@ -325,7 +326,8 @@ const courseYearOptions = [
 ];
 
 export default function CreateElectionPage() {
-  const { administeredOrg } = useAdminOrg();
+  const searchParams = useSearchParams();
+  const administeredOrg = searchParams.get('administered_Org') || '';
   const [orgID, setOrgId] = useState('');
   useEffect(() => {
     const fetchOrgId = async () => {
@@ -411,6 +413,9 @@ export default function CreateElectionPage() {
 
   const handleAddCandidate = () => {
     if (newCandidate.name && newCandidate.email && newCandidate.positionId) {
+      // Parse the course-year input
+      const { course, year } = parseCourseYear(newCandidate.course);
+      
       const candidate: Candidate = {
         id: Date.now().toString(),
         name: newCandidate.name!,
@@ -418,11 +423,12 @@ export default function CreateElectionPage() {
         positionId: newCandidate.positionId!,
         status: "pending",
         credentials: newCandidate.credentials || "",
-        course: newCandidate.course || "",
-        year: newCandidate.year || "",
+        course: course, // Use parsed course
+        year: year, // Use parsed year
         platform: newCandidate.platform || "",
         picture_url: newCandidate.picture_url || "",
       }
+      
       setElection((prev) => ({
         ...prev,
         candidates: [...prev.candidates, candidate],
@@ -438,28 +444,35 @@ export default function CreateElectionPage() {
         status: "pending",
         picture_url: "",
       })
+      setImageUrl(''); // Reset the image URL
       setIsAddCandidateOpen(false)
     }
   }
 
   const handleEditCandidate = (candidate: Candidate) => {
     setEditingCandidate(candidate)
+    const formattedCourse = candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : candidate.course || '';
+    
     setNewCandidate({
       name: candidate.name,
       email: candidate.email,
       positionId: candidate.positionId,
       credentials: candidate.credentials,
-      course: candidate.course,
+      course: formattedCourse,
       year: candidate.year,
       platform: candidate.platform,
       status: candidate.status,
       picture_url: candidate.picture_url || "",
     })
+    setImageUrl(candidate.picture_url || ''); // Set the image URL for the edit dialog
     setIsEditCandidateOpen(true)
   }
 
   const handleUpdateCandidate = () => {
     if (editingCandidate && newCandidate.name && newCandidate.email && newCandidate.positionId) {
+      // Parse the course-year input
+      const { course, year } = parseCourseYear(newCandidate.course);
+      
       setElection((prev) => ({
         ...prev,
         candidates: prev.candidates.map((c) =>
@@ -470,8 +483,8 @@ export default function CreateElectionPage() {
                 email: newCandidate.email!,
                 positionId: newCandidate.positionId!,
                 credentials: newCandidate.credentials || "",
-                course: newCandidate.course || "",
-                year: newCandidate.year || "",
+                course: course, // Use parsed course
+                year: year, // Use parsed year
                 platform: newCandidate.platform || "",
                 status: newCandidate.status || "pending",
                 picture_url: newCandidate.picture_url || c.picture_url || "",
@@ -492,6 +505,7 @@ export default function CreateElectionPage() {
         status: "pending",
         picture_url: "",
       })
+      setImageUrl(''); // Reset the image URL
       setEditingCandidate(null)
       setIsEditCandidateOpen(false)
     }
@@ -604,6 +618,43 @@ export default function CreateElectionPage() {
   const getPositionById = (positionId: string) => {
     return election.positions.find((p) => p.id === positionId)
   }
+
+  // Helper function to parse course_year string (same as in API route)
+  const parseCourseYear = (courseYearString: string | null | undefined): { course: string; year: string } => {
+    if (!courseYearString || typeof courseYearString !== 'string') {
+      return { course: '', year: '' };
+    }
+
+    const trimmed = courseYearString.trim();
+    
+    // Handle the format "BS Civil Engineering - 1st Year"
+    if (trimmed.includes(' - ')) {
+      const parts = trimmed.split(' - ');
+      if (parts.length >= 2) {
+        return {
+          course: parts[0].trim(),
+          year: parts[1].trim()
+        };
+      }
+    }
+    
+    // Handle alternative formats like "BS Civil Engineering-1st Year" (no spaces around dash)
+    if (trimmed.includes('-')) {
+      const parts = trimmed.split('-');
+      if (parts.length >= 2) {
+        return {
+          course: parts[0].trim(),
+          year: parts[1].trim()
+        };
+      }
+    }
+    
+    // If no separator found, treat the whole string as course
+    return {
+      course: trimmed,
+      year: ''
+    };
+  };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -832,7 +883,7 @@ export default function CreateElectionPage() {
                             </div>
                             <div className="text-black">
                                 <Label htmlFor="candidate-course" className="text-black">Course and Year</Label>
-                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))}>
+                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))} value={newCandidate.course || ""}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select course and Year" />
                                 </SelectTrigger>
@@ -884,19 +935,19 @@ export default function CreateElectionPage() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {getPositionCandidates(position.id).map((candidate) => (
-                            <CandidateCard
-                                key={candidate.id}
-                                candidate={{
-                                ...candidate,
-                                position: position.title,
-                                picture_url: candidate.picture_url || "",
-                                }}
-                                onDelete={handleDeleteCandidate}
-                                onApprove={(id) => handleStatusChange(id, "approved")}
-                                onDisqualify={(id) => handleStatusChange(id, "disqualified")}
-                                onViewDetails={setDetailViewCandidate}
-                                onEdit={handleEditCandidate}
-                            />
+                              <CandidateCard
+                                  key={candidate.id}
+                                  candidate={{
+                                  ...candidate,
+                                  position: position.title,
+                                  picture_url: candidate.picture_url || "",
+                                  }}
+                                  onDelete={handleDeleteCandidate}
+                                  onApprove={(id) => handleStatusChange(id, "approved")}
+                                  onDisqualify={(id) => handleStatusChange(id, "disqualified")}
+                                  onViewDetails={setDetailViewCandidate}
+                                  onEdit={handleEditCandidate}
+                              />
                             ))}
                         </div>
                         {getPositionCandidates(position.id).length === 0 && (
@@ -914,57 +965,101 @@ export default function CreateElectionPage() {
 
                 {/* Edit Candidate Dialog */}
                 <Dialog open={isEditCandidateOpen} onOpenChange={setIsEditCandidateOpen}>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                         <DialogTitle className="text-red-900">Edit Candidate</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
-                        <div>
-                            <Label htmlFor="edit-candidate-name" className="text-black">Full Name</Label>
-                            <Input className="text-black"
-                            id="edit-candidate-name"
-                            value={newCandidate.name || ""}
-                            onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
-                            placeholder="Enter full name"
+                        <div className="flex flex-col items-center">
+                            <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
+                            {imageUrl ? (
+                                <img src={imageUrl} alt="Candidate" className="w-full h-full object-cover" />
+                            ) : (
+                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            )}
+                            </div>
+                            <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
+                            onChange={handleImageChange}
+                            disabled={imageUploading}
                             />
+                            <Button
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="mt-1 bg-gray-200 text-red-900 hover:bg-gray-100 focus:bg-gray-100 border border-gray-300"
+                            disabled={imageUploading}
+                            >
+                            {imageUploading ? 'Uploading...' : (imageUrl ? 'Change Picture' : 'Upload Picture')}
+                            </Button>
                         </div>
-                        <div>
-                            <Label htmlFor="edit-candidate-email" className="text-black">Email</Label>
-                            <Input className="text-black"
-                            id="edit-candidate-email"
-                            type="email"
-                            value={newCandidate.email || ""}
-                            onChange={(e) => setNewCandidate((prev) => ({ ...prev, email: e.target.value }))}
-                            placeholder="Enter email address"
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="edit-candidate-name" className="text-black">Full Name</Label>
+                                <Input className="text-black"
+                                id="edit-candidate-name"
+                                value={newCandidate.name || ""}
+                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
+                                placeholder="Enter full name"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-candidate-email" className="text-black">Email</Label>
+                                <Input className="text-black"
+                                id="edit-candidate-email"
+                                type="email"
+                                value={newCandidate.email || ""}
+                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, email: e.target.value }))}
+                                placeholder="Enter email address"
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="text-black">
+                                <Label htmlFor="edit-candidate-position" className="text-black">Position</Label>
+                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, positionId: value }))}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select position" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {election.positions.map((position) => (
+                                    <SelectItem key={position.id} value={position.id}>
+                                        {position.title}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="text-black">
+                                <Label htmlFor="edit-candidate-course" className="text-black">Course and Year</Label>
+                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))} value={newCandidate.course || ""}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select course and Year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {courseYearOptions.map((course) => (
+                                    <SelectItem key={course} value={course}>
+                                        {course}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="text-black">
-                            <Label htmlFor="edit-candidate-position" className="text-black">Position</Label>
-                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, positionId: value }))}>
+                            <Label htmlFor="edit-candidate-status" className="text-black">Status</Label>
+                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, status: value as "pending" | "approved" | "disqualified" }))}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select position" />
+                                <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                             <SelectContent>
-                                {election.positions.map((position) => (
-                                <SelectItem key={position.id} value={position.id}>
-                                    {position.title}
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="text-black">
-                            <Label htmlFor="edit-candidate-course" className="text-black">Course and Year</Label>
-                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select course and Year" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {courseYearOptions.map((course) => (
-                                <SelectItem key={course} value={course}>
-                                    {course}
-                                </SelectItem>
-                                ))}
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="disqualified">Disqualified</SelectItem>
                             </SelectContent>
                             </Select>
                         </div>
@@ -988,22 +1083,11 @@ export default function CreateElectionPage() {
                             rows={4}
                             />
                         </div>
-                        <div className="text-black">
-                            <Label htmlFor="edit-candidate-status" className="text-black">Status</Label>
-                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, status: value as "pending" | "approved" | "disqualified" }))}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="approved">Approved</SelectItem>
-                                <SelectItem value="disqualified">Disqualified</SelectItem>
-                            </SelectContent>
-                            </Select>
+                        <div className="pt-4 border-t border-gray-200">
+                            <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
+                                Update Candidate
+                            </Button>
                         </div>
-                        <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
-                            Update Candidate
-                        </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1156,11 +1240,17 @@ export default function CreateElectionPage() {
 
                 {/* Candidate Detail Modal */}
                 <CandidateDetailModal
-                candidate={detailViewCandidate}
+                candidate={
+                  detailViewCandidate? {
+                    ...detailViewCandidate,
+                    positionName: getPositionById(detailViewCandidate.positionId)?.title || "Unknown Position"
+                  } : null
+                }
                 isOpen={!!detailViewCandidate}
                 onClose={() => setDetailViewCandidate(null)}
                 onApprove={(id) => handleStatusChange(id, "approved")}
                 onDisqualify={(id) => handleStatusChange(id, "disqualified")}
+                onEdit={handleEditCandidate}
                 />
             </div>
         </main>

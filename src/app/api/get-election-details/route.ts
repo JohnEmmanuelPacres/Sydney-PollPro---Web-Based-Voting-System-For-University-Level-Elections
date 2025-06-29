@@ -63,6 +63,22 @@ function testCourseYearParsing() {
   });
 }
 
+// Helper function to convert UTC to Singapore timezone
+// The dates in the database represent the intended Singapore time but are stored in UTC
+const convertUTCToSingapore = (utcDateString: string) => {
+  const utcDate = new Date(utcDateString);
+  // Since the dates represent intended Singapore time, we need to add 8 hours
+  // to convert from the stored UTC representation to actual Singapore time
+  const singaporeOffset = 8 * 60 * 60 * 1000; // UTC+8
+  return new Date(utcDate.getTime() + singaporeOffset);
+};
+
+// The dates are stored as the admin intended, so we display them as-is
+const convertToDisplayFormat = (dateString: string) => {
+  const date = new Date(dateString);
+  return date;
+};
+
 export async function POST(request: NextRequest) {
   try {
     const { electionId } = await request.json();
@@ -154,10 +170,10 @@ export async function POST(request: NextRequest) {
     const transformedElection = {
       name: electionData.name || '',
       description: electionData.description || '',
-      startDate: electionData.start_date ? new Date(electionData.start_date).toISOString().split('T')[0] : '',
-      startTime: electionData.start_date ? new Date(electionData.start_date).toTimeString().slice(0, 5) : '',
-      endDate: electionData.end_date ? new Date(electionData.end_date).toISOString().split('T')[0] : '',
-      endTime: electionData.end_date ? new Date(electionData.end_date).toTimeString().slice(0, 5) : '',
+      startDate: electionData.start_date ? convertToDisplayFormat(electionData.start_date).toISOString().split('T')[0] : '',
+      startTime: electionData.start_date ? convertToDisplayFormat(electionData.start_date).toTimeString().slice(0, 5) : '',
+      endDate: electionData.end_date ? convertToDisplayFormat(electionData.end_date).toISOString().split('T')[0] : '',
+      endTime: electionData.end_date ? convertToDisplayFormat(electionData.end_date).toTimeString().slice(0, 5) : '',
       positions: positionsData?.map(pos => ({
         id: pos.id,
         title: pos.title,

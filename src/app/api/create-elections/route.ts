@@ -1,7 +1,6 @@
 // app/api/create-elections/route.ts
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { convertLocalToSingaporeTime } from '@/utils/dateUtils';
 
 // Add these interfaces to match your frontend
 interface Position {
@@ -37,17 +36,29 @@ export async function POST(request: Request) {
     console.log('Received payload in /api/create-elections:', JSON.stringify(body, null, 2));
     const { electionData, orgID } = body;
 
-    // Convert dates to Singapore timezone with +08:00 offset
-    const startDateSingapore = `${electionData.startDate}T${electionData.startTime}:00+08:00`;
-    const endDateSingapore = `${electionData.endDate}T${electionData.endTime}:00+08:00`;
+    // Create ISO strings from the admin's input
+    // The admin inputs the intended Singapore time, so we store it directly
+    const createDateTimeISO = (dateStr: string, timeStr: string) => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hour, minute] = timeStr.split(':').map(Number);
+      
+      // Create date object with the admin's intended time
+      const date = new Date(year, month - 1, day, hour, minute, 0);
+      
+      // Return as ISO string - this will be stored as the exact time the admin intended
+      return date.toISOString();
+    };
 
-    console.log('Original dates:', {
+    const startDateISO = createDateTimeISO(electionData.startDate, electionData.startTime);
+    const endDateISO = createDateTimeISO(electionData.endDate, electionData.endTime);
+
+    console.log('Original dates from admin:', {
       start: `${electionData.startDate}T${electionData.startTime}:00`,
       end: `${electionData.endDate}T${electionData.endTime}:00`
     });
-    console.log('Singapore timezone dates:', {
-      start: startDateSingapore,
-      end: endDateSingapore
+    console.log('ISO dates for storage:', {
+      start: startDateISO,
+      end: endDateISO
     });
 
     // 1. Create election
@@ -56,8 +67,8 @@ export async function POST(request: Request) {
       .insert({
         name: electionData.name,
         description: electionData.description,
-        start_date: startDateSingapore,
-        end_date: endDateSingapore,
+        start_date: startDateISO,
+        end_date: endDateISO,
         is_uni_level: electionData.settings.isUniLevel,
         allow_abstain: electionData.settings.allowAbstain,
         eligible_courseYear: electionData.settings.eligibleCourseYear, // Fixed column name
