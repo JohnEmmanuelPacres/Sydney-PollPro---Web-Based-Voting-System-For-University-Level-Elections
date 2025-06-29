@@ -19,11 +19,9 @@ const ElectionStatusBar: React.FC<ElectionStatusBarProps> = ({ election }) => {
   const { administeredOrg } = useAdminOrg();
   const [showPrompt, setShowPrompt] = useState(false);
   
-  // Get current time in Singapore timezone
-  const getCurrentSingaporeTime = () => {
-    const now = new Date();
-    const singaporeOffset = 8 * 60 * 60 * 1000; // UTC+8
-    return new Date(now.getTime() + singaporeOffset);
+  // Get current time in local timezone (same as election dates)
+  const getCurrentLocalTime = () => {
+    return new Date();
   };
 
   // The dates are stored as the admin intended, so we use them as-is
@@ -32,7 +30,7 @@ const ElectionStatusBar: React.FC<ElectionStatusBarProps> = ({ election }) => {
     return date;
   };
 
-  const now = getCurrentSingaporeTime();
+  const now = getCurrentLocalTime();
   const start = convertToDisplayFormat(election.start_date);
   const end = convertToDisplayFormat(election.end_date);
 
