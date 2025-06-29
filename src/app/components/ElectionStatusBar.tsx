@@ -39,9 +39,14 @@ const ElectionStatusBar: React.FC<ElectionStatusBarProps> = ({ election }) => {
     now >= start && now <= end ? 'Ongoing' : 'Ended';
 
   const statusColor =
-    status === 'Upcoming' ? 'bg-yellow-500' :
+    status === 'Upcoming' ? 'bg-[#c2410c]' :
     status === 'Ongoing' ? 'bg-green-600' :
     'bg-gray-500';
+
+  const borderColor =
+    status === 'Upcoming' ? 'border-[#c2410c]' :
+    status === 'Ongoing' ? 'border-green-600' :
+    'border-gray-500';
 
   const isClickable = status === 'Upcoming';
 
@@ -75,14 +80,14 @@ const ElectionStatusBar: React.FC<ElectionStatusBarProps> = ({ election }) => {
     <div className="relative">
       <button
         onClick={handleClick}
-        className={`absolute top-[438px] left-[50%] transform -translate-x-1/2 text-[26px] leading-[150%] text-center w-[80%] rounded-xl shadow-md bg-[#fef2f2] border-2 border-[#c2410c] p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 text-black transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:ring-opacity-50 ${
+        className={`absolute top-[438px] left-[50%] transform -translate-x-1/2 text-[26px] leading-[150%] text-center w-[85%] rounded-xl shadow-md bg-[#fef2f2] border-4 p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 text-black transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:ring-opacity-50 ${
           isClickable 
-            ? 'hover:bg-[#f5f5f5] hover:border-[#ea580c]' 
+            ? `hover:bg-[#f5f5f5] hover:scale-105 hover:${borderColor}` 
             : 'opacity-75 cursor-not-allowed hover:bg-[#fef2f2]'
         }`}
         disabled={!isClickable}
       >
-        <div>
+        <div className="text-left">
           <h2 className="text-xl font-bold">{election.name}</h2>
           <p className="text-sm">
             {formatDateForDisplay(election.start_date)} &mdash; {formatDateForDisplay(election.end_date)}
