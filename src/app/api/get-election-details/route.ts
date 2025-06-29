@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
           course: course,
           year: year,
           platform: cand.platform || '',
+          picture_url: cand.picture_url || null,
         };
       } catch (error) {
         console.error(`Error processing candidate ${cand.id}:`, error);
@@ -162,6 +163,7 @@ export async function POST(request: NextRequest) {
           course: cand.course_year || '', // Use original value as fallback
           year: '',
           platform: cand.platform || '',
+          picture_url: null,
         };
       }
     }) || [];

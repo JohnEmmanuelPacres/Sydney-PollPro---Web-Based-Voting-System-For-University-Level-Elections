@@ -24,6 +24,7 @@ interface candidate {
   status: "pending" | "approved" | "disqualified";
   platform: string;
   credentials: string;
+  picture_url?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -63,10 +64,12 @@ export async function POST(request: NextRequest) {
     await supabaseAdmin.from('positions').delete().eq('election_id', electionId);
     await supabaseAdmin.from('candidates').delete().eq('election_id', electionId);
 
-    // Insert updated positions
+    // Insert updated positions and get new UUIDs
+    let positionMap = new Map<string, string>();
+    let dbPositions: { id: string }[] = [];
     if (electionData.positions && electionData.positions.length > 0) {
       const positionsToInsert = electionData.positions.map((pos: position) => ({
-        id: pos.id,
+        // Do not send id, let DB generate
         election_id: electionId,
         title: pos.title,
         description: pos.description,
@@ -75,28 +78,35 @@ export async function POST(request: NextRequest) {
         is_required: pos.isRequired,
       }));
 
-      const { error: positionsError } = await supabaseAdmin
+      const { data: insertedPositions, error: positionsError } = await supabaseAdmin
         .from('positions')
-        .insert(positionsToInsert);
+        .insert(positionsToInsert)
+        .select();
 
       if (positionsError) {
         console.error('Positions update error:', positionsError);
         return NextResponse.json({ error: 'Failed to update positions: ' + positionsError.message }, { status: 500 });
       }
+      dbPositions = insertedPositions as { id: string }[];
+      // Map frontend index to new UUID
+      (electionData.positions as position[]).forEach((frontendPos: position, idx: number) => {
+        positionMap.set(frontendPos.id, dbPositions[idx].id);
+      });
     }
 
-    // Insert updated candidates
+    // Insert updated candidates with correct position_id
     if (electionData.candidates && electionData.candidates.length > 0) {
       const candidatesToInsert = electionData.candidates.map((cand: candidate) => ({
-        id: cand.id,
+        // Do not send id, let DB generate
         election_id: electionId,
         name: cand.name,
         email: cand.email,
-        position_id: cand.positionId,
+        position_id: positionMap.get(cand.positionId) || null,
         status: cand.status,
         platform: cand.platform,
         detailed_achievements: cand.credentials,
         course_year: `${cand.course} - ${cand.year}`,
+        picture_url: cand.picture_url || null,
       }));
 
       const { error: candidatesError } = await supabaseAdmin

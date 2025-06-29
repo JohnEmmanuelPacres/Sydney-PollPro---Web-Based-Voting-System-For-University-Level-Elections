@@ -1,7 +1,8 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useAdminOrg } from '../AdminedOrgContext'; //React Context
 import { useSearchParams } from 'next/navigation';
+import { supabase } from "@/utils/supabaseClient"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -25,7 +26,7 @@ import { MultiSelectDropdown } from "../../../components/CreateElectionComponent
 import AdminHeader from "../../../components/AdminHeader"
 
 interface Position {
-  id: string
+  id?: string
   title: string
   description: string
   maxCandidates: number
@@ -34,7 +35,7 @@ interface Position {
 }
 
 interface Candidate {
-  id: string
+  id?: string
   name: string
   email: string
   positionId: string
@@ -43,6 +44,7 @@ interface Candidate {
   course: string
   year: string
   platform: string
+  picture_url?: string
   detailedCredentials?: string
   achievements?: string[]
   experience?: string[]
@@ -64,40 +66,6 @@ interface Election {
   };
 }
 
-const defaultPositions: Position[] = [
-  {
-    id: "1",
-    title: "President",
-    description: "Chief executive of the student body",
-    maxCandidates: 5,
-    maxWinners: 1, // Typically only one president
-    isRequired: true,
-  },
-  {
-    id: "2",
-    title: "Vice President",
-    description: "Second in command and legislative leader",
-    maxCandidates: 5,
-    maxWinners: 1, // Typically only one vice president
-    isRequired: true,
-  },
-  {
-    id: "3",
-    title: "Secretary",
-    description: "Records keeper and communications officer",
-    maxCandidates: 3,
-    maxWinners: 1, // Typically only one secretary
-    isRequired: true,
-  },
-  {
-    id: "4",
-    title: "Treasurer",
-    description: "Financial officer and budget manager",
-    maxCandidates: 3,
-    maxWinners: 1, // Typically only one treasurer
-    isRequired: true,
-  },
-]
 const courseYearOptions = [
 // Architecture
 'BS Architecture - 1st Year',
@@ -323,6 +291,42 @@ const courseYearOptions = [
 'BS Criminology - 4th Year'
 ];
 
+const defaultPositions: Position[] = [
+  {
+    id: "1",
+    title: "President",
+    description: "Chief executive of the student body",
+    maxCandidates: 5,
+    maxWinners: 1, // Typically only one president
+    isRequired: true,
+  },
+  {
+    id: "2",
+    title: "Vice President",
+    description: "Second in command and legislative leader",
+    maxCandidates: 5,
+    maxWinners: 1, // Typically only one vice president
+    isRequired: true,
+  },
+  {
+    id: "3",
+    title: "Secretary",
+    description: "Records keeper and communications officer",
+    maxCandidates: 3,
+    maxWinners: 1, // Typically only one secretary
+    isRequired: true,
+  },
+  {
+    id: "4",
+    title: "Treasurer",
+    description: "Financial officer and budget manager",
+    maxCandidates: 3,
+    maxWinners: 1, // Typically only one treasurer
+    isRequired: true,
+  },
+  // Add more default positions here if needed, but do NOT add 'muse'
+];
+
 export default function UpdateElectionPage() {
   const { administeredOrg } = useAdminOrg();
   const searchParams = useSearchParams();
@@ -333,56 +337,67 @@ export default function UpdateElectionPage() {
   // Temporary: Add this line to see what electionId we're getting
   console.log('URL electionId:', electionId);
 
-  // Fetch election data on component mount using API route
-  useEffect(() => {
-    const fetchElectionData = async () => {
-      console.log('Fetching election data for electionId:', electionId);
-      
-      if (!electionId) {
-        setError('No election ID provided');
+  // Move fetchElectionData outside of useEffect so it can be called elsewhere
+  const fetchElectionData = async () => {
+    console.log('Fetching election data for electionId:', electionId);
+    if (!electionId) {
+      setError('No election ID provided');
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/get-election-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ electionId }),
+      });
+      const result = await response.json();
+      console.log('API response:', result);
+      if (!response.ok) {
+        setError(result.error || 'Failed to fetch election data');
         setLoading(false);
         return;
       }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Call the API route instead of direct Supabase query
-        const response = await fetch('/api/get-election-details', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ electionId }),
-        });
-
-        const result = await response.json();
-        console.log('API response:', result);
-
-        if (!response.ok) {
-          setError(result.error || 'Failed to fetch election data');
-          setLoading(false);
-          return;
-        }
-
-        if (!result.election) {
-          setError('No election data returned');
-          setLoading(false);
-          return;
-        }
-
-        setElection(result.election);
-        console.log('Set election data:', result.election);
-
-      } catch (err) {
-        setError('Unexpected error fetching election data');
-        console.error('Error fetching election data:', err);
-      } finally {
+      if (!result.election) {
+        setError('No election data returned');
         setLoading(false);
+        return;
       }
-    };
+      setElection(result.election);
+      setNewCandidate({
+        name: "",
+        email: "",
+        positionId: "",
+        credentials: "",
+        course: "",
+        year: "",
+        platform: "",
+        status: "pending",
+        picture_url: "",
+      });
+      setEditingCandidate(null);
+      setDetailViewCandidate(null);
+      setIsEditCandidateOpen(false);
+      console.log('✅ Set election data:', result.election);
+      console.log('🔍 Candidates after refetch:', result.election.candidates);
+      console.log('🔍 Candidate IDs check:');
+      result.election.candidates.forEach((c: any) => {
+        const isUUID = c.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id);
+        console.log(`  - ${c.name}: ID="${c.id}" (UUID: ${isUUID}), Status: ${c.status}`);
+      });
+    } catch (err) {
+      setError('Unexpected error fetching election data');
+      console.error('Error fetching election data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchElectionData();
   }, [electionId]);
 
@@ -425,7 +440,14 @@ export default function UpdateElectionPage() {
     year: "",
     platform: "",
     status: "pending",
+    picture_url: "",
   })
+
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isAddingPosition, setIsAddingPosition] = useState(false);
 
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
@@ -468,56 +490,102 @@ export default function UpdateElectionPage() {
     };
   };
 
-  const handleAddPosition = () => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Only accept image files
+    const acceptedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!acceptedTypes.includes(file.type)) {
+      alert('Only image files (png, jpg, jpeg, gif, webp) are allowed.');
+      return;
+    }
+    setImageUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const filePath = `candidate1/candidate-${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from('election').upload(filePath, file, { upsert: true });
+    if (uploadError) {
+      alert('Failed to upload image: ' + uploadError.message);
+      setImageUploading(false);
+      return;
+    }
+    const { data } = supabase.storage.from('election').getPublicUrl(filePath);
+    setImageUrl(data.publicUrl);
+    setNewCandidate((prev) => ({ ...prev, picture_url: data.publicUrl }));
+    setImageUploading(false);
+  };
+
+  const handleAddPosition = async () => {
     if (newPosition.title && newPosition.description) {
-      const position: Position = {
-        id: Date.now().toString(),
-        title: newPosition.title!,
-        description: newPosition.description!,
-        maxCandidates: newPosition.maxCandidates || 3,
-        maxWinners: newPosition.maxWinners || 1,
-        isRequired: newPosition.isRequired || false,
+      setIsAddingPosition(true);
+      try {
+        // Save to DB immediately
+        const response = await fetch('/api/add-position', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            electionId,
+            title: newPosition.title,
+            description: newPosition.description,
+            maxCandidates: newPosition.maxCandidates || 3,
+            maxWinners: newPosition.maxWinners || 1,
+            isRequired: newPosition.isRequired || false,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to add position');
+        // Refetch election data to get new UUIDs
+        await fetchElectionData();
+        setNewPosition({ title: "", description: "", maxCandidates: 3, maxWinners: 1, isRequired: false });
+        setIsAddPositionOpen(false);
+      } catch (err: any) {
+        alert('Failed to add position: ' + err.message);
+      } finally {
+        setIsAddingPosition(false);
       }
-      setElection((prev) => ({
-        ...prev,
-        positions: [...prev.positions, position],
-      }))
-      setNewPosition({ title: "", description: "", maxCandidates: 3, maxWinners: 1, isRequired: false })
-      setIsAddPositionOpen(false)
     }
   }
 
-  const handleAddCandidate = () => {
+  const handleAddCandidate = async () => {
     if (newCandidate.name && newCandidate.email && newCandidate.positionId) {
       // Parse the course-year input
       const { course, year } = parseCourseYear(newCandidate.course);
-      
-      const candidate: Candidate = {
-        id: Date.now().toString(),
-        name: newCandidate.name!,
-        email: newCandidate.email!,
-        positionId: newCandidate.positionId!,
-        status: "pending",
-        credentials: newCandidate.credentials || "",
-        course: course, // Use parsed course
-        year: year, // Use parsed year
-        platform: newCandidate.platform || "",
+      try {
+        // Save to DB immediately
+        const response = await fetch('/api/add-candidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            electionId,
+            name: newCandidate.name,
+            email: newCandidate.email,
+            positionId: newCandidate.positionId,
+            status: 'pending',
+            credentials: newCandidate.credentials || '',
+            course: course,
+            year: year,
+            platform: newCandidate.platform || '',
+            picture_url: newCandidate.picture_url || '',
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to add candidate');
+        // Refetch election data to get new UUIDs and correct position mapping
+        await fetchElectionData();
+        setNewCandidate({
+          name: "",
+          email: "",
+          positionId: "",
+          credentials: "",
+          course: "",
+          year: "",
+          platform: "",
+          status: "pending",
+          picture_url: "",
+        });
+        setIsAddCandidateOpen(false);
+      } catch (err: any) {
+        alert('Failed to add candidate: ' + err.message);
       }
-      setElection((prev) => ({
-        ...prev,
-        candidates: [...prev.candidates, candidate],
-      }))
-      setNewCandidate({
-        name: "",
-        email: "",
-        positionId: "",
-        credentials: "",
-        course: "",
-        year: "",
-        platform: "",
-        status: "pending",
-      })
-      setIsAddCandidateOpen(false)
     }
   }
 
@@ -532,7 +600,9 @@ export default function UpdateElectionPage() {
       year: candidate.year,
       platform: candidate.platform,
       status: candidate.status,
+      picture_url: candidate.picture_url || "",
     })
+    setImageUrl(candidate.picture_url || ''); // Set the image URL for the edit dialog
     setIsEditCandidateOpen(true)
   }
 
@@ -555,6 +625,7 @@ export default function UpdateElectionPage() {
                 year: year, // Use parsed year
                 platform: newCandidate.platform || "",
                 status: newCandidate.status || "pending",
+                picture_url: newCandidate.picture_url || "",
               }
             : c
         ),
@@ -570,7 +641,9 @@ export default function UpdateElectionPage() {
         year: "",
         platform: "",
         status: "pending",
+        picture_url: "",
       })
+      setImageUrl(''); // Reset the image URL
       setEditingCandidate(null)
       setIsEditCandidateOpen(false)
     }
@@ -591,11 +664,54 @@ export default function UpdateElectionPage() {
     }))
   }
 
-  const handleStatusChange = (candidateId: string, newStatus: "approved" | "disqualified") => {
-    setElection((prev) => ({
-      ...prev,
-      candidates: prev.candidates.map((c) => (c.id === candidateId ? { ...c, status: newStatus } : c)),
-    }))
+  const handleStatusChange = async (candidateId: string, newStatus: "approved" | "disqualified") => {
+    console.log("🔍 handleStatusChange called with:", { candidateId, newStatus });
+    console.log("🔍 Current candidates:", election.candidates.map(c => ({ id: c.id, name: c.name, status: c.status })));
+    
+    // Check if candidateId is a valid UUID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(candidateId);
+    console.log("🔍 Is candidateId a UUID?", isUUID);
+    
+    if (!isUUID) {
+      console.error("❌ Candidate ID is not a UUID:", candidateId);
+      alert("Cannot approve/disqualify candidate. Please update the election first to get proper IDs.");
+      return;
+    }
+    
+    try {
+      // Update local state first for immediate UI feedback
+      setElection((prev) => ({
+        ...prev,
+        candidates: prev.candidates.map((c) => 
+          c.id === candidateId ? { ...c, status: newStatus } : c
+        ),
+      }));
+      
+      // Persist to database
+      const response = await fetch('/api/update-candidate-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidateId, status: newStatus }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error("❌ API error:", result);
+        alert(`Failed to update candidate status: ${result.error}`);
+        // Revert local state on error
+        await fetchElectionData();
+        return;
+      }
+      
+      console.log("✅ Candidate status updated successfully:", result);
+      
+    } catch (error) {
+      console.error("❌ Error in handleStatusChange:", error);
+      alert("Failed to update candidate status. Please try again.");
+      // Revert local state on error
+      await fetchElectionData();
+    }
   }
 
   const validateElection = (election: Election): boolean => {
@@ -626,6 +742,7 @@ export default function UpdateElectionPage() {
     }
 
     try {
+        console.log("🔄 Starting election update...");
         const response = await fetch('/api/update-election', {
             method: 'POST',
             headers: {
@@ -644,10 +761,41 @@ export default function UpdateElectionPage() {
         }
 
         alert('Election updated successfully!');
-        console.log("Updated election:", election);
+        console.log("✅ Election updated successfully");
+        
+        // Clear all local state and dialogs
+        setNewCandidate({
+            name: "",
+            email: "",
+            positionId: "",
+            credentials: "",
+            course: "",
+            year: "",
+            platform: "",
+            status: "pending",
+            picture_url: "",
+        });
+        setNewPosition({
+            title: "",
+            description: "",
+            maxCandidates: 3,
+            maxWinners: 1,
+            isRequired: false,
+        });
+        setEditingCandidate(null);
+        setDetailViewCandidate(null);
+        setIsEditCandidateOpen(false);
+        setIsAddCandidateOpen(false);
+        setIsAddPositionOpen(false);
+        setImageUrl('');
+        
+        // Refetch the latest data so IDs are correct
+        console.log("🔄 Refetching election data after update...");
+        await fetchElectionData();
+        console.log("✅ Election data refetched successfully");
 
     } catch (error) {
-        console.error('Error updating election:', error);
+        console.error('❌ Error updating election:', error);
         alert('Failed to update election. Please try again.');
     }
   }
@@ -777,8 +925,8 @@ export default function UpdateElectionPage() {
                                 />
                                 <Label htmlFor="is-required" className="text-black">Required position (voters must vote for this)</Label>
                             </div>
-                            <Button onClick={handleAddPosition} className="w-full bg-red-900 hover:bg-red-800">
-                                Add Position
+                            <Button onClick={handleAddPosition} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingPosition}>
+                                {isAddingPosition ? 'Adding...' : 'Add Position'}
                             </Button>
                             </div>
                         </DialogContent>
@@ -789,11 +937,8 @@ export default function UpdateElectionPage() {
                     <div className="space-y-4">
                         {election.positions.map((position) => (
                         <PositionCard
-                            key={position.id}
-                            position={{
-                            ...position,
-                            currentCandidates: getPositionCandidates(position.id).length,
-                            }}
+                            key={position.id ?? position.title ?? 'generated-id'}
+                            position={{ ...position, id: position.id ?? position.title ?? 'generated-id' }}
                             onDelete={handleDeletePosition}
                         />
                         ))}
@@ -823,6 +968,33 @@ export default function UpdateElectionPage() {
                             <DialogTitle className="text-red-900">Add New Candidate</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
+                            <div className="flex flex-col items-center">
+                                <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
+                                {imageUrl ? (
+                                    <img src={imageUrl} alt="Candidate" className="w-full h-full object-cover" />
+                                ) : (
+                                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                )}
+                                </div>
+                                <input
+                                type="file"
+                                accept="image/*"
+                                ref={fileInputRef}
+                                style={{ display: 'none' }}
+                                onChange={handleImageChange}
+                                disabled={imageUploading}
+                                />
+                                <Button
+                                size="sm"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="mt-1 bg-gray-200 text-red-900 hover:bg-gray-100 focus:bg-gray-100 border border-gray-300"
+                                disabled={imageUploading}
+                                >
+                                {imageUploading ? 'Uploading...' : (imageUrl ? 'Change Picture' : 'Upload Picture')}
+                                </Button>
+                            </div>
                             <div>
                                 <Label htmlFor="candidate-name" className="text-black">Full Name</Label>
                                 <Input className="text-black"
@@ -850,7 +1022,7 @@ export default function UpdateElectionPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {election.positions.map((position) => (
-                                    <SelectItem key={position.id} value={position.id}>
+                                    <SelectItem key={position.id ?? position.title ?? 'generated-id'} value={position.id ?? position.title ?? 'generated-id'}>
                                         {position.title}
                                     </SelectItem>
                                     ))}
@@ -902,30 +1074,56 @@ export default function UpdateElectionPage() {
                     </CardHeader>
                     <CardContent>
                     {election.positions.map((position) => (
-                        <div key={position.id} className="mb-6">
+                        <div key={position.id ?? position.title ?? 'generated-id'} className="mb-6">
                         <div className="flex items-center gap-2 mb-3">
                             <h3 className="text-lg font-semibold text-red-900">{position.title}</h3>
                             <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-                            {getPositionCandidates(position.id).length} candidates
+                            {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length} candidates
                             </Badge>
                         </div>
+                        
+                        {/* Warning for candidates without real UUIDs */}
+                        {getPositionCandidates(position.id ?? position.title ?? 'generated-id').some(c => !c.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id)) && (
+                          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-yellow-800">
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span className="font-medium">New candidates detected</span>
+                            </div>
+                            <p className="text-yellow-700 text-sm mt-1">
+                              Some candidates were recently added. Click "Update Election" to save them to the database and enable approval/disqualification.
+                            </p>
+                          </div>
+                        )}
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {getPositionCandidates(position.id).map((candidate) => (
-                            <CandidateCard
-                                key={candidate.id}
-                                candidate={{
-                                ...candidate,
-                                position: position.title,
-                                }}
-                                onDelete={handleDeleteCandidate}
-                                onApprove={(id) => handleStatusChange(id, "approved")}
-                                onDisqualify={(id) => handleStatusChange(id, "disqualified")}
-                                onViewDetails={setDetailViewCandidate}
-                                onEdit={handleEditCandidate}
-                            />
-                            ))}
+                            {getPositionCandidates(position.id ?? position.title ?? 'generated-id').map((candidate) => {
+                              // Ensure we have a real UUID for the candidate
+                              const candidateId = candidate.id;
+                              const isRealUUID = candidateId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(candidateId);
+                              
+                              console.log(`🔍 Candidate ${candidate.name}: ID=${candidateId}, isUUID=${isRealUUID}, status=${candidate.status}`);
+                              
+                              return (
+                                <CandidateCard
+                                  key={candidateId || candidate.email || 'temp-id'}
+                                  candidate={{ 
+                                    ...candidate, 
+                                    id: candidateId || candidate.email || 'temp-id', 
+                                    position: position.title 
+                                  }}
+                                  onDelete={handleDeleteCandidate}
+                                  onApprove={isRealUUID ? (id) => handleStatusChange(id, "approved") : undefined}
+                                  onDisqualify={isRealUUID ? (id) => handleStatusChange(id, "disqualified") : undefined}
+                                  onViewDetails={setDetailViewCandidate}
+                                  onEdit={handleEditCandidate}
+                                  showActions={true}
+                                />
+                              );
+                            })}
                         </div>
-                        {getPositionCandidates(position.id).length === 0 && (
+                        {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length === 0 && (
                             <EmptyState
                             icon={<User className="w-12 h-12" />}
                             title="No candidates yet"
@@ -945,6 +1143,33 @@ export default function UpdateElectionPage() {
                         <DialogTitle className="text-red-900">Edit Candidate</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
+                        <div className="flex flex-col items-center">
+                            <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
+                            {imageUrl ? (
+                                <img src={imageUrl} alt="Candidate" className="w-full h-full object-cover" />
+                            ) : (
+                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            )}
+                            </div>
+                            <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            style={{ display: 'none' }}
+                            onChange={handleImageChange}
+                            disabled={imageUploading}
+                            />
+                            <Button
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="mt-1 bg-gray-200 text-red-900 hover:bg-gray-100 focus:bg-gray-100 border border-gray-300"
+                            disabled={imageUploading}
+                            >
+                            {imageUploading ? 'Uploading...' : (imageUrl ? 'Change Picture' : 'Upload Picture')}
+                            </Button>
+                        </div>
                         <div>
                             <Label htmlFor="edit-candidate-name" className="text-black">Full Name</Label>
                             <Input className="text-black"
@@ -972,7 +1197,7 @@ export default function UpdateElectionPage() {
                             </SelectTrigger>
                             <SelectContent>
                                 {election.positions.map((position) => (
-                                <SelectItem key={position.id} value={position.id}>
+                                <SelectItem key={position.id ?? position.title ?? 'generated-id'} value={position.id ?? position.title ?? 'generated-id'}>
                                     {position.title}
                                 </SelectItem>
                                 ))}
@@ -1139,18 +1364,18 @@ export default function UpdateElectionPage() {
                         <h3 className="text-lg font-semibold text-red-900 mb-4">Positions & Candidates</h3>
                         <div className="space-y-4">
                         {election.positions.map((position) => (
-                            <Card key={position.id} className="border border-red-200">
+                            <Card key={position.id ?? position.title ?? 'generated-id'} className="border border-red-200">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-semibold text-red-900">{position.title}</h4>
                                 <Badge className="bg-yellow-100 text-yellow-800">
-                                    {getPositionCandidates(position.id).length} candidates
+                                    {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length} candidates
                                 </Badge>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-3">{position.description}</p>
                                 <div className="flex flex-wrap gap-2">
-                                {getPositionCandidates(position.id).map((candidate) => (
-                                    <Badge key={candidate.id} variant="outline" className="bg-white">
+                                {getPositionCandidates(position.id ?? position.title ?? 'generated-id').map((candidate) => (
+                                    <Badge key={candidate.id ?? candidate.email ?? 'generated-id'} variant="outline" className="bg-white">
                                     {candidate.name}
                                     </Badge>
                                 ))}
@@ -1180,10 +1405,11 @@ export default function UpdateElectionPage() {
                 {/* Candidate Detail Modal */}
                 <CandidateDetailModal
                 candidate={
-                  detailViewCandidate? {
+                  detailViewCandidate ? {
                     ...detailViewCandidate,
-                    positionName: getPositionById(detailViewCandidate.positionId)?.title || "Unknown Position"
-                  } : null
+                    id: detailViewCandidate.id ?? detailViewCandidate.email ?? 'generated-id',
+                    positionName: getPositionById(detailViewCandidate.positionId ?? detailViewCandidate.positionId ?? 'generated-id')?.title || "Unknown Position"
+                  } as any : null
                 }
 
                 isOpen={!!detailViewCandidate}
