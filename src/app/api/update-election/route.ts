@@ -27,6 +27,18 @@ interface candidate {
   picture_url?: string;
 }
 
+// Helper to create ISO string from admin's input (same as create-elections)
+function createDateTimeISO(dateStr: string, timeStr: string) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
+  
+  // Create date object with the admin's intended time
+  const date = new Date(year, month - 1, day, hour, minute, 0);
+  
+  // Return as ISO string - this will be stored as the exact time the admin intended
+  return date.toISOString();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { electionId, electionData } = await request.json();
@@ -47,8 +59,8 @@ export async function POST(request: NextRequest) {
       .update({
         name: electionData.name,
         description: electionData.description,
-        start_date: `${electionData.startDate}T${electionData.startTime}:00`,
-        end_date: `${electionData.endDate}T${electionData.endTime}:00`,
+        start_date: createDateTimeISO(electionData.startDate, electionData.startTime),
+        end_date: createDateTimeISO(electionData.endDate, electionData.endTime),
         is_uni_level: electionData.settings.isUniLevel,
         allow_abstain: electionData.settings.allowAbstain,
         eligible_courseYear: electionData.settings.eligibleCourseYear,
@@ -60,64 +72,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update election: ' + electionUpdateError.message }, { status: 500 });
     }
 
-    // Delete existing positions and candidates
-    await supabaseAdmin.from('positions').delete().eq('election_id', electionId);
-    await supabaseAdmin.from('candidates').delete().eq('election_id', electionId);
-
-    // Insert updated positions and get new UUIDs
-    let positionMap = new Map<string, string>();
-    let dbPositions: { id: string }[] = [];
-    if (electionData.positions && electionData.positions.length > 0) {
-      const positionsToInsert = electionData.positions.map((pos: position) => ({
-        // Do not send id, let DB generate
-        election_id: electionId,
-        title: pos.title,
-        description: pos.description,
-        max_candidates: pos.maxCandidates,
-        max_winners: pos.maxWinners || 1,
-        is_required: pos.isRequired,
-      }));
-
-      const { data: insertedPositions, error: positionsError } = await supabaseAdmin
-        .from('positions')
-        .insert(positionsToInsert)
-        .select();
-
-      if (positionsError) {
-        console.error('Positions update error:', positionsError);
-        return NextResponse.json({ error: 'Failed to update positions: ' + positionsError.message }, { status: 500 });
-      }
-      dbPositions = insertedPositions as { id: string }[];
-      // Map frontend index to new UUID
-      (electionData.positions as position[]).forEach((frontendPos: position, idx: number) => {
-        positionMap.set(frontendPos.id, dbPositions[idx].id);
-      });
-    }
-
-    // Insert updated candidates with correct position_id
-    if (electionData.candidates && electionData.candidates.length > 0) {
-      const candidatesToInsert = electionData.candidates.map((cand: candidate) => ({
-        // Do not send id, let DB generate
-        election_id: electionId,
-        name: cand.name,
-        email: cand.email,
-        position_id: positionMap.get(cand.positionId) || null,
-        status: cand.status,
-        platform: cand.platform,
-        detailed_achievements: cand.credentials,
-        course_year: `${cand.course} - ${cand.year}`,
-        picture_url: cand.picture_url || null,
-      }));
-
-      const { error: candidatesError } = await supabaseAdmin
-        .from('candidates')
-        .insert(candidatesToInsert);
-
-      if (candidatesError) {
-        console.error('Candidates update error:', candidatesError);
-        return NextResponse.json({ error: 'Failed to update candidates: ' + candidatesError.message }, { status: 500 });
-      }
-    }
+    // Do not delete or re-insert positions or candidates here. Only update election info.
 
     console.log('Election updated successfully');
 

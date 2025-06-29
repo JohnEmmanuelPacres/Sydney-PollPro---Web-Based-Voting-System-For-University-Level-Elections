@@ -339,7 +339,7 @@ export default function UpdateElectionPage() {
 
   // Move fetchElectionData outside of useEffect so it can be called elsewhere
   const fetchElectionData = async () => {
-    console.log('Fetching election data for electionId:', electionId);
+    console.log("🔄 fetchElectionData called");
     if (!electionId) {
       setError('No election ID provided');
       setLoading(false);
@@ -355,8 +355,9 @@ export default function UpdateElectionPage() {
         },
         body: JSON.stringify({ electionId }),
       });
+
       const result = await response.json();
-      console.log('API response:', result);
+
       if (!response.ok) {
         setError(result.error || 'Failed to fetch election data');
         setLoading(false);
@@ -367,6 +368,14 @@ export default function UpdateElectionPage() {
         setLoading(false);
         return;
       }
+
+      console.log("📊 Fetched election data:", {
+        name: result.election.name,
+        positionsCount: result.election.positions.length,
+        candidatesCount: result.election.candidates.length,
+        candidates: result.election.candidates.map((c: any) => ({ name: c.name, id: c.id }))
+      });
+
       setElection(result.election);
       setNewCandidate({
         name: "",
@@ -387,11 +396,11 @@ export default function UpdateElectionPage() {
       console.log('🔍 Candidate IDs check:');
       result.election.candidates.forEach((c: any) => {
         const isUUID = c.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id);
-        console.log(`  - ${c.name}: ID="${c.id}" (UUID: ${isUUID}), Status: ${c.status}`);
+        console.log(`  - ${c.name}: ID=${c.id}, isUUID=${isUUID}`);
       });
-    } catch (err) {
+    } catch (error) {
       setError('Unexpected error fetching election data');
-      console.error('Error fetching election data:', err);
+      console.error('Error fetching election data:', error);
     } finally {
       setLoading(false);
     }
@@ -448,6 +457,8 @@ export default function UpdateElectionPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isAddingPosition, setIsAddingPosition] = useState(false);
+  const [isAddingCandidate, setIsAddingCandidate] = useState(false);
+  const isAddingCandidateRef = useRef(false);
 
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
@@ -546,10 +557,20 @@ export default function UpdateElectionPage() {
   }
 
   const handleAddCandidate = async () => {
+    // Prevent multiple simultaneous calls
+    if (isAddingCandidateRef.current) {
+      console.log("🚫 handleAddCandidate already in progress, skipping...");
+      return;
+    }
+    
     if (newCandidate.name && newCandidate.email && newCandidate.positionId) {
+      console.log("🔍 Starting to add candidate:", newCandidate.name);
+      isAddingCandidateRef.current = true;
+      setIsAddingCandidate(true);
       // Parse the course-year input
       const { course, year } = parseCourseYear(newCandidate.course);
       try {
+        console.log("🔍 Calling API to add candidate...");
         // Save to DB immediately
         const response = await fetch('/api/add-candidate', {
           method: 'POST',
@@ -569,8 +590,10 @@ export default function UpdateElectionPage() {
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Failed to add candidate');
+        console.log("✅ Candidate added successfully, refetching data...");
         // Refetch election data to get new UUIDs and correct position mapping
         await fetchElectionData();
+        console.log("✅ Data refetched, resetting form...");
         setNewCandidate({
           name: "",
           email: "",
@@ -583,8 +606,13 @@ export default function UpdateElectionPage() {
           picture_url: "",
         });
         setIsAddCandidateOpen(false);
+        console.log("✅ Candidate addition completed");
       } catch (err: any) {
+        console.error("❌ Error adding candidate:", err);
         alert('Failed to add candidate: ' + err.message);
+      } finally {
+        setIsAddingCandidate(false);
+        isAddingCandidateRef.current = false;
       }
     }
   }
@@ -657,11 +685,34 @@ export default function UpdateElectionPage() {
     }))
   }
 
-  const handleDeleteCandidate = (candidateId: string) => {
+  const handleDeleteCandidate = async (candidateId: string) => {
+    // Remove from local state immediately
     setElection((prev) => ({
       ...prev,
       candidates: prev.candidates.filter((c) => c.id !== candidateId),
-    }))
+    }));
+    // Remove from Supabase
+    try {
+      const response = await fetch('/api/delete-candidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidateId }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        console.error('❌ Failed to delete candidate from Supabase:', result.error);
+        alert('Failed to delete candidate from database: ' + result.error);
+        // Optionally, refetch data to ensure consistency
+        await fetchElectionData();
+      } else {
+        console.log('✅ Candidate deleted from Supabase');
+      }
+    } catch (err: any) {
+      console.error('❌ Error deleting candidate from Supabase:', err);
+      alert('Failed to delete candidate from database: ' + err.message);
+      // Optionally, refetch data to ensure consistency
+      await fetchElectionData();
+    }
   }
 
   const handleStatusChange = async (candidateId: string, newStatus: "approved" | "disqualified") => {
@@ -1064,8 +1115,8 @@ export default function UpdateElectionPage() {
                                 rows={4}
                                 />
                             </div>
-                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800">
-                                Add Candidate
+                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingCandidate}>
+                                {isAddingCandidate ? 'Adding...' : 'Add Candidate'}
                             </Button>
                             </div>
                         </DialogContent>
