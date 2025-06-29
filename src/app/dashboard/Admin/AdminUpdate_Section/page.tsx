@@ -299,6 +299,37 @@ const AdminUpdateSection = () => {
     loadArticles();
   };
 
+  // Delete article handler
+  const handleDeleteArticle = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this article? This action cannot be undone.')) return;
+    try {
+      const response = await fetch('/api/delete-post', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete article');
+      }
+      setArticles(prev => prev.filter(article => article.id !== id));
+      alert('Article deleted successfully!');
+    } catch (error: any) {
+      alert(`Failed to delete article: ${error.message || error}`);
+    }
+  };
+
+  // Edit article handler
+  const handleEditArticle = (article: Article) => {
+    setActiveTab('create');
+    setCurrentArticle({
+      ...article,
+      images: [], // Optionally, you can fetch and set images if needed
+      status: 'draft',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-red-950 font-inter">
       <AdminHeader />
@@ -590,10 +621,16 @@ const AdminUpdateSection = () => {
                             {article.status.charAt(0).toUpperCase() + article.status.slice(1)}
                           </span>
                           <div className="flex space-x-2">
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow">
+                            <button
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow"
+                              onClick={() => handleEditArticle(article)}
+                            >
                               Edit
                             </button>
-                            <button className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold shadow">
+                            <button
+                              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold shadow"
+                              onClick={() => handleDeleteArticle(article.id)}
+                            >
                               Delete
                             </button>
                           </div>

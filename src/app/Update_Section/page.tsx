@@ -37,7 +37,7 @@ const UpdatesPage = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [userType, setUserType] = useState<'admin' | 'voter' | 'guest'>('guest');
+  const [userType, setUserType] = useState<'admin' | 'voter' | 'guest' | null>(null);
   const [departmentOrg, setDepartmentOrg] = useState<string>('');
   
   const articlesRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -48,37 +48,81 @@ const UpdatesPage = () => {
   // Get current user and determine user type
   useEffect(() => {
     const getCurrentUser = async () => {
+      setIsLoading(true); // Start loading when we begin user check
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
+        // First check if we have an active session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setUserType('guest');
+          setCurrentUser(null);
+          return;
+        }
+
+        if (!session) {
+          console.log('No active session found, setting as guest');
+          setUserType('guest');
+          setCurrentUser(null);
+          return;
+        }
+
+        // Get user from session
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error('Auth error:', authError);
+          setUserType('guest');
+          setCurrentUser(null);
+          return;
+        }
+        
+        setCurrentUser(user || null);
 
         if (user) {
-          // Check if user is admin
-          const { data: adminProfile } = await supabase
+          console.log('User found:', user.id);
+          
+          // Check admin profile first
+          const { data: adminProfile, error: adminError } = await supabase
             .from('admin_profiles')
             .select('department_org')
             .eq('id', user.id)
             .single();
 
-          if (adminProfile) {
+          if (!adminError && adminProfile) {
+            console.log('Admin profile found:', adminProfile);
             setUserType('admin');
             setDepartmentOrg(adminProfile.department_org);
-          } else {
-            // Check if user is voter
-            const { data: voterProfile } = await supabase
-              .from('voter_profiles')
-              .select('department_org')
-              .eq('id', user.id)
-              .single();
-
-            if (voterProfile) {
-              setUserType('voter');
-              setDepartmentOrg(voterProfile.department_org);
-            }
+            return;
           }
+
+          // If not admin, check voter profile
+          const { data: voterProfile, error: voterError } = await supabase
+            .from('voter_profiles')
+            .select('department_org')
+            .eq('id', user.id)
+            .single();
+
+          if (!voterError && voterProfile) {
+            console.log('Voter profile found:', voterProfile);
+            setUserType('voter');
+            setDepartmentOrg(voterProfile.department_org);
+            return;
+          }
+
+          // If neither profile exists but user is authenticated
+          console.log('User authenticated but no profile found, setting as guest');
+          setUserType('guest');
+        } else {
+          console.log('No user found, setting as guest');
+          setUserType('guest');
         }
       } catch (error) {
         console.error('Error getting user:', error);
+        setUserType('guest');
+        setCurrentUser(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -87,23 +131,37 @@ const UpdatesPage = () => {
 
   // Load articles based on user type and organization
   useEffect(() => {
-    if (currentUser !== null) { // Allow loading for both authenticated and unauthenticated users
+    if (userType !== null) { // Changed from currentUser check
       loadArticles();
     }
-  }, [currentUser, userType, departmentOrg]);
+  }, [userType, departmentOrg]); // Added dependencies
 
   const loadArticles = async () => {
     setIsLoading(true);
+    
     try {
+      console.log('Loading articles with:', {
+        user_id: currentUser?.id,
+        user_type: userType,
+        department_org: departmentOrg
+      });
+
+      // For guest users, don't send user_id
+      const requestBody = {
+        user_id: userType === 'guest' ? null : currentUser?.id || null,
+        user_type: userType,
+        department_org: departmentOrg || null
+      };
+
+      console.log('Request body:', requestBody);
+
       const response = await fetch('/api/get-posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: currentUser?.id || null,
-          user_type: userType,
-          department_org: departmentOrg,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -111,18 +169,15 @@ const UpdatesPage = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const { posts, error: apiError } = await response.json();
+      const data = await response.json();
+      console.log('API Response:', data);
       
-      if (apiError) {
-        console.error('API returned error:', apiError);
-        throw new Error(apiError);
+      if (data.error) {
+        throw new Error(data.error);
       }
 
-      console.log('Fetched posts from API:', posts); // Debug log
-
-      const transformedArticles: Article[] = (posts || []).map((post: any) => {
-        // Safely handle image_urls - it could be null, undefined, or an array
-        let imageUrl = '/default-news.jpg'; // Default fallback
+      const transformedArticles: Article[] = (data.posts || []).map((post: any) => {
+        let imageUrl = '/default-news.jpg';
         if (post.image_urls && Array.isArray(post.image_urls) && post.image_urls.length > 0) {
           imageUrl = post.image_urls[0];
         }
@@ -139,7 +194,7 @@ const UpdatesPage = () => {
         };
       });
 
-      console.log('Transformed articles for voter:', transformedArticles); // Debug log
+      console.log('Transformed articles:', transformedArticles);
       setArticles(transformedArticles);
     } catch (error) {
       console.error('Error loading articles:', error);
@@ -173,17 +228,22 @@ const UpdatesPage = () => {
     ? articles 
     : articles.filter(article => article.category === activeFilter);
 
+  // Keep articlesRef in sync with filteredArticles
+  useEffect(() => {
+    articlesRef.current.length = filteredArticles.length;
+  }, [filteredArticles.length]);
+
   // Initialize animations
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Content animation (excluding header)
       gsap.fromTo(contentRef.current, 
         { opacity: 0, y: 30 },
         { opacity: 1, y: 0, duration: 1, ease: "power2.out" }
       );
 
-      // Articles animation
-      gsap.fromTo(articlesRef.current, 
+      // Only animate non-null refs
+      const validArticleRefs = articlesRef.current.filter(Boolean);
+      gsap.fromTo(validArticleRefs, 
         { opacity: 0, y: 50, scale: 0.95 },
         { 
           opacity: 1, 
@@ -203,7 +263,9 @@ const UpdatesPage = () => {
   // Filter change animation
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(articlesRef.current, 
+      // Only animate non-null refs
+      const validArticleRefs = articlesRef.current.filter(Boolean);
+      gsap.fromTo(validArticleRefs, 
         { opacity: 0, x: -20 },
         { 
           opacity: 1, 
@@ -294,7 +356,7 @@ const UpdatesPage = () => {
       gsap.to(filter, {
         scale: 1,
         y: 0,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
         duration: 0.3,
         ease: "power2.out"
       });
@@ -302,111 +364,128 @@ const UpdatesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-red-950 font-inter" ref={pageRef}>
+    <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
       <Header />
 
       {/* Main Content */}
-      <div className="flex flex-col items-center px-4 py-8 pt-32" ref={contentRef}>
-        <div className="w-full max-w-6xl">
-          {/* Header */}
-          <div className="w-full mb-8">
-            <h1 className="text-white text-2xl sm:text-4xl font-bold font-['Geist'] mb-2">Latest Updates</h1>
-            <p className="text-orange-100 text-base sm:text-lg font-normal font-['Geist']">
-              Stay informed with the latest news, announcements, and updates from UniVote.
-            </p>
-          </div>
+      <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
+        {/* Title Section */}
+        <div className="w-full max-w-4xl mb-6 sm:mb-8 px-2 sm:px-0">
+          <h1 className="text-white text-2xl sm:text-4xl font-bold font-['Geist'] mb-2">Updates</h1>
+          <p className="text-orange-100 text-base sm:text-lg font-normal font-['Geist']">
+            Stay informed with the latest news and announcements from UniVote.
+          </p>
+        </div>
 
-          {/* Filter Navigation */}
-          <div className="bg-[#7A1B1B] rounded-[16px] border-2 border-[#FFD700] p-1 mb-8">
-            <div className="flex gap-1 overflow-x-auto">
-              {FILTERS.map((filter, index) => (
-                <button
-                  key={filter}
-                  ref={(el) => { filtersRef.current[index] = el; }}
-                  onClick={() => handleFilterClick(filter, index)}
-                  onMouseEnter={() => handleFilterHover(index, true)}
-                  onMouseLeave={() => handleFilterHover(index, false)}
-                  className={`px-4 py-3 rounded-[12px] font-semibold transition-all duration-200 text-sm whitespace-nowrap ${
-                    activeFilter === filter 
-                      ? 'bg-[#FFD700] text-[#6B0000] shadow-lg' 
-                      : 'text-white hover:bg-[#8B2323]'
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
+        {/* Filter Section */}
+        <div className="w-full max-w-4xl mb-6 sm:mb-8 px-0">
+          <div className="bg-[#7A1B1B] rounded-[16px] border-2 border-[#FFD700] p-1 flex gap-1">
+            {FILTERS.map((filter, index) => (
+              <button
+                key={filter}
+                ref={el => { filtersRef.current[index] = el; }}
+                onClick={() => handleFilterClick(filter, index)}
+                onMouseEnter={() => handleFilterHover(index, true)}
+                onMouseLeave={() => handleFilterHover(index, false)}
+                className={`flex-1 px-2 sm:px-4 py-2 rounded-[12px] font-semibold transition-all duration-200 text-xs sm:text-sm shadow-none border-none outline-none focus:ring-2 focus:ring-[#FFD700] focus:z-10 ${
+                  activeFilter === filter 
+                    ? 'bg-[#FFD700] text-[#6B0000] shadow-lg' 
+                    : 'text-white hover:bg-[#8B2323]'
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Articles Grid */}
+        {/* Articles Section */}
+        <div className="w-full max-w-4xl space-y-6">
           {isLoading ? (
-            <div className="flex justify-center items-center py-20">
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FFD700]"></div>
+              <p className="text-white">Loading updates...</p>
+              {articles.length === 0 && (
+                <p className="text-orange-300 text-sm">
+                  If this takes too long, try refreshing the page
+                </p>
+              )}
             </div>
           ) : filteredArticles.length === 0 ? (
             <div className="bg-white rounded-[16px] border-2 border-[#FFD700] shadow-md p-20 text-center">
               <div className="text-gray-400 text-6xl mb-4">📰</div>
-              <p className="text-gray-600 text-xl font-medium mb-2">No updates available</p>
-              <p className="text-gray-400">Check back later for new announcements and updates</p>
+              <p className="text-gray-600 text-xl font-medium mb-2">
+                {articles.length === 0 ? 'No updates available' : 'No matching updates'}
+              </p>
+              <p className="text-gray-400">
+                {articles.length === 0 
+                  ? 'Check back later for new announcements and updates' 
+                  : 'Try a different filter'}
+              </p>
+              <button
+                onClick={loadArticles}
+                className="mt-4 px-4 py-2 bg-[#FFD700] text-[#6B0000] rounded-lg font-semibold hover:bg-yellow-400 transition-colors"
+              >
+                Retry Loading
+              </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredArticles.map((article, index) => (
-                <motion.div
-                  key={article.id}
-                  ref={(el) => { articlesRef.current[index] = el; }}
-                  onMouseEnter={() => handleArticleHover(index, true)}
-                  onMouseLeave={() => handleArticleHover(index, false)}
-                  className="bg-white rounded-[16px] border-2 border-[#FFD700] shadow-md overflow-hidden cursor-pointer transform transition-all duration-300 hover:shadow-xl"
-                >
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={article.image}
-                      alt={article.headline}
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                    />
-                    <div className="absolute top-4 left-4 flex items-center space-x-2">
-                      <div className={`category-tag px-3 py-1 rounded-full text-white text-sm font-semibold tracking-wide shadow ${getCategoryColor(article.category)}`}>
-                        {article.category}
+            filteredArticles.map((article, index) => (
+              <div
+                key={article.id}
+                ref={el => { articlesRef.current[index] = el; }}
+                onMouseEnter={() => handleArticleHover(index, true)}
+                onMouseLeave={() => handleArticleHover(index, false)}
+                className="bg-white rounded-[16px] border-2 border-[#FFD700] shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer flex flex-col sm:flex-row"
+              >
+                {/* Image Section */}
+                <div className="w-full sm:w-80 h-48 sm:h-64 flex-shrink-0">
+                  <img 
+                    src={article.image} 
+                    alt={article.headline}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Content Section */}
+                <div className="flex-1 p-4 sm:p-6 relative">
+                  {/* Tags Row: University + Category */}
+                  <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2 z-10">
+                    {article.isUniLevel && (
+                      <div className="px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center">
+                        🌐 University
                       </div>
-                      {article.isUniLevel && (
-                        <div className="px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center">
-                          🌐 University
-                        </div>
-                      )}
+                    )}
+                    <div className={`category-tag px-2 sm:px-3 py-1 rounded-full text-white text-xs font-semibold tracking-wide shadow ${getCategoryColor(article.category)}`}> 
+                      {article.category}
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="flex items-center text-[#6B0000] text-sm font-semibold mb-3">
-                      <span>🕒</span>
-                      <span className="ml-1">{article.timeAgo}</span>
-                    </div>
-                    
-                    <h3 className="text-gray-900 text-xl font-bold mb-3 line-clamp-2 leading-tight">
-                      {article.headline}
-                    </h3>
-                    
-                    <p className="text-gray-700 text-base leading-relaxed line-clamp-3 mb-4">
-                      {article.details}
-                    </p>
-                    
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                      <span className="text-[#6B0000] text-sm font-semibold">
-                        Tap for full details
-                      </span>
-                      <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow transition-colors duration-200">
-                        Read More
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  {/* Time Stamp */}
+                  <p className="text-[#6B0000] text-xs font-semibold mb-1 sm:mb-2">
+                    {article.timeAgo}
+                  </p>
+                  {/* Headline */}
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 pr-12 sm:pr-24">
+                    {article.headline}
+                  </h2>
+                  {/* Details */}
+                  <p className="text-gray-700 text-sm leading-relaxed mb-3 sm:mb-4">
+                    {article.details}
+                  </p>
+                  {/* View Post Button */}
+                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold shadow transition-colors duration-200 w-full sm:w-auto">
+                    View Post
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
+
+        {!isLoading && filteredArticles.length === 0 && articles.length > 0 && (
+          <div className="text-center py-20">
+            <p className="text-white text-xl sm:text-2xl font-medium">No updates found for this category.</p>
+          </div>
+        )}
       </div>
 
       <Footer />
