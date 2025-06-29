@@ -9,7 +9,7 @@ This document outlines the integration of the posts/news system with the existin
 - **Posts Table**: Utilizes the existing `posts` table with the following structure:
   - `id` (uuid, primary key)
   - `title` (text) - Article headline
-  - `context` (text) - Article content
+  - `content` (text) - Article content
   - `category` (text) - Article category (Announcements, System Updates, Election News)
   - `admin_id` (uuid) - Reference to admin who created the post
   - `org_id` (uuid) - Organization ID (null for university level posts)
@@ -24,7 +24,7 @@ This document outlines the integration of the posts/news system with the existin
 - **Purpose**: Create new posts/articles
 - **Parameters**:
   - `title`: Article headline
-  - `context`: Article content
+  - `content`: Article content
   - `category`: Article category
   - `admin_id`: Admin user ID
   - `org_id`: Organization ID (null for university level)

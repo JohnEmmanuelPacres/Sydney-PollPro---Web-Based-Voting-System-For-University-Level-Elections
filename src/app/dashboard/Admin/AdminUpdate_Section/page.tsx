@@ -49,7 +49,6 @@ const AdminUpdateSection = () => {
         setCurrentUser(user);
 
         if (user && administeredOrg) {
-          // Get organization ID
           const { data: org } = await supabase
             .from('organizations')
             .select('id')
@@ -78,34 +77,29 @@ const AdminUpdateSection = () => {
   const loadArticles = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/get-admin-posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          admin_id: currentUser.id,
-          administered_org: administeredOrg
-        })
-      });
+      const { data: posts, error } = await supabase
+        .from('posts')
+        .select('*')
+        .or(`org_id.eq.${orgId},and(admin_id.eq.${currentUser?.id},is_uni_lev.eq.true)`)
+        .order('created_at', { ascending: false });
 
-      if (response.ok) {
-        const { posts } = await response.json();
-        
-        // Transform posts to articles format
-        const transformedArticles: Article[] = posts.map((post: any) => ({
-          id: post.id,
-          headline: post.title,
-          content: post.context,
-          category: post.category as Category,
-          images: [], // We'll handle images separately if needed
-          status: 'published',
-          publishedAt: new Date(post.created_at),
-          isUniLevel: post.is_uni_lev
-        }));
+      if (error) throw error;
 
-        setArticles(transformedArticles);
-      }
+      const transformedArticles: Article[] = posts.map((post: any) => ({
+        id: post.id,
+        headline: post.title,
+        content: post.content,
+        category: post.category as Category,
+        images: Array.isArray(post.image_urls) ? post.image_urls.map(() => new File([], 'image')) : [],
+        publishedAt: new Date(post.created_at),
+        status: 'published',
+        isUniLevel: post.is_uni_lev,
+      }));
+
+      setArticles(transformedArticles);
     } catch (error) {
       console.error('Error loading articles:', error);
+      setArticles([]);
     } finally {
       setIsLoading(false);
     }
@@ -153,66 +147,61 @@ const AdminUpdateSection = () => {
       return;
     }
 
-    if (!currentUser || !orgId) {
-      alert('User or organization information is missing');
-      return;
-    }
-
     try {
-      // First upload images if there are any
       let imageUrls: string[] = [];
-      if (currentArticle.images.length > 0) {
-        const formData = new FormData();
-        currentArticle.images.forEach(image => {
-          formData.append('images', image);
-        });
-
-        const uploadResponse = await fetch('/api/upload-images', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('Image upload failed');
-        }
-
-        const { urls } = await uploadResponse.json();
-        imageUrls = urls;
-      }
-
-      // Then create the post
-      const postResponse = await fetch('/api/create-post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: currentArticle.headline,
-          context: currentArticle.content,
-          category: currentArticle.category,
-          admin_id: currentUser.id,
-          org_id: currentArticle.isUniLevel ? null : orgId,
-          image_urls: imageUrls,
-          is_uni_lev: currentArticle.isUniLevel
-        })
-      });
-
-      if (!postResponse.ok) {
-        const errorData = await postResponse.json();
-        throw new Error(errorData.error || 'Failed to create post');
-      }
-
-      const { post } = await postResponse.json();
-
-      // Update local state
-      const newArticle: Article = {
-        ...currentArticle,
-        id: post.id,
-        status: 'published',
-        publishedAt: new Date()
-      };
-
-      setArticles(prev => [newArticle, ...prev]);
       
-      // Reset form
+      if (currentArticle.images.length > 0) {
+        // Upload images and collect URLs
+        imageUrls = await Promise.all(
+          currentArticle.images.map(async (image) => {
+            const fileExt = image.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+            const { data, error } = await supabase.storage
+              .from('article-images')
+              .upload(fileName, image);
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('article-images')
+              .getPublicUrl(data.path);
+            return publicUrl;
+          })
+        );
+      }
+
+      // Insert post with image_urls as an array (or null if empty)
+      const { data: post, error: postError } = await supabase
+        .from('posts')
+        .insert({
+          title: currentArticle.headline,
+          content: currentArticle.content,
+          category: currentArticle.category,
+          admin_id: currentUser?.id,
+          org_id: currentArticle.isUniLevel ? null : orgId,
+          image_urls: imageUrls.length > 0 ? imageUrls : null, // Store as array or null
+          is_uni_lev: currentArticle.isUniLevel,
+        })
+        .select()
+        .single();
+
+      if (postError) {
+        console.error('Post creation error:', postError);
+        throw postError;
+      }
+
+      // Update local state and reset form
+      setArticles(prev => [{
+        id: post.id,
+        headline: post.title,
+        content: post.content,
+        category: post.category as Category,
+        images: currentArticle.images,
+        publishedAt: new Date(post.created_at),
+        status: 'published',
+        isUniLevel: post.is_uni_lev
+      }, ...prev]);
+      
       setCurrentArticle({
         id: '',
         headline: '',
@@ -224,10 +213,9 @@ const AdminUpdateSection = () => {
       });
 
       alert('Article published successfully!');
-
     } catch (error: any) {
       console.error('Publish error:', error);
-      alert(`Failed to publish article: ${error.message}`);
+      alert(`Failed to publish article: ${error.message || 'Unknown error'}`);
     }
   };
 

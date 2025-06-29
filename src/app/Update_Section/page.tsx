@@ -101,36 +101,31 @@ const UpdatesPage = () => {
         body: JSON.stringify({
           user_id: currentUser?.id || null,
           user_type: userType,
-          department_org: departmentOrg
-        })
+          department_org: departmentOrg,
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-      const { posts, error } = await response.json();
-      
-      if (error) {
-        throw new Error(error);
-      }
-      
+      const { posts } = await response.json();
+
       const transformedArticles: Article[] = posts.map((post: any) => ({
         id: post.id,
         headline: post.title,
-        details: post.context,
+        details: post.content,
         category: post.category,
         timeAgo: formatTimeAgo(new Date(post.created_at)),
         bgColor: getCategoryBgColor(post.category),
-        image: post.image_urls && post.image_urls.length > 0 ? post.image_urls[0] : '/default-news.jpg',
-        isUniLevel: post.is_uni_lev
+        image: Array.isArray(post.image_urls) && post.image_urls.length > 0 
+          ? post.image_urls[0]  // Use first image if array exists
+          : '/default-news.jpg', // Fallback if no images
+        isUniLevel: post.is_uni_lev,
       }));
 
       setArticles(transformedArticles);
     } catch (error) {
       console.error('Error loading articles:', error);
-      // Optionally show error to user
-      setArticles([]); // Clear articles to show empty state
+      setArticles([]);
     } finally {
       setIsLoading(false);
     }

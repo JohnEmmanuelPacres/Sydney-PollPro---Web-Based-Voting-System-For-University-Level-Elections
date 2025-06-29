@@ -17,8 +17,9 @@ export async function POST(request: NextRequest) {
       department_org: body.department_org
     });
 
-    if (!user_id || !user_type) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // For guest users, user_id and user_type can be null
+    if (user_type && !user_id) {
+      return NextResponse.json({ error: 'Missing user_id for authenticated user' }, { status: 400 });
     }
 
     let query = supabaseAdmin

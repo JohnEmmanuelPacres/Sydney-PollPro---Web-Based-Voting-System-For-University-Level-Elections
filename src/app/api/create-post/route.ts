@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, context, category, admin_id, org_id, image_urls, is_uni_lev } = body;
+    const { title, content, category, admin_id, org_id, image_urls, is_uni_lev } = body;
 
     console.log('Creating post with data:', {
       title: body.title,
@@ -20,20 +20,23 @@ export async function POST(request: NextRequest) {
       image_urls: body.image_urls?.length || 0
     });
 
-    if (!title || !context || !category || !admin_id) {
+    if (!title || !content || !category || !admin_id) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Validate image_urls is an array (or null/undefined)
+    const sanitizedImageUrls = Array.isArray(image_urls) ? image_urls : null;
 
     // Create the post
     const { data: post, error: postError } = await supabaseAdmin
       .from('posts')
       .insert({
         title,
-        context,
+        content,
         category,
         admin_id,
         org_id: is_uni_lev ? null : org_id, // If university level, org_id is null
-        image_urls: image_urls || [],
+        image_urls: sanitizedImageUrls, // Pass as array or null
         is_uni_lev: is_uni_lev || false,
         created_at: new Date().toISOString()
       })
