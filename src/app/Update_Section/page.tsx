@@ -16,6 +16,7 @@ type Article = {
   bgColor: string;
   image: string;
   isUniLevel: boolean;
+  image_urls?: string[];
 };
 
 type Filter = 'All Updates' | 'Announcements' | 'System Updates' | 'Election News';
@@ -44,6 +45,18 @@ const UpdatesPage = () => {
   const filtersRef = useRef<(HTMLButtonElement | null)[]>([]);
   const pageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // State for expanded article
+  const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
+  // State for comments (UI only, not persisted)
+  const [commentInput, setCommentInput] = useState('');
+  const [comments, setComments] = useState<Record<string, {name: string, time: string, text: string}[]>>({});
+
+  // State for modal
+  const [expandedArticle, setExpandedArticle] = useState<Article | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [modalImageIdx, setModalImageIdx] = useState(0);
 
   // Get current user and determine user type
   useEffect(() => {
@@ -191,6 +204,7 @@ const UpdatesPage = () => {
           bgColor: getCategoryBgColor(post.category),
           image: imageUrl,
           isUniLevel: post.is_uni_lev,
+          image_urls: post.image_urls,
         };
       });
 
@@ -363,6 +377,58 @@ const UpdatesPage = () => {
     }
   };
 
+  // Add comment handler
+  const handleAddComment = (articleId: string) => {
+    if (!commentInput.trim()) return;
+    setComments(prev => ({
+      ...prev,
+      [articleId]: [
+        ...(prev[articleId] || []),
+        {
+          name: currentUser?.user_metadata?.full_name || 'Anonymous',
+          time: 'just now',
+          text: commentInput.trim(),
+        }
+      ]
+    }));
+    setCommentInput('');
+  };
+
+  // Open modal with GSAP animation (centered modal)
+  const openModal = (article: Article) => {
+    setExpandedArticle(article);
+    setModalImageIdx(0);
+    setModalVisible(true);
+    setTimeout(() => {
+      if (modalRef.current) {
+        gsap.fromTo(
+          modalRef.current,
+          { x: '-100vw', opacity: 0 },
+          { x: '0vw', opacity: 1, duration: 0.5, ease: 'power3.out' }
+        );
+      }
+    }, 10);
+  };
+
+  // Close modal with GSAP animation
+  const closeModal = () => {
+    if (modalRef.current) {
+      gsap.to(modalRef.current, {
+        x: '-100vw',
+        opacity: 0,
+        duration: 0.4,
+        ease: 'power3.in',
+        onComplete: () => {
+          setModalVisible(false);
+          setExpandedArticle(null);
+        }
+      });
+    } else {
+      setModalVisible(false);
+      setExpandedArticle(null);
+    }
+  };
+
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
       <Header />
@@ -430,54 +496,76 @@ const UpdatesPage = () => {
               </button>
             </div>
           ) : (
-            filteredArticles.map((article, index) => (
-              <div
-                key={article.id}
-                ref={el => { articlesRef.current[index] = el; }}
-                onMouseEnter={() => handleArticleHover(index, true)}
-                onMouseLeave={() => handleArticleHover(index, false)}
-                className="bg-white rounded-[16px] border-2 border-[#FFD700] shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer flex flex-col sm:flex-row"
-              >
-                {/* Image Section */}
-                <div className="w-full sm:w-80 h-48 sm:h-64 flex-shrink-0">
-                  <img 
-                    src={article.image} 
-                    alt={article.headline}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {/* Content Section */}
-                <div className="flex-1 p-4 sm:p-6 relative">
-                  {/* Tags Row: University + Category */}
-                  <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2 z-10">
-                    {article.isUniLevel && (
-                      <div className="px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center">
-                        🌐 University
+            filteredArticles.map((article, index) => {
+              // Support multiple images
+              const images = article.image_urls && Array.isArray(article.image_urls) && article.image_urls.length > 0
+                ? article.image_urls
+                : [article.image];
+              const isStacked = images.length > 1;
+              return (
+                <div
+                  key={article.id}
+                  ref={el => { articlesRef.current[index] = el; }}
+                  onMouseEnter={() => handleArticleHover(index, true)}
+                  onMouseLeave={() => handleArticleHover(index, false)}
+                  className="bg-white rounded-[16px] border-2 border-[#FFD700] shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer flex flex-row relative"
+                >
+                  {/* Image Section with stack indicator */}
+                  <div className="relative w-32 sm:w-48 h-32 sm:h-40 flex-shrink-0 flex items-center justify-center">
+                    <img
+                      src={images[0]}
+                      alt={article.headline}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    {isStacked && (
+                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full">
+                        +{images.length - 1}
                       </div>
                     )}
-                    <div className={`category-tag px-2 sm:px-3 py-1 rounded-full text-white text-xs font-semibold tracking-wide shadow ${getCategoryColor(article.category)}`}> 
-                      {article.category}
+                  </div>
+                  {/* Content Section with fade-out for long text */}
+                  <div className="flex-1 p-4 sm:p-6 relative flex flex-col justify-between">
+                    <div>
+                      {/* Tags Row: University + Category */}
+                      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-2 z-10">
+                        {article.isUniLevel && (
+                          <div className="px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-semibold flex items-center">
+                            🌐 University
+                          </div>
+                        )}
+                        <div className={`category-tag px-2 sm:px-3 py-1 rounded-full text-white text-xs font-semibold tracking-wide shadow ${getCategoryColor(article.category)}`}> 
+                          {article.category}
+                        </div>
+                      </div>
+                      {/* Time Stamp */}
+                      <p className="text-[#6B0000] text-xs font-semibold mb-1 sm:mb-2">
+                        {article.timeAgo}
+                      </p>
+                      {/* Headline */}
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 pr-12 sm:pr-24">
+                        {article.headline}
+                      </h2>
+                      {/* Details with fade-out if too long */}
+                      <div className="relative max-h-20 overflow-hidden">
+                        <p className="text-gray-700 text-sm leading-relaxed mb-3 sm:mb-4">
+                          {article.details}
+                        </p>
+                        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                      </div>
+                    </div>
+                    {/* View Post Button */}
+                    <div className="flex justify-end mt-2">
+                      <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold shadow transition-colors duration-200 w-full sm:w-auto"
+                        onClick={() => openModal(article)}
+                      >
+                        View Post
+                      </button>
                     </div>
                   </div>
-                  {/* Time Stamp */}
-                  <p className="text-[#6B0000] text-xs font-semibold mb-1 sm:mb-2">
-                    {article.timeAgo}
-                  </p>
-                  {/* Headline */}
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 pr-12 sm:pr-24">
-                    {article.headline}
-                  </h2>
-                  {/* Details */}
-                  <p className="text-gray-700 text-sm leading-relaxed mb-3 sm:mb-4">
-                    {article.details}
-                  </p>
-                  {/* View Post Button */}
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold shadow transition-colors duration-200 w-full sm:w-auto">
-                    View Post
-                  </button>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -487,6 +575,107 @@ const UpdatesPage = () => {
           </div>
         )}
       </div>
+
+      {/* Modal for expanded article */}
+      {modalVisible && expandedArticle && (
+        <>
+          <div className="fixed inset-0 bg-black bg-opacity-40 z-40" onClick={closeModal}></div>
+          <div
+            ref={modalRef}
+            className="fixed left-1/2 top-1/2 z-50 bg-white rounded-xl shadow-2xl flex flex-col"
+            style={{
+              transform: 'translate(-50%, -50%)',
+              maxWidth: '900px',
+              width: '95vw',
+              maxHeight: '90vh',
+              minHeight: '400px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
+            }}
+          >
+            {/* Modal Header with Close */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">{expandedArticle.headline}</h2>
+              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            </div>
+            {/* Modal Content: Flex row for image and article */}
+            <div className="flex-1 flex flex-row gap-6 overflow-hidden">
+              {/* Image Section (left) */}
+              <div className="flex flex-col items-center p-6 min-w-[280px] max-w-[320px] w-full">
+                {expandedArticle.image_urls && expandedArticle.image_urls.length > 0 ? (
+                  <div className="relative w-full h-48 mb-4 flex items-center justify-center">
+                    <img
+                      src={expandedArticle.image_urls[modalImageIdx]}
+                      alt={expandedArticle.headline}
+                      className="w-full h-full object-cover rounded-lg border"
+                    />
+                    {expandedArticle.image_urls.length > 1 && (
+                      <div className="flex gap-2 mt-2 absolute bottom-2 left-1/2 -translate-x-1/2">
+                        {expandedArticle.image_urls.map((img, idx) => (
+                          <button
+                            key={img}
+                            className={`w-3 h-3 rounded-full border-2 ${modalImageIdx === idx ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-400'}`}
+                            onClick={() => setModalImageIdx(idx)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <img
+                    src={expandedArticle.image}
+                    alt={expandedArticle.headline}
+                    className="w-full h-48 object-cover rounded-lg border mb-4"
+                  />
+                )}
+              </div>
+              {/* Article and Comments Section (right) */}
+              <div className="flex-1 flex flex-col overflow-hidden pr-6 pt-6 pb-6">
+                {/* Article Content (scrollable) */}
+                <div className="flex-1 overflow-y-auto pr-2">
+                  <p className="text-gray-700 text-base whitespace-pre-line mb-8">{expandedArticle.details}</p>
+                </div>
+                {/* Comments Section */}
+                <div className="mt-4">
+                  <h4 className="text-lg font-semibold mb-4">Comments</h4>
+                  <div className="space-y-4 mb-4">
+                    {(comments[expandedArticle.id] || []).length === 0 && (
+                      <p className="text-gray-400">No comments yet. Be the first to comment!</p>
+                    )}
+                    {(comments[expandedArticle.id] || []).map((comment, idx) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg">
+                          {comment.name[0]}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-800">{comment.name}</span>
+                            <span className="text-xs text-gray-400">{comment.time}</span>
+                          </div>
+                          <p className="text-gray-700 text-sm mt-1">{comment.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-end gap-3">
+                    <textarea
+                      className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-blue-400 resize-none min-h-[48px]"
+                      placeholder="Write a comment..."
+                      value={commentInput}
+                      onChange={e => setCommentInput(e.target.value)}
+                    />
+                    <button
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow transition-colors duration-200"
+                      onClick={() => handleAddComment(expandedArticle.id)}
+                    >
+                      Post
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <Footer />
     </div>
