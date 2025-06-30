@@ -579,92 +579,140 @@ const UpdatesPage = () => {
       {/* Modal for expanded article */}
       {modalVisible && expandedArticle && (
         <>
-          <div className="fixed inset-0 bg-black bg-opacity-40 z-40" onClick={closeModal}></div>
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={closeModal}></div>
           <div
             ref={modalRef}
             className="fixed left-1/2 top-1/2 z-50 bg-white rounded-xl shadow-2xl flex flex-col"
             style={{
               transform: 'translate(-50%, -50%)',
-              maxWidth: '900px',
+              maxWidth: '800px',
               width: '95vw',
               maxHeight: '90vh',
-              minHeight: '400px',
+              minHeight: '500px',
               boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
             }}
           >
             {/* Modal Header with Close */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">{expandedArticle.headline}</h2>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">&times;</button>
-            </div>
-            {/* Modal Content: Flex row for image and article */}
-            <div className="flex-1 flex flex-row gap-6 overflow-hidden">
-              {/* Image Section (left) */}
-              <div className="flex flex-col items-center p-6 min-w-[280px] max-w-[320px] w-full">
-                {expandedArticle.image_urls && expandedArticle.image_urls.length > 0 ? (
-                  <div className="relative w-full h-48 mb-4 flex items-center justify-center">
-                    <img
-                      src={expandedArticle.image_urls[modalImageIdx]}
-                      alt={expandedArticle.headline}
-                      className="w-full h-full object-cover rounded-lg border"
-                    />
-                    {expandedArticle.image_urls.length > 1 && (
-                      <div className="flex gap-2 mt-2 absolute bottom-2 left-1/2 -translate-x-1/2">
-                        {expandedArticle.image_urls.map((img, idx) => (
-                          <button
-                            key={img}
-                            className={`w-3 h-3 rounded-full border-2 ${modalImageIdx === idx ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 border-gray-400'}`}
-                            onClick={() => setModalImageIdx(idx)}
-                          />
-                        ))}
-                      </div>
-                    )}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className={`px-3 py-1 rounded-full text-white text-sm font-semibold ${getCategoryColor(expandedArticle.category)}`}>
+                  {expandedArticle.category}
+                </div>
+                {expandedArticle.isUniLevel && (
+                  <div className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-semibold">
+                    🌐 University
                   </div>
-                ) : (
-                  <img
-                    src={expandedArticle.image}
-                    alt={expandedArticle.headline}
-                    className="w-full h-48 object-cover rounded-lg border mb-4"
-                  />
                 )}
               </div>
-              {/* Article and Comments Section (right) */}
-              <div className="flex-1 flex flex-col overflow-hidden pr-6 pt-6 pb-6">
-                {/* Article Content (scrollable) */}
-                <div className="flex-1 overflow-y-auto pr-2">
-                  <p className="text-gray-700 text-base whitespace-pre-line mb-8">{expandedArticle.details}</p>
+              <button 
+                onClick={closeModal} 
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Image and Article Section - Side by Side */}
+              <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 flex-1 overflow-hidden">
+                {/* Image Section */}
+                <div className="w-full sm:w-80 flex-shrink-0">
+                  {expandedArticle.image_urls && expandedArticle.image_urls.length > 0 ? (
+                    <div className="relative w-full h-48 sm:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden">
+                      <img
+                        src={expandedArticle.image_urls[modalImageIdx]}
+                        alt={expandedArticle.headline}
+                        className="w-full h-full object-cover"
+                      />
+                      {expandedArticle.image_urls.length > 1 && (
+                        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
+                          {expandedArticle.image_urls.map((img, idx) => (
+                            <button
+                              key={img}
+                              className={`w-2 h-2 rounded-full transition-all ${
+                                modalImageIdx === idx 
+                                  ? 'bg-white' 
+                                  : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                              }`}
+                              onClick={() => setModalImageIdx(idx)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-48 sm:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden">
+                      <img
+                        src={expandedArticle.image}
+                        alt={expandedArticle.headline}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
-                {/* Comments Section */}
-                <div className="mt-4">
-                  <h4 className="text-lg font-semibold mb-4">Comments</h4>
-                  <div className="space-y-4 mb-4">
-                    {(comments[expandedArticle.id] || []).length === 0 && (
-                      <p className="text-gray-400">No comments yet. Be the first to comment!</p>
-                    )}
-                    {(comments[expandedArticle.id] || []).map((comment, idx) => (
+
+                {/* Article Content Section */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {/* Time and Title */}
+                  <div className="mb-4">
+                    <p className="text-gray-500 text-sm mb-2">{expandedArticle.timeAgo}</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                      {expandedArticle.headline}
+                    </h2>
+                  </div>
+
+                  {/* Article Content */}
+                  <div className="flex-1 overflow-y-auto">
+                    <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-line">
+                      {expandedArticle.details}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments Section - Below */}
+              <div className="border-t border-gray-200 p-4 sm:p-6">
+                <h4 className="text-lg font-semibold mb-3 text-gray-900">Comments</h4>
+                
+                {/* Comments List */}
+                <div className="space-y-3 mb-4 max-h-32 overflow-y-auto">
+                  {(comments[expandedArticle.id] || []).length === 0 ? (
+                    <p className="text-gray-400 text-sm italic">No comments yet. Be the first to comment!</p>
+                  ) : (
+                    (comments[expandedArticle.id] || []).map((comment, idx) => (
                       <div key={idx} className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg">
+                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
                           {comment.name[0]}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-800">{comment.name}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-gray-800 text-sm">{comment.name}</span>
                             <span className="text-xs text-gray-400">{comment.time}</span>
                           </div>
-                          <p className="text-gray-700 text-sm mt-1">{comment.text}</p>
+                          <p className="text-gray-700 text-sm">{comment.text}</p>
                         </div>
                       </div>
-                    ))}
+                    ))
+                  )}
+                </div>
+
+                {/* Comment Input */}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
+                    {currentUser?.user_metadata?.full_name?.[0] || 'A'}
                   </div>
-                  <div className="flex items-end gap-3">
-                    <textarea
-                      className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-blue-400 resize-none min-h-[48px]"
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                       placeholder="Write a comment..."
                       value={commentInput}
                       onChange={e => setCommentInput(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && handleAddComment(expandedArticle.id)}
                     />
                     <button
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow transition-colors duration-200"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold text-sm shadow transition-colors duration-200 flex-shrink-0"
                       onClick={() => handleAddComment(expandedArticle.id)}
                     >
                       Post
