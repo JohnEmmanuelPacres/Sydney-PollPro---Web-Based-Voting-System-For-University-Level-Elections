@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
+import { extractFirstAndLastNameFromEmail, prettifyFirstName } from '@/utils/emailUtils';
 
 const SIGNIN: NextPage = () => {
   const [email, setEmail] = useState("");
@@ -87,6 +88,54 @@ const SIGNIN: NextPage = () => {
           }
           setIsLoading(false);
           return;
+        }
+
+        const { data: voterProfile, error: voterProfileError } = await supabase
+          .from('voter_profiles')
+          .select('*')
+          .eq('email', email)
+          .single();
+
+        if (voterProfileError || !voterProfile) {
+          const {data: adminProfile, error: adminError} = await supabase
+            .from('admin_profiles')
+            .select('*')
+            .eq('email', email)
+            .single();
+
+          if (adminError || !adminProfile) {
+            setSignInError('Invalid login credentials. Please try again.');
+            setIsLoading(false);
+            return;
+          }
+
+           // Check for required fields and prompt if missing
+          if (!adminProfile.course_year || !adminProfile.department_org) {
+            setSignInError('Your admin profile is missing required voter information (course year or department/org). Please contact support.');
+            setIsLoading(false);
+            return;
+          }
+
+          // If the admin tries to log in as voter
+          const { first_name, last_name } = extractFirstAndLastNameFromEmail(email!);
+          const prettyFirstName = prettifyFirstName(first_name);
+          const {error: voterInsertError} = await supabase.from('voter_profiles').insert({
+            id: adminProfile.id,
+            email: email!,
+            course_year: adminProfile.course_year || '',
+            department_org: adminProfile.department_org || '',
+            first_name: prettyFirstName,
+            last_name,
+          });
+
+          if (voterInsertError) {
+            // If duplicate, ignore; otherwise, show error
+            if (voterInsertError.code !== '23505') { // 23505 = unique_violation in Postgres
+              setSignInError('Failed to register you as a voter: ' + voterInsertError.message);
+              setIsLoading(false);
+              return;
+            }
+          }
         }
 
         if (data.user) {

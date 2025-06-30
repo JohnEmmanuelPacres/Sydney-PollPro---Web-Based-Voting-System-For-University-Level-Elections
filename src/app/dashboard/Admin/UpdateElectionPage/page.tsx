@@ -1,7 +1,8 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import { supabase } from "@/utils/supabaseClient"
 import { useAdminOrg } from '../AdminedOrgContext'; //React Context
+import { useSearchParams } from 'next/navigation';
+import { supabase } from "@/utils/supabaseClient"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -23,10 +24,9 @@ import { CandidateDetailModal } from "../../../components/CreateElectionComponen
 import { EmptyState } from "../../../components/CreateElectionComponents/empty-state"
 import { MultiSelectDropdown } from "../../../components/CreateElectionComponents/multi-select-dropdown"
 import AdminHeader from "../../../components/AdminHeader"
-import { useSearchParams } from "next/navigation";
 
 interface Position {
-  id: string
+  id?: string
   title: string
   description: string
   maxCandidates: number
@@ -35,7 +35,7 @@ interface Position {
 }
 
 interface Candidate {
-  id: string
+  id?: string
   name: string
   email: string
   positionId: string
@@ -44,10 +44,10 @@ interface Candidate {
   course: string
   year: string
   platform: string
+  picture_url?: string
   detailedCredentials?: string
   achievements?: string[]
   experience?: string[]
-  picture_url?: string
 }
 
 interface Election {
@@ -66,40 +66,6 @@ interface Election {
   };
 }
 
-const defaultPositions: Position[] = [
-  {
-    id: "1",
-    title: "President",
-    description: "Chief executive of the student body",
-    maxCandidates: 5,
-    maxWinners: 1, // Typically only one president
-    isRequired: true,
-  },
-  {
-    id: "2",
-    title: "Vice President",
-    description: "Second in command and legislative leader",
-    maxCandidates: 5,
-    maxWinners: 1, // Typically only one vice president
-    isRequired: true,
-  },
-  {
-    id: "3",
-    title: "Secretary",
-    description: "Records keeper and communications officer",
-    maxCandidates: 3,
-    maxWinners: 1, // Typically only one secretary
-    isRequired: true,
-  },
-  {
-    id: "4",
-    title: "Treasurer",
-    description: "Financial officer and budget manager",
-    maxCandidates: 3,
-    maxWinners: 1, // Typically only one treasurer
-    isRequired: true,
-  },
-]
 const courseYearOptions = [
 // Architecture
 'BS Architecture - 1st Year',
@@ -325,39 +291,124 @@ const courseYearOptions = [
 'BS Criminology - 4th Year'
 ];
 
-export default function CreateElectionPage() {
+const defaultPositions: Position[] = [
+  {
+    id: "1",
+    title: "President",
+    description: "Chief executive of the student body",
+    maxCandidates: 5,
+    maxWinners: 1, // Typically only one president
+    isRequired: true,
+  },
+  {
+    id: "2",
+    title: "Vice President",
+    description: "Second in command and legislative leader",
+    maxCandidates: 5,
+    maxWinners: 1, // Typically only one vice president
+    isRequired: true,
+  },
+  {
+    id: "3",
+    title: "Secretary",
+    description: "Records keeper and communications officer",
+    maxCandidates: 3,
+    maxWinners: 1, // Typically only one secretary
+    isRequired: true,
+  },
+  {
+    id: "4",
+    title: "Treasurer",
+    description: "Financial officer and budget manager",
+    maxCandidates: 3,
+    maxWinners: 1, // Typically only one treasurer
+    isRequired: true,
+  },
+  // Add more default positions here if needed, but do NOT add 'muse'
+];
+
+export default function UpdateElectionPage() {
+  const { administeredOrg } = useAdminOrg();
   const searchParams = useSearchParams();
-  const administeredOrg = searchParams.get('administered_Org') || '';
-  const [orgID, setOrgId] = useState('');
-  const [adminDepartmentOrg, setAdminDepartmentOrg] = useState<string | null>(null);
+  const electionId = searchParams.get('electionId');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchOrgId = async () => {
-        const { data: org } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('organization_name', administeredOrg || '')
-        .single();
+  // Temporary: Add this line to see what electionId we're getting
+  console.log('URL electionId:', electionId);
 
-        if (org) setOrgId(org.id);
-    };
-    
-    fetchOrgId();
-  }, []);
-
-  useEffect(() => {
-    async function fetchAdminDepartmentOrg() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) return;
-      const { data: profile } = await supabase
-        .from('admin_profiles')
-        .select('administered_org')
-        .eq('email', user.email)
-        .single();
-      setAdminDepartmentOrg(profile?.administered_org || null);
+  // Move fetchElectionData outside of useEffect so it can be called elsewhere
+  const fetchElectionData = async () => {
+    console.log("🔄 fetchElectionData called");
+    if (!electionId) {
+      setError('No election ID provided');
+      setLoading(false);
+      return;
     }
-    fetchAdminDepartmentOrg();
-  }, []);
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/get-election-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ electionId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || 'Failed to fetch election data');
+        setLoading(false);
+        return;
+      }
+      if (!result.election) {
+        setError('No election data returned');
+        setLoading(false);
+        return;
+      }
+
+      console.log("📊 Fetched election data:", {
+        name: result.election.name,
+        positionsCount: result.election.positions.length,
+        candidatesCount: result.election.candidates.length,
+        candidates: result.election.candidates.map((c: any) => ({ name: c.name, id: c.id }))
+      });
+
+      setElection(result.election);
+      setNewCandidate({
+        name: "",
+        email: "",
+        positionId: "",
+        credentials: "",
+        course: "",
+        year: "",
+        platform: "",
+        status: "pending",
+        picture_url: "",
+      });
+      setEditingCandidate(null);
+      setDetailViewCandidate(null);
+      setIsEditCandidateOpen(false);
+      console.log('✅ Set election data:', result.election);
+      console.log('🔍 Candidates after refetch:', result.election.candidates);
+      console.log('🔍 Candidate IDs check:');
+      result.election.candidates.forEach((c: any) => {
+        const isUUID = c.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id);
+        console.log(`  - ${c.name}: ID=${c.id}, isUUID=${isUUID}`);
+      });
+    } catch (error) {
+      setError('Unexpected error fetching election data');
+      console.error('Error fetching election data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchElectionData();
+  }, [electionId]);
 
   const [election, setElection] = useState<Election>({
     name: "",
@@ -366,7 +417,7 @@ export default function CreateElectionPage() {
     startTime: "",
     endDate: "",
     endTime: "",
-    positions: defaultPositions,
+    positions: [],
     candidates: [],
     settings: {
       isUniLevel: false,
@@ -400,244 +451,17 @@ export default function CreateElectionPage() {
     status: "pending",
     picture_url: "",
   })
+
   const [imageUploading, setImageUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [isAddingPosition, setIsAddingPosition] = useState(false);
+  const [isAddingCandidate, setIsAddingCandidate] = useState(false);
+  const isAddingCandidateRef = useRef(false);
+
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleAddPosition = () => {
-    if (newPosition.title && newPosition.description) {
-      const position: Position = {
-        id: Date.now().toString(),
-        title: newPosition.title!,
-        description: newPosition.description!,
-        maxCandidates: newPosition.maxCandidates || 3,
-        maxWinners: newPosition.maxWinners || 1,
-        isRequired: newPosition.isRequired || false,
-      }
-      setElection((prev) => ({
-        ...prev,
-        positions: [...prev.positions, position],
-      }))
-      setNewPosition({ title: "", description: "", maxCandidates: 3, maxWinners: 1, isRequired: false })
-      setIsAddPositionOpen(false)
-    }
-  }
-
-  const handleAddCandidate = () => {
-    if (newCandidate.name && newCandidate.email && newCandidate.positionId) {
-      // Parse the course-year input
-      const { course, year } = parseCourseYear(newCandidate.course);
-      
-      const candidate: Candidate = {
-        id: Date.now().toString(),
-        name: newCandidate.name!,
-        email: newCandidate.email!,
-        positionId: newCandidate.positionId!,
-        status: "pending",
-        credentials: newCandidate.credentials || "",
-        course: course, // Use parsed course
-        year: year, // Use parsed year
-        platform: newCandidate.platform || "",
-        picture_url: newCandidate.picture_url || "",
-      }
-      
-      setElection((prev) => ({
-        ...prev,
-        candidates: [...prev.candidates, candidate],
-      }))
-      setNewCandidate({
-        name: "",
-        email: "",
-        positionId: "",
-        credentials: "",
-        course: "",
-        year: "",
-        platform: "",
-        status: "pending",
-        picture_url: "",
-      })
-      setImageUrl(''); // Reset the image URL
-      setIsAddCandidateOpen(false)
-    }
-  }
-
-  const handleEditCandidate = (candidate: Candidate) => {
-    setEditingCandidate(candidate)
-    const formattedCourse = candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : candidate.course || '';
-    
-    setNewCandidate({
-      name: candidate.name,
-      email: candidate.email,
-      positionId: candidate.positionId,
-      credentials: candidate.credentials,
-      course: formattedCourse,
-      year: candidate.year,
-      platform: candidate.platform,
-      status: candidate.status,
-      picture_url: candidate.picture_url || "",
-    })
-    setImageUrl(candidate.picture_url || ''); // Set the image URL for the edit dialog
-    setIsEditCandidateOpen(true)
-  }
-
-  const handleUpdateCandidate = () => {
-    if (editingCandidate && newCandidate.name && newCandidate.email && newCandidate.positionId) {
-      // Parse the course-year input
-      const { course, year } = parseCourseYear(newCandidate.course);
-      
-      setElection((prev) => ({
-        ...prev,
-        candidates: prev.candidates.map((c) =>
-          c.id === editingCandidate.id
-            ? {
-                ...c,
-                name: newCandidate.name!,
-                email: newCandidate.email!,
-                positionId: newCandidate.positionId!,
-                credentials: newCandidate.credentials || "",
-                course: course, // Use parsed course
-                year: year, // Use parsed year
-                platform: newCandidate.platform || "",
-                status: newCandidate.status || "pending",
-                picture_url: newCandidate.picture_url || c.picture_url || "",
-              }
-            : c
-        ),
-      }))
-      
-      // Reset form
-      setNewCandidate({
-        name: "",
-        email: "",
-        positionId: "",
-        credentials: "",
-        course: "",
-        year: "",
-        platform: "",
-        status: "pending",
-        picture_url: "",
-      })
-      setImageUrl(''); // Reset the image URL
-      setEditingCandidate(null)
-      setIsEditCandidateOpen(false)
-    }
-  }
-
-  const handleDeletePosition = (positionId: string) => {
-    setElection((prev) => ({
-      ...prev,
-      positions: prev.positions.filter((p) => p.id !== positionId),
-      candidates: prev.candidates.filter((c) => c.positionId !== positionId),
-    }))
-  }
-
-  const handleDeleteCandidate = (candidateId: string) => {
-    setElection((prev) => ({
-      ...prev,
-      candidates: prev.candidates.filter((c) => c.id !== candidateId),
-    }))
-  }
-
-  const handleStatusChange = (candidateId: string, newStatus: "approved" | "disqualified") => {
-    setElection((prev) => ({
-      ...prev,
-      candidates: prev.candidates.map((c) => (c.id === candidateId ? { ...c, status: newStatus } : c)),
-    }))
-  }
-
-  const validateElection = (election: Election): boolean => {
-    return (
-      election.name.trim() !== '' &&
-      election.description.trim() !== '' &&
-      !!election.startDate &&
-      !!election.endDate &&
-      election.positions.length > 0 &&
-      election.positions.every(
-        (pos) => pos.title.trim() !== '' && pos.description.trim() !== ''
-      ) &&
-      election.candidates.length > 0 &&
-      election.candidates.every(
-        (c) => c.name.trim() !== '' && c.email.trim() !== '' //&& c.positionId.trim() !== ''
-      )
-      // Add any other validation rules you need
-    );
-  };
-
-  const handleCreateElection = async () => {
-    if (!validateElection(election)) {
-        alert('Please complete all required fields before publishing');
-        return;
-    }
-    if (!orgID) {
-        alert('Organization ID is missing. Cannot create election.');
-        return;
-    }
-    if (!election.settings.isUniLevel && !adminDepartmentOrg) {
-        alert('Admin department/organization is missing. Cannot create organization election.');
-        return;
-    }
-    // Map candidates to API shape
-    const mappedCandidates = election.candidates.map((c) => ({
-      id: c.id,
-      name: c.name,
-      email: c.email,
-      course_Year: c.course + (c.year ? ` - ${c.year}` : ''),
-      positionId: c.positionId,
-      status: c.status,
-      platform: c.platform,
-      detailed_achievements: c.credentials || '',
-      picture_url: c.picture_url || '',
-    }));
-    const payload = {
-      electionData: {
-        name: election.name,
-        description: election.description,
-        startDate: election.startDate,
-        startTime: election.startTime,
-        endDate: election.endDate,
-        endTime: election.endTime,
-        positions: election.positions,
-        candidates: mappedCandidates,
-        settings: {
-          isUniLevel: election.settings.isUniLevel,
-          allowAbstain: election.settings.allowAbstain,
-          eligibleCourseYear: election.settings.eligibleCourseYear
-        },
-        department_org: !election.settings.isUniLevel ? adminDepartmentOrg : null
-      },
-      orgID: orgID
-    };
-    console.log('Payload sent to /api/create-elections:', payload);
-    try {
-        const response = await fetch('/api/create-elections', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-        throw new Error('Failed to create election');
-        }
-        const result = await response.json();
-        console.log("Creating election:", election);
-        console.log("Result:", result);
-        alert('Election created successfully!');
-        // Redirect or reset form as needed
-    } catch (error) {
-        console.error('Error creating election:', error);
-        alert('Failed to create election. Please try again.');
-    }
-  }
-
-  const getPositionCandidates = (positionId: string) => {
-    return election.candidates.filter((c) => c.positionId === positionId)
-  }
-
-  const getPositionById = (positionId: string) => {
-    return election.positions.find((p) => p.id === positionId)
   }
 
   // Helper function to parse course_year string (same as in API route)
@@ -701,6 +525,358 @@ export default function CreateElectionPage() {
     setImageUploading(false);
   };
 
+  const handleAddPosition = async () => {
+    if (newPosition.title && newPosition.description) {
+      setIsAddingPosition(true);
+      try {
+        // Save to DB immediately
+        const response = await fetch('/api/add-position', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            electionId,
+            title: newPosition.title,
+            description: newPosition.description,
+            maxCandidates: newPosition.maxCandidates || 3,
+            maxWinners: newPosition.maxWinners || 1,
+            isRequired: newPosition.isRequired || false,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to add position');
+        // Refetch election data to get new UUIDs
+        await fetchElectionData();
+        setNewPosition({ title: "", description: "", maxCandidates: 3, maxWinners: 1, isRequired: false });
+        setIsAddPositionOpen(false);
+      } catch (err: any) {
+        alert('Failed to add position: ' + err.message);
+      } finally {
+        setIsAddingPosition(false);
+      }
+    }
+  }
+
+  const handleAddCandidate = async () => {
+    // Prevent multiple simultaneous calls
+    if (isAddingCandidateRef.current) {
+      console.log("🚫 handleAddCandidate already in progress, skipping...");
+      return;
+    }
+    
+    if (newCandidate.name && newCandidate.email && newCandidate.positionId) {
+      console.log("🔍 Starting to add candidate:", newCandidate.name);
+      isAddingCandidateRef.current = true;
+      setIsAddingCandidate(true);
+      // Parse the course-year input
+      const { course, year } = parseCourseYear(newCandidate.course);
+      try {
+        console.log("🔍 Calling API to add candidate...");
+        // Save to DB immediately
+        const response = await fetch('/api/add-candidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            electionId,
+            name: newCandidate.name,
+            email: newCandidate.email,
+            positionId: newCandidate.positionId,
+            status: 'pending',
+            credentials: newCandidate.credentials || '',
+            course: course,
+            year: year,
+            platform: newCandidate.platform || '',
+            picture_url: newCandidate.picture_url || '',
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to add candidate');
+        console.log("✅ Candidate added successfully, refetching data...");
+        // Refetch election data to get new UUIDs and correct position mapping
+        await fetchElectionData();
+        console.log("✅ Data refetched, resetting form...");
+        setNewCandidate({
+          name: "",
+          email: "",
+          positionId: "",
+          credentials: "",
+          course: "",
+          year: "",
+          platform: "",
+          status: "pending",
+          picture_url: "",
+        });
+        setIsAddCandidateOpen(false);
+        console.log("✅ Candidate addition completed");
+      } catch (err: any) {
+        console.error("❌ Error adding candidate:", err);
+        alert('Failed to add candidate: ' + err.message);
+      } finally {
+        setIsAddingCandidate(false);
+        isAddingCandidateRef.current = false;
+      }
+    }
+  }
+
+  const handleEditCandidate = (candidate: Candidate) => {
+    setEditingCandidate(candidate)
+    setNewCandidate({
+      name: candidate.name,
+      email: candidate.email,
+      positionId: candidate.positionId,
+      credentials: candidate.credentials,
+      course: candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : candidate.course || '',
+      year: candidate.year,
+      platform: candidate.platform,
+      status: candidate.status,
+      picture_url: candidate.picture_url || "",
+    })
+    setImageUrl(candidate.picture_url || ''); // Set the image URL for the edit dialog
+    setIsEditCandidateOpen(true)
+  }
+
+  const handleUpdateCandidate = () => {
+    if (editingCandidate && newCandidate.name && newCandidate.email && newCandidate.positionId) {
+      // Parse the course-year input
+      const { course, year } = parseCourseYear(newCandidate.course);
+      
+      setElection((prev) => ({
+        ...prev,
+        candidates: prev.candidates.map((c) =>
+          c.id === editingCandidate.id
+            ? {
+                ...c,
+                name: newCandidate.name!,
+                email: newCandidate.email!,
+                positionId: newCandidate.positionId!,
+                credentials: newCandidate.credentials || "",
+                course: course, // Use parsed course
+                year: year, // Use parsed year
+                platform: newCandidate.platform || "",
+                status: newCandidate.status || "pending",
+                picture_url: newCandidate.picture_url || "",
+              }
+            : c
+        ),
+      }))
+      
+      // Reset form
+      setNewCandidate({
+        name: "",
+        email: "",
+        positionId: "",
+        credentials: "",
+        course: "",
+        year: "",
+        platform: "",
+        status: "pending",
+        picture_url: "",
+      })
+      setImageUrl(''); // Reset the image URL
+      setEditingCandidate(null)
+      setIsEditCandidateOpen(false)
+    }
+  }
+
+  const handleDeletePosition = (positionId: string) => {
+    setElection((prev) => ({
+      ...prev,
+      positions: prev.positions.filter((p) => p.id !== positionId),
+      candidates: prev.candidates.filter((c) => c.positionId !== positionId),
+    }))
+  }
+
+  const handleDeleteCandidate = async (candidateId: string) => {
+    // Remove from local state immediately
+    setElection((prev) => ({
+      ...prev,
+      candidates: prev.candidates.filter((c) => c.id !== candidateId),
+    }));
+    // Remove from Supabase
+    try {
+      const response = await fetch('/api/delete-candidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidateId }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        console.error('❌ Failed to delete candidate from Supabase:', result.error);
+        alert('Failed to delete candidate from database: ' + result.error);
+        // Optionally, refetch data to ensure consistency
+        await fetchElectionData();
+      } else {
+        console.log('✅ Candidate deleted from Supabase');
+      }
+    } catch (err: any) {
+      console.error('❌ Error deleting candidate from Supabase:', err);
+      alert('Failed to delete candidate from database: ' + err.message);
+      // Optionally, refetch data to ensure consistency
+      await fetchElectionData();
+    }
+  }
+
+  const handleStatusChange = async (candidateId: string, newStatus: "approved" | "disqualified") => {
+    console.log("🔍 handleStatusChange called with:", { candidateId, newStatus });
+    console.log("🔍 Current candidates:", election.candidates.map(c => ({ id: c.id, name: c.name, status: c.status })));
+    
+    // Check if candidateId is a valid UUID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(candidateId);
+    console.log("🔍 Is candidateId a UUID?", isUUID);
+    
+    if (!isUUID) {
+      console.error("❌ Candidate ID is not a UUID:", candidateId);
+      alert("Cannot approve/disqualify candidate. Please update the election first to get proper IDs.");
+      return;
+    }
+    
+    try {
+      // Update local state first for immediate UI feedback
+      setElection((prev) => ({
+        ...prev,
+        candidates: prev.candidates.map((c) => 
+          c.id === candidateId ? { ...c, status: newStatus } : c
+        ),
+      }));
+      
+      // Persist to database
+      const response = await fetch('/api/update-candidate-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidateId, status: newStatus }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error("❌ API error:", result);
+        alert(`Failed to update candidate status: ${result.error}`);
+        // Revert local state on error
+        await fetchElectionData();
+        return;
+      }
+      
+      console.log("✅ Candidate status updated successfully:", result);
+      
+    } catch (error) {
+      console.error("❌ Error in handleStatusChange:", error);
+      alert("Failed to update candidate status. Please try again.");
+      // Revert local state on error
+      await fetchElectionData();
+    }
+  }
+
+  const validateElection = (election: Election): boolean => {
+    return (
+      election.name.trim() !== '' &&
+      election.description.trim() !== '' &&
+      !!election.startDate &&
+      !!election.endDate &&
+      election.positions.length > 0 &&
+      election.positions.every(
+        (pos) => pos.title.trim() !== '' && pos.description.trim() !== ''
+      ) &&
+      election.candidates.length > 0 &&
+      election.candidates.every(
+        (c) => c.name.trim() !== '' && c.email.trim() !== ''
+      )
+    );
+  };
+
+  const handleUpdateElection = async () => {
+    if (!validateElection(election)) {
+        alert('Please complete all required fields before updating');
+        return;
+    }
+    if (!electionId) {
+        alert('Election ID is missing. Cannot update election.');
+        return;
+    }
+
+    try {
+        console.log("🔄 Starting election update...");
+        const response = await fetch('/api/update-election', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                electionId,
+                electionData: election
+            }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to update election');
+        }
+
+        alert('Election updated successfully!');
+        console.log("✅ Election updated successfully");
+        
+        // Clear all local state and dialogs
+        setNewCandidate({
+            name: "",
+            email: "",
+            positionId: "",
+            credentials: "",
+            course: "",
+            year: "",
+            platform: "",
+            status: "pending",
+            picture_url: "",
+        });
+        setNewPosition({
+            title: "",
+            description: "",
+            maxCandidates: 3,
+            maxWinners: 1,
+            isRequired: false,
+        });
+        setEditingCandidate(null);
+        setDetailViewCandidate(null);
+        setIsEditCandidateOpen(false);
+        setIsAddCandidateOpen(false);
+        setIsAddPositionOpen(false);
+        setImageUrl('');
+        
+        // Refetch the latest data so IDs are correct
+        console.log("🔄 Refetching election data after update...");
+        await fetchElectionData();
+        console.log("✅ Election data refetched successfully");
+
+    } catch (error) {
+        console.error('❌ Error updating election:', error);
+        alert('Failed to update election. Please try again.');
+    }
+  }
+
+  const getPositionCandidates = (positionId: string) => {
+    return election.candidates.filter((c) => c.positionId === positionId)
+  }
+
+  const getPositionById = (positionId: string) => {
+    return election.positions.find((p) => p.id === positionId)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#52100D] flex flex-col items-center justify-center">
+        <div className="text-white text-xl">Loading election data...</div>
+        <div className="text-white text-sm mt-2">Election ID: {electionId || 'None'}</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#52100D] flex flex-col items-center justify-center">
+        <div className="text-red-400 text-xl">{error}</div>
+        <div className="text-white text-sm mt-2">Election ID: {electionId || 'None'}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#52100D]">
         <header className="fixed top-0 left-0 right-0 z-50">
@@ -709,8 +885,8 @@ export default function CreateElectionPage() {
         {/* Semantic Main Content */}
         <main className="pt-32"> {/* Adjust based on header height */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-3xl font-bold">Create New Election</h1>
-                <p className="text-red-100 mt-1">Set up a new election with positions, candidates, and voting rules</p>
+                <h1 className="text-3xl font-bold text-white">Update Election</h1>
+                <p className="text-red-100 mt-1">Update election with positions, candidates, and voting rules</p>
             </div>
             <div className="max-w-7xl mx-auto p-6">
                 {/* Navigation Tabs */}
@@ -800,8 +976,8 @@ export default function CreateElectionPage() {
                                 />
                                 <Label htmlFor="is-required" className="text-black">Required position (voters must vote for this)</Label>
                             </div>
-                            <Button onClick={handleAddPosition} className="w-full bg-red-900 hover:bg-red-800">
-                                Add Position
+                            <Button onClick={handleAddPosition} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingPosition}>
+                                {isAddingPosition ? 'Adding...' : 'Add Position'}
                             </Button>
                             </div>
                         </DialogContent>
@@ -812,11 +988,8 @@ export default function CreateElectionPage() {
                     <div className="space-y-4">
                         {election.positions.map((position) => (
                         <PositionCard
-                            key={position.id}
-                            position={{
-                            ...position,
-                            currentCandidates: getPositionCandidates(position.id).length,
-                            }}
+                            key={position.id ?? position.title ?? 'generated-id'}
+                            position={{ ...position, id: position.id ?? position.title ?? 'generated-id' }}
                             onDelete={handleDeletePosition}
                         />
                         ))}
@@ -875,7 +1048,12 @@ export default function CreateElectionPage() {
                             </div>
                             <div>
                                 <Label htmlFor="candidate-name" className="text-black">Full Name</Label>
-                                <Input className="text-black focus:ring-2 focus:ring-red-200 hover:bg-gray-50" id="candidate-name" value={newCandidate.name || ""} onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))} placeholder="Enter full name" />
+                                <Input className="text-black"
+                                id="candidate-name"
+                                value={newCandidate.name || ""}
+                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
+                                placeholder="Enter full name"
+                                />
                             </div>
                             <div>
                                 <Label htmlFor="candidate-email" className="text-black">Email</Label>
@@ -895,7 +1073,7 @@ export default function CreateElectionPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {election.positions.map((position) => (
-                                    <SelectItem key={position.id} value={position.id}>
+                                    <SelectItem key={position.id ?? position.title ?? 'generated-id'} value={position.id ?? position.title ?? 'generated-id'}>
                                         {position.title}
                                     </SelectItem>
                                     ))}
@@ -904,7 +1082,7 @@ export default function CreateElectionPage() {
                             </div>
                             <div className="text-black">
                                 <Label htmlFor="candidate-course" className="text-black">Course and Year</Label>
-                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))} value={newCandidate.course || ""}>
+                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select course and Year" />
                                 </SelectTrigger>
@@ -937,8 +1115,8 @@ export default function CreateElectionPage() {
                                 rows={4}
                                 />
                             </div>
-                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-700 focus:bg-red-700">
-                                Add Candidate
+                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingCandidate}>
+                                {isAddingCandidate ? 'Adding...' : 'Add Candidate'}
                             </Button>
                             </div>
                         </DialogContent>
@@ -947,31 +1125,56 @@ export default function CreateElectionPage() {
                     </CardHeader>
                     <CardContent>
                     {election.positions.map((position) => (
-                        <div key={position.id} className="mb-6">
+                        <div key={position.id ?? position.title ?? 'generated-id'} className="mb-6">
                         <div className="flex items-center gap-2 mb-3">
                             <h3 className="text-lg font-semibold text-red-900">{position.title}</h3>
                             <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-                            {getPositionCandidates(position.id).length} candidates
+                            {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length} candidates
                             </Badge>
                         </div>
+                        
+                        {/* Warning for candidates without real UUIDs */}
+                        {getPositionCandidates(position.id ?? position.title ?? 'generated-id').some(c => !c.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.id)) && (
+                          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-yellow-800">
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span className="font-medium">New candidates detected</span>
+                            </div>
+                            <p className="text-yellow-700 text-sm mt-1">
+                              Some candidates were recently added. Click "Update Election" to save them to the database and enable approval/disqualification.
+                            </p>
+                          </div>
+                        )}
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {getPositionCandidates(position.id).map((candidate) => (
-                              <CandidateCard
-                                  key={candidate.id}
-                                  candidate={{
-                                  ...candidate,
-                                  position: position.title,
-                                  picture_url: candidate.picture_url || "",
+                            {getPositionCandidates(position.id ?? position.title ?? 'generated-id').map((candidate) => {
+                              // Ensure we have a real UUID for the candidate
+                              const candidateId = candidate.id;
+                              const isRealUUID = candidateId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(candidateId);
+                              
+                              console.log(`🔍 Candidate ${candidate.name}: ID=${candidateId}, isUUID=${isRealUUID}, status=${candidate.status}`);
+                              
+                              return (
+                                <CandidateCard
+                                  key={candidateId || candidate.email || 'temp-id'}
+                                  candidate={{ 
+                                    ...candidate, 
+                                    id: candidateId || candidate.email || 'temp-id', 
+                                    position: position.title 
                                   }}
                                   onDelete={handleDeleteCandidate}
-                                  onApprove={(id) => handleStatusChange(id, "approved")}
-                                  onDisqualify={(id) => handleStatusChange(id, "disqualified")}
+                                  onApprove={isRealUUID ? (id) => handleStatusChange(id, "approved") : undefined}
+                                  onDisqualify={isRealUUID ? (id) => handleStatusChange(id, "disqualified") : undefined}
                                   onViewDetails={setDetailViewCandidate}
                                   onEdit={handleEditCandidate}
-                              />
-                            ))}
+                                  showActions={true}
+                                />
+                              );
+                            })}
                         </div>
-                        {getPositionCandidates(position.id).length === 0 && (
+                        {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length === 0 && (
                             <EmptyState
                             icon={<User className="w-12 h-12" />}
                             title="No candidates yet"
@@ -986,7 +1189,7 @@ export default function CreateElectionPage() {
 
                 {/* Edit Candidate Dialog */}
                 <Dialog open={isEditCandidateOpen} onOpenChange={setIsEditCandidateOpen}>
-                    <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                         <DialogTitle className="text-red-900">Edit Candidate</DialogTitle>
                         </DialogHeader>
@@ -1018,69 +1221,52 @@ export default function CreateElectionPage() {
                             {imageUploading ? 'Uploading...' : (imageUrl ? 'Change Picture' : 'Upload Picture')}
                             </Button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="edit-candidate-name" className="text-black">Full Name</Label>
-                                <Input className="text-black"
-                                id="edit-candidate-name"
-                                value={newCandidate.name || ""}
-                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
-                                placeholder="Enter full name"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-candidate-email" className="text-black">Email</Label>
-                                <Input className="text-black"
-                                id="edit-candidate-email"
-                                type="email"
-                                value={newCandidate.email || ""}
-                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, email: e.target.value }))}
-                                placeholder="Enter email address"
-                                />
-                            </div>
+                        <div>
+                            <Label htmlFor="edit-candidate-name" className="text-black">Full Name</Label>
+                            <Input className="text-black"
+                            id="edit-candidate-name"
+                            value={newCandidate.name || ""}
+                            onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
+                            placeholder="Enter full name"
+                            />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="text-black">
-                                <Label htmlFor="edit-candidate-position" className="text-black">Position</Label>
-                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, positionId: value }))}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select position" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {election.positions.map((position) => (
-                                    <SelectItem key={position.id} value={position.id}>
-                                        {position.title}
-                                    </SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="text-black">
-                                <Label htmlFor="edit-candidate-course" className="text-black">Course and Year</Label>
-                                <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))} value={newCandidate.course || ""}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select course and Year" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {courseYearOptions.map((course) => (
-                                    <SelectItem key={course} value={course}>
-                                        {course}
-                                    </SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                            </div>
+                        <div>
+                            <Label htmlFor="edit-candidate-email" className="text-black">Email</Label>
+                            <Input className="text-black"
+                            id="edit-candidate-email"
+                            type="email"
+                            value={newCandidate.email || ""}
+                            onChange={(e) => setNewCandidate((prev) => ({ ...prev, email: e.target.value }))}
+                            placeholder="Enter email address"
+                            />
                         </div>
                         <div className="text-black">
-                            <Label htmlFor="edit-candidate-status" className="text-black">Status</Label>
-                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, status: value as "pending" | "approved" | "disqualified" }))}>
+                            <Label htmlFor="edit-candidate-position" className="text-black">Position</Label>
+                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, positionId: value }))}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
+                                <SelectValue placeholder="Select position" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="approved">Approved</SelectItem>
-                                <SelectItem value="disqualified">Disqualified</SelectItem>
+                                {election.positions.map((position) => (
+                                <SelectItem key={position.id ?? position.title ?? 'generated-id'} value={position.id ?? position.title ?? 'generated-id'}>
+                                    {position.title}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="text-black">
+                            <Label htmlFor="edit-candidate-course" className="text-black">Course and Year</Label>
+                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select course and Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {courseYearOptions.map((course) => (
+                                <SelectItem key={course} value={course}>
+                                    {course}
+                                </SelectItem>
+                                ))}
                             </SelectContent>
                             </Select>
                         </div>
@@ -1104,11 +1290,22 @@ export default function CreateElectionPage() {
                             rows={4}
                             />
                         </div>
-                        <div className="pt-4 border-t border-gray-200">
-                            <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
-                                Update Candidate
-                            </Button>
+                        <div className="text-black">
+                            <Label htmlFor="edit-candidate-status" className="text-black">Status</Label>
+                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, status: value as "pending" | "approved" | "disqualified" }))}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="disqualified">Disqualified</SelectItem>
+                            </SelectContent>
+                            </Select>
                         </div>
+                        <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
+                            Update Candidate
+                        </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1202,18 +1399,15 @@ export default function CreateElectionPage() {
                         <div>
                             <span className="font-semibold text-red-900">Voting Opens:</span>
                             <p>
-                            {election.startDate} {election.startTime} (SGT)
+                            {election.startDate} {election.startTime}
                             </p>
                         </div>
                         <div>
                             <span className="font-semibold text-red-900">Voting Closes:</span>
                             <p>
-                            {election.endDate} {election.endTime} (SGT)
+                            {election.endDate} {election.endTime}
                             </p>
                         </div>
-                        </div>
-                        <div className="mt-2 text-xs text-blue-600">
-                            <p>All times are in Singapore timezone (UTC+8)</p>
                         </div>
                     </div>
 
@@ -1221,18 +1415,18 @@ export default function CreateElectionPage() {
                         <h3 className="text-lg font-semibold text-red-900 mb-4">Positions & Candidates</h3>
                         <div className="space-y-4">
                         {election.positions.map((position) => (
-                            <Card key={position.id} className="border border-red-200">
+                            <Card key={position.id ?? position.title ?? 'generated-id'} className="border border-red-200">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-semibold text-red-900">{position.title}</h4>
                                 <Badge className="bg-yellow-100 text-yellow-800">
-                                    {getPositionCandidates(position.id).length} candidates
+                                    {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length} candidates
                                 </Badge>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-3">{position.description}</p>
                                 <div className="flex flex-wrap gap-2">
-                                {getPositionCandidates(position.id).map((candidate) => (
-                                    <Badge key={candidate.id} variant="outline" className="bg-white">
+                                {getPositionCandidates(position.id ?? position.title ?? 'generated-id').map((candidate) => (
+                                    <Badge key={candidate.id ?? candidate.email ?? 'generated-id'} variant="outline" className="bg-white">
                                     {candidate.name}
                                     </Badge>
                                 ))}
@@ -1245,14 +1439,14 @@ export default function CreateElectionPage() {
 
                     <div className="flex justify-center pt-6">
                         <Button
-                        onClick={handleCreateElection}
+                        onClick={handleUpdateElection}
                         className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg"
                         disabled={
                             !election.name || !election.startDate || !election.endDate || election.positions.length === 0
                         }
                         >
                         <CheckCircle className="w-5 h-5 mr-2" />
-                        Create Election
+                        Update Election
                         </Button>
                     </div>
                     </CardContent>
@@ -1262,11 +1456,13 @@ export default function CreateElectionPage() {
                 {/* Candidate Detail Modal */}
                 <CandidateDetailModal
                 candidate={
-                  detailViewCandidate? {
+                  detailViewCandidate ? {
                     ...detailViewCandidate,
-                    positionName: getPositionById(detailViewCandidate.positionId)?.title || "Unknown Position"
-                  } : null
+                    id: detailViewCandidate.id ?? detailViewCandidate.email ?? 'generated-id',
+                    positionName: getPositionById(detailViewCandidate.positionId ?? detailViewCandidate.positionId ?? 'generated-id')?.title || "Unknown Position"
+                  } as any : null
                 }
+
                 isOpen={!!detailViewCandidate}
                 onClose={() => setDetailViewCandidate(null)}
                 onApprove={(id) => handleStatusChange(id, "approved")}

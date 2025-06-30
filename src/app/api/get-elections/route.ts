@@ -7,51 +7,47 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  const { orgID } = await request.json();
+  try {
+    const { orgID } = await request.json();
 
-  if (!orgID) {
-    return NextResponse.json({ error: 'Missing orgID' }, { status: 400 });
+    if (!orgID) {
+      return NextResponse.json({ error: 'Missing orgID' }, { status: 400 });
+    }
+
+    // Fetch elections with related positions and candidates in a single query
+    const { data: elections, error } = await supabaseAdmin
+      .from('elections')
+      .select(`*, positions (*), candidates (*)`)
+      .eq('org_id', orgID)
+      .order('start_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching elections:', error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // The dates are stored as the admin intended, so we display them as-is
+    const convertToDisplayFormat = (dateString: string) => {
+      const date = new Date(dateString);
+      return date.toISOString();
+    };
+
+    // Transform elections to include display dates
+    const transformedElections = elections?.map(election => ({
+      ...election,
+      // Keep original dates for database operations
+      start_date: election.start_date,
+      end_date: election.end_date,
+      // Add display dates (same as original since they're stored correctly now)
+      start_date_sg: election.start_date,
+      end_date_sg: election.end_date,
+    })) || [];
+
+    console.log('Fetched elections with timezone conversion:', transformedElections);
+
+    return NextResponse.json({ elections: transformedElections }, { status: 200 });
+  } catch (err: any) {
+    console.error('Unexpected error in get-elections:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  // Fetch elections for the given orgID
-  const { data: elections, error: electionsError } = await supabaseAdmin
-    .from('elections')
-    .select('*')
-    .eq('org_id', orgID)
-    .order('start_date', { ascending: false });
-
-  if (electionsError) {
-    return NextResponse.json({ error: electionsError.message }, { status: 500 });
-  }
-
-  // For each election, fetch positions and candidates
-  const detailedElections = await Promise.all(
-    (elections || []).map(async (election) => {
-      // Fetch positions for this election
-      const { data: positions, error: positionsError } = await supabaseAdmin
-        .from('positions')
-        .select('*')
-        .eq('election_id', election.id);
-      if (positionsError) {
-        return { ...election, positions: [], candidates: [], error: positionsError.message };
-      }
-
-      // Fetch candidates for this election
-      const { data: candidates, error: candidatesError } = await supabaseAdmin
-        .from('candidates')
-        .select('*')
-        .eq('election_id', election.id);
-      if (candidatesError) {
-        return { ...election, positions, candidates: [], error: candidatesError.message };
-      }
-
-      return {
-        ...election,
-        positions,
-        candidates,
-      };
-    })
-  );
-
-  return NextResponse.json({ elections: detailedElections }, { status: 200 });
-} 
+}

@@ -1,27 +1,116 @@
-import type { NextPage } from 'next';
+import React, { useEffect, useState } from "react";
+import { supabase } from '@/utils/supabaseClient';
+import { useAdminOrg } from '../dashboard/Admin/AdminedOrgContext';
 
-const ReviewElectionPanel: NextPage = () => {
+interface CompletedElection {
+  id: string;
+  name: string;
+  description?: string;
+  start_date: string;
+  end_date: string;
+  allow_abstain: boolean;
+  is_Uni_level: boolean;
+  org_id: string;
+}
+
+interface ReviewElectionPanelProps {
+  completedElections: CompletedElection[];
+  totalCompletedElections?: number;
+}
+
+const ReviewElectionPanel: React.FC<ReviewElectionPanelProps> = ({ completedElections, totalCompletedElections = 0 }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Format date for display
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-SG', {
+      timeZone: 'Asia/Singapore',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleElectionClick = (election: CompletedElection) => {
+    // TODO: Add navigation or modal functionality for completed elections
+    console.log('Clicked on completed election:', election.name);
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full h-[180px] flex items-center justify-center text-gray-500">
+        Loading completed elections...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-[180px] flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  }
+
+  if (completedElections.length === 0) {
+    // If there are no completed elections at all
+    if (totalCompletedElections === 0) {
+      return (
+        <div className="w-full h-[180px] flex items-center justify-center text-gray-500">
+          <div className="text-center">
+            <div className="text-lg font-medium mb-2">No completed elections found</div>
+            <div className="text-sm">There are currently no completed elections to review.</div>
+          </div>
+        </div>
+      );
+    }
+    
+    // If there are elections but search returned no results
+    return (
+      <div className="w-full h-[180px] flex items-center justify-center text-gray-500">
+        <div className="text-center">
+          <div className="text-lg font-medium mb-2">No results found</div>
+          <div className="text-sm">Try adjusting your search terms or year filter.</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="w-full relative backdrop-blur-md rounded-[14px] bg-white border-[4px] border-[#ac6d6c] box-border
-                 h-[180px] flex flex-col items-start justify-start px-[39px] py-[26px] gap-[40px] text-left text-[34px]
-                 text-black font-['Baloo_2']"
-    >
-      <div className="w-[564px] relative h-[51px]">
-        <div className="absolute w-full top-0 left-0 leading-[150%] font-medium flex items-center">
-          CIT-U HALALAN - 2027
-        </div>
-      </div>
-      <div
-        className="flex flex-row items-start justify-start gap-[44px] text-[23px] text-[#7f1d1d] font-inter"
-      >
-        <div className="relative leading-[150%] font-medium">Schedule:</div>
-        <div className="relative leading-[150%] font-medium">
-          mm/dd/yyyy hh:mm:ss
-        </div>
-        <div className="relative leading-[150%] font-medium">Status:</div>
-        <div className="relative leading-[150%] font-medium">COMPLETED</div>
-      </div>
+    <div className="w-full space-y-4 ml-1 mt-1">
+      {completedElections.map((election) => (
+        <button
+          key={election.id}
+          onClick={() => handleElectionClick(election)}
+          className="w-[99%] text-center rounded-xl shadow-md bg-[#fef2f2] border-4 border-gray-500 p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 text-black transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 hover:bg-[#f5f5f5] hover:scale-[1.02] transform-gpu"
+        >
+          <div className="text-left">
+            <h2 className="text-xl font-bold">{election.name}</h2>
+            <p className="text-sm">
+              {formatDateForDisplay(election.start_date)} &mdash; {formatDateForDisplay(election.end_date)}
+            </p>
+            <p className="text-sm text-gray-700">
+              {election.is_Uni_level ? 'University Level Election' : 'Department/Organization Election'}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:items-end gap-1">
+            <span className="px-3 py-1 text-sm rounded-full text-white bg-gray-500">
+              COMPLETED
+            </span>
+            <span className="text-sm">
+              Abstain Votes: {election.allow_abstain ? 'Allowed' : 'Not Allowed'}
+            </span>
+            <span className="text-xs text-gray-600 font-medium">
+              Click to view details
+            </span>
+          </div>
+        </button>
+      ))}
     </div>
   );
 };

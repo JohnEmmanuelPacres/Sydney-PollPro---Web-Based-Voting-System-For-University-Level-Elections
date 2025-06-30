@@ -16,6 +16,7 @@ interface CandidateCardProps {
     course: string
     year: string
     platform?: string
+    picture_url?: string
   }
   onEdit?: (candidate: any) => void
   onDelete?: (id: string) => void
@@ -50,8 +51,12 @@ export function CandidateCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-red-900 rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-red-900 rounded-full flex items-center justify-center overflow-hidden">
+              {candidate.picture_url ? (
+                <img src={candidate.picture_url} alt={candidate.name} className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-6 h-6 text-white" />
+              )}
             </div>
             <div>
               <CardTitle className="text-lg text-red-900">{candidate.name}</CardTitle>
