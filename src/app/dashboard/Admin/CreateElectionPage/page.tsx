@@ -329,6 +329,8 @@ export default function CreateElectionPage() {
   const searchParams = useSearchParams();
   const administeredOrg = searchParams.get('administered_Org') || '';
   const [orgID, setOrgId] = useState('');
+  const [adminDepartmentOrg, setAdminDepartmentOrg] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchOrgId = async () => {
         const { data: org } = await supabase
@@ -341,6 +343,20 @@ export default function CreateElectionPage() {
     };
     
     fetchOrgId();
+  }, []);
+
+  useEffect(() => {
+    async function fetchAdminDepartmentOrg() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data: profile } = await supabase
+        .from('admin_profiles')
+        .select('administered_org')
+        .eq('email', user.email)
+        .single();
+      setAdminDepartmentOrg(profile?.administered_org || null);
+    }
+    fetchAdminDepartmentOrg();
   }, []);
 
   const [election, setElection] = useState<Election>({
@@ -560,6 +576,10 @@ export default function CreateElectionPage() {
         alert('Organization ID is missing. Cannot create election.');
         return;
     }
+    if (!election.settings.isUniLevel && !adminDepartmentOrg) {
+        alert('Admin department/organization is missing. Cannot create organization election.');
+        return;
+    }
     // Map candidates to API shape
     const mappedCandidates = election.candidates.map((c) => ({
       id: c.id,
@@ -586,7 +606,8 @@ export default function CreateElectionPage() {
           isUniLevel: election.settings.isUniLevel,
           allowAbstain: election.settings.allowAbstain,
           eligibleCourseYear: election.settings.eligibleCourseYear
-        }
+        },
+        department_org: !election.settings.isUniLevel ? adminDepartmentOrg : null
       },
       orgID: orgID
     };

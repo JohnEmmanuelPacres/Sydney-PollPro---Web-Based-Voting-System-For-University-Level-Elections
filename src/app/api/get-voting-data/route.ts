@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const electionId = searchParams.get('electionId');
     const orgId = searchParams.get('orgId');
     const type = searchParams.get('type');
+    const departmentOrg = searchParams.get('department_org');
+    console.log('[API] get-voting-data params:', { electionId, orgId, type, departmentOrg });
 
     let query = supabaseAdmin
       .from('elections')
@@ -23,6 +25,8 @@ export async function GET(request: NextRequest) {
       query = query.eq('id', electionId);
     } else if (type === 'university') {
       query = query.eq('is_uni_level', true);
+    } else if (type === 'organization' && departmentOrg) {
+      query = query.eq('is_uni_level', false).eq('department_org', departmentOrg);
     } else if (orgId) {
       query = query.eq('org_id', orgId);
     } else {
@@ -40,6 +44,7 @@ export async function GET(request: NextRequest) {
       .order('start_date', { ascending: true });
 
     if (electionsError) {
+      console.error('[API] get-voting-data electionsError:', electionsError.message);
       return NextResponse.json({ error: electionsError.message }, { status: 500 });
     }
 
@@ -100,7 +105,7 @@ export async function GET(request: NextRequest) {
     }, { status: 200 });
 
   } catch (error) {
-    console.error('Error in /api/get-voting-data:', error);
+    console.error('[API] get-voting-data CATCH error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch voting data', details: String(error) },
       { status: 500 }

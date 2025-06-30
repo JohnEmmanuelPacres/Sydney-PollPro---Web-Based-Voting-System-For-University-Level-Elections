@@ -72,7 +72,8 @@ export async function POST(request: Request) {
         is_uni_level: electionData.settings.isUniLevel,
         allow_abstain: electionData.settings.allowAbstain,
         eligible_courseYear: electionData.settings.eligibleCourseYear, // Fixed column name
-        org_id: orgID
+        org_id: orgID,
+        department_org: electionData.department_org
       })
       .select()
       .single();

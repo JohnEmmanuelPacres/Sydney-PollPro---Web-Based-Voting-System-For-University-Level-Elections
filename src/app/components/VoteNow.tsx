@@ -41,7 +41,7 @@ interface Election {
   candidatesByPosition: { [key: string]: Candidate[] };
 }
 
-export default function VoteNow() {
+export default function VoteNow({ department_org }: { department_org?: string }) {
   const router = useRouter();
   const [selectedCandidates, setSelectedCandidates] = useState<{[key: string]: string}>({});
   const [elections, setElections] = useState<any[]>([]);
@@ -50,12 +50,18 @@ export default function VoteNow() {
 
   useEffect(() => {
     fetchElectionData();
-  }, []);
+  }, [department_org]);
 
   const fetchElectionData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/get-voting-data?type=university`);
+      let url = '';
+      if (department_org) {
+        url = `/api/get-voting-data?type=organization&department_org=${encodeURIComponent(department_org)}`;
+      } else {
+        url = `/api/get-voting-data?type=university`;
+      }
+      const response = await fetch(url);
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Election API error:', errorText);
@@ -206,8 +212,15 @@ export default function VoteNow() {
                 </button>
                 
                 <div>
-                  <h1 className="text-red-700 text-3xl font-bold font-['Geist']">Cast Your Vote</h1>
-                  <p className="text-yellow-700 text-base font-normal font-['Geist']">Select your preferred candidates for each election</p>
+                  <h1 className="text-red-700 text-3xl font-bold font-['Geist']">
+                    {department_org ? 'Organization Election' : 'Cast Your Vote'}
+                  </h1>
+                  <p className="text-yellow-700 text-base font-normal font-['Geist']">
+                    {department_org 
+                      ? `Select your preferred candidates for ${department_org} election`
+                      : 'Select your preferred candidates for each election'
+                    }
+                  </p>
                 </div>
               </div>
 
@@ -293,8 +306,15 @@ export default function VoteNow() {
               </button>
               
               <div>
-                <h1 className="text-red-700 text-3xl font-bold font-['Geist']">Cast Your Vote</h1>
-                <p className="text-yellow-700 text-base font-normal font-['Geist']">Select your preferred candidates for each election</p>
+                <h1 className="text-red-700 text-3xl font-bold font-['Geist']">
+                  {department_org ? 'Organization Election' : 'Cast Your Vote'}
+                </h1>
+                <p className="text-yellow-700 text-base font-normal font-['Geist']">
+                  {department_org 
+                    ? `Select your preferred candidates for ${department_org} election`
+                    : 'Select your preferred candidates for each election'
+                  }
+                </p>
               </div>
             </div>
 
