@@ -65,7 +65,7 @@ export default function WelcomeSection() {
     if (type === 'university') {
       router.push('/UniversityElection');
     } else {
-      // Add organization election routing here when implemented
+      router.push('/OrganizationElection');
     }
   };
 
