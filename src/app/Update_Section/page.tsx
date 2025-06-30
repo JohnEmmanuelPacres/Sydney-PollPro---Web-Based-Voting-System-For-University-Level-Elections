@@ -17,6 +17,7 @@ type Article = {
   image: string;
   isUniLevel: boolean;
   image_urls?: string[];
+  org_id?: string;
 };
 
 type Filter = 'All Updates' | 'Announcements' | 'System Updates' | 'Election News';
@@ -57,6 +58,14 @@ const UpdatesPage = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const [modalImageIdx, setModalImageIdx] = useState(0);
+
+  // State for fullscreen image viewer
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageViewerIdx, setImageViewerIdx] = useState(0);
+  const imageViewerRef = useRef<HTMLDivElement>(null);
+
+  // State for modal view: 'article' or 'comments'
+  const [modalView, setModalView] = useState<'article' | 'comments'>('article');
 
   // Get current user and determine user type
   useEffect(() => {
@@ -205,6 +214,7 @@ const UpdatesPage = () => {
           image: imageUrl,
           isUniLevel: post.is_uni_lev,
           image_urls: post.image_urls,
+          org_id: post.org_id,
         };
       });
 
@@ -230,12 +240,14 @@ const UpdatesPage = () => {
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+
+    if (minutes < 1) return 'Posted just now';
+    if (minutes < 60) return `Posted ${minutes} min${minutes > 1 ? 's' : ''} ago`;
+    if (hours < 24) return `Posted ${hours} hour${hours > 1 ? 's' : ''} ago`;
     const days = Math.floor(hours / 24);
-    
-    if (days > 0) return `Posted ${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `Posted ${hours} hour${hours > 1 ? 's' : ''} ago`;
-    return 'Posted just now';
+    return `Posted ${days} day${days > 1 ? 's' : ''} ago`;
   };
 
   const filteredArticles = activeFilter === 'All Updates' 
@@ -394,6 +406,19 @@ const UpdatesPage = () => {
     setCommentInput('');
   };
 
+  // Image navigation functions
+  const nextImage = () => {
+    if (expandedArticle?.image_urls) {
+      setModalImageIdx(prev => (prev + 1) % expandedArticle.image_urls!.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (expandedArticle?.image_urls) {
+      setModalImageIdx(prev => prev === 0 ? expandedArticle.image_urls!.length - 1 : prev - 1);
+    }
+  };
+
   // Open modal with GSAP animation (centered modal)
   const openModal = (article: Article) => {
     setExpandedArticle(article);
@@ -428,6 +453,53 @@ const UpdatesPage = () => {
       setExpandedArticle(null);
     }
   };
+
+  // Open image viewer
+  const openImageViewer = (idx: number) => {
+    setImageViewerIdx(idx);
+    setImageViewerOpen(true);
+    setTimeout(() => {
+      if (imageViewerRef.current) {
+        gsap.fromTo(
+          imageViewerRef.current,
+          { scale: 0.8, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.3, ease: 'power2.out' }
+        );
+      }
+    }, 10);
+  };
+
+  // Close image viewer
+  const closeImageViewer = () => {
+    if (imageViewerRef.current) {
+      gsap.to(imageViewerRef.current, {
+        scale: 0.8,
+        opacity: 0,
+        duration: 0.2,
+        ease: 'power2.in',
+        onComplete: () => setImageViewerOpen(false),
+      });
+    } else {
+      setImageViewerOpen(false);
+    }
+  };
+
+  // Image viewer navigation
+  const nextViewerImage = () => {
+    if (expandedArticle?.image_urls) {
+      setImageViewerIdx((prev) => (prev + 1) % expandedArticle.image_urls!.length);
+    }
+  };
+  const prevViewerImage = () => {
+    if (expandedArticle?.image_urls) {
+      setImageViewerIdx((prev) => prev === 0 ? expandedArticle.image_urls!.length - 1 : prev - 1);
+    }
+  };
+
+  // Helper to determine if user can comment
+  const isVoter = currentUser && userType === 'voter';
+  const canView = expandedArticle?.isUniLevel || (isVoter && departmentOrg && departmentOrg === expandedArticle?.org_id);
+  const canComment = isVoter && canView;
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
@@ -614,112 +686,217 @@ const UpdatesPage = () => {
 
             {/* Modal Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Image and Article Section - Side by Side */}
-              <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 flex-1 overflow-hidden">
-                {/* Image Section */}
-                <div className="w-full sm:w-80 flex-shrink-0">
-                  {expandedArticle.image_urls && expandedArticle.image_urls.length > 0 ? (
-                    <div className="relative w-full h-48 sm:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden">
-                      <img
-                        src={expandedArticle.image_urls[modalImageIdx]}
-                        alt={expandedArticle.headline}
-                        className="w-full h-full object-cover"
-                      />
-                      {expandedArticle.image_urls.length > 1 && (
-                        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
-                          {expandedArticle.image_urls.map((img, idx) => (
+              {/* Image and Article Section - Responsive Layout */}
+              {modalView === 'article' && (
+                <div className="flex flex-col lg:flex-row gap-4 p-4 sm:p-6 flex-1 overflow-hidden">
+                  {/* Image Section - Smaller on mobile */}
+                  <div className="w-full lg:w-80 flex-shrink-0">
+                    {expandedArticle.image_urls && expandedArticle.image_urls.length > 0 ? (
+                      <div className="relative w-full h-32 sm:h-40 lg:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden cursor-pointer"
+                        onClick={() => openImageViewer(modalImageIdx)}
+                      >
+                        <img
+                          src={expandedArticle.image_urls[modalImageIdx]}
+                          alt={expandedArticle.headline}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Navigation arrows for multiple images */}
+                        {expandedArticle.image_urls.length > 1 && (
+                          <>
                             <button
-                              key={img}
-                              className={`w-2 h-2 rounded-full transition-all ${
-                                modalImageIdx === idx 
-                                  ? 'bg-white' 
-                                  : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-                              }`}
-                              onClick={() => setModalImageIdx(idx)}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="relative w-full h-48 sm:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden">
-                      <img
-                        src={expandedArticle.image}
-                        alt={expandedArticle.headline}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Article Content Section */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  {/* Time and Title */}
-                  <div className="mb-4">
-                    <p className="text-gray-500 text-sm mb-2">{expandedArticle.timeAgo}</p>
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
-                      {expandedArticle.headline}
-                    </h2>
-                  </div>
-
-                  {/* Article Content */}
-                  <div className="flex-1 overflow-y-auto">
-                    <p className="text-gray-700 text-xs leading-relaxed whitespace-pre-line">
-                      {expandedArticle.details}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Comments Section - Below */}
-              <div className="border-t border-gray-200 p-4 sm:p-6">
-                <h4 className="text-lg font-semibold mb-3 text-gray-900">Comments</h4>
-                
-                {/* Comments List */}
-                <div className="space-y-3 mb-4 max-h-32 overflow-y-auto">
-                  {(comments[expandedArticle.id] || []).length === 0 ? (
-                    <p className="text-gray-400 text-sm italic">No comments yet. Be the first to comment!</p>
-                  ) : (
-                    (comments[expandedArticle.id] || []).map((comment, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
-                          {comment.name[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-800 text-sm">{comment.name}</span>
-                            <span className="text-xs text-gray-400">{comment.time}</span>
+                              onClick={e => { e.stopPropagation(); prevImage(); }}
+                              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={e => { e.stopPropagation(); nextImage(); }}
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                        {/* Image indicators */}
+                        {expandedArticle.image_urls.length > 1 && (
+                          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
+                            {expandedArticle.image_urls.map((img, idx) => (
+                              <button
+                                key={img}
+                                className={`w-2 h-2 rounded-full transition-all ${
+                                  modalImageIdx === idx 
+                                    ? 'bg-white' 
+                                    : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                                }`}
+                                onClick={e => { e.stopPropagation(); setModalImageIdx(idx); }}
+                              />
+                            ))}
                           </div>
-                          <p className="text-gray-700 text-sm">{comment.text}</p>
-                        </div>
+                        )}
                       </div>
-                    ))
+                    ) : (
+                      <div className="relative w-full h-32 sm:h-40 lg:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden cursor-pointer"
+                        onClick={() => openImageViewer(0)}
+                      >
+                        <img
+                          src={expandedArticle.image}
+                          alt={expandedArticle.headline}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Article and Comments Section - Overlap logic */}
+                  <div className="flex-1 flex flex-col overflow-hidden min-h-0 w-full relative">
+                    <div className="mb-4 flex-shrink-0">
+                      <p className="text-gray-500 text-sm mb-2">{expandedArticle.timeAgo}</p>
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+                        {expandedArticle.headline}
+                      </h2>
+                    </div>
+                    <div className="flex-1 overflow-y-auto min-h-0">
+                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                        {expandedArticle.details}
+                      </p>
+                    </div>
+                    <div className="flex justify-center mt-6">
+                      <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold text-base shadow transition-colors duration-200"
+                        onClick={() => setModalView('comments')}
+                      >
+                        Check Comments
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {modalView === 'comments' && (
+                <div className="flex flex-col p-4 sm:p-6 flex-1 h-full min-h-0 overflow-hidden rounded-xl shadow-xl animate-fadeIn bg-white">
+                  <button
+                    className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold text-base"
+                    onClick={() => setModalView('article')}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Article
+                  </button>
+                  <h4 className="text-lg font-semibold mb-3 text-gray-900">Comments</h4>
+                  {/* Comments List */}
+                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto mb-4">
+                    {(comments[expandedArticle.id] || []).length === 0 ? (
+                      <p className="text-gray-400 text-sm italic">No comments yet. Be the first to comment!</p>
+                    ) : (
+                      (comments[expandedArticle.id] || []).map((comment, idx) => (
+                        <div key={idx} className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
+                            {comment.name[0]}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-800 text-sm">{comment.name}</span>
+                              <span className="text-xs text-gray-400">{comment.time}</span>
+                            </div>
+                            <p className="text-gray-700 text-sm">{comment.text}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {/* Comment Input or Permission Message */}
+                  {canComment ? (
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
+                        {currentUser?.user_metadata?.full_name?.[0] || 'A'}
+                      </div>
+                      <div className="flex-1 flex gap-2">
+                        <input
+                          type="text"
+                          className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                          placeholder="Write a comment..."
+                          value={commentInput}
+                          onChange={e => setCommentInput(e.target.value)}
+                          onKeyPress={e => e.key === 'Enter' && handleAddComment(expandedArticle.id)}
+                        />
+                        <button
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold text-sm shadow transition-colors duration-200 flex-shrink-0"
+                          onClick={() => handleAddComment(expandedArticle.id)}
+                        >
+                          Post
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-gray-400 italic mt-2">
+                      {expandedArticle?.isUniLevel
+                        ? 'Sign in as a registered voter to comment.'
+                        : 'You do not have permission to comment on this article.'}
+                    </div>
                   )}
                 </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
-                {/* Comment Input */}
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
-                    {currentUser?.user_metadata?.full_name?.[0] || 'A'}
-                  </div>
-                  <div className="flex-1 flex gap-2">
-                    <input
-                      type="text"
-                      className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-                      placeholder="Write a comment..."
-                      value={commentInput}
-                      onChange={e => setCommentInput(e.target.value)}
-                      onKeyPress={e => e.key === 'Enter' && handleAddComment(expandedArticle.id)}
-                    />
-                    <button
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold text-sm shadow transition-colors duration-200 flex-shrink-0"
-                      onClick={() => handleAddComment(expandedArticle.id)}
-                    >
-                      Post
-                    </button>
-                  </div>
-                </div>
-              </div>
+      {/* Fullscreen Image Viewer Popup */}
+      {imageViewerOpen && expandedArticle && (
+        <>
+          <div className="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center" onClick={closeImageViewer}></div>
+          <div
+            ref={imageViewerRef}
+            className="fixed inset-0 z-[110] flex flex-col items-center justify-center"
+            style={{ pointerEvents: 'none' }}
+          >
+            <div className="relative w-full h-full flex items-center justify-center" style={{ pointerEvents: 'auto' }}>
+              {/* Prev Button */}
+              {expandedArticle.image_urls && expandedArticle.image_urls.length > 1 && (
+                <button
+                  onClick={e => { e.stopPropagation(); prevViewerImage(); }}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 hover:bg-opacity-80 text-white w-10 h-10 rounded-full flex items-center justify-center z-20"
+                  aria-label="Previous image"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+              {/* Image */}
+              <img
+                src={expandedArticle.image_urls && expandedArticle.image_urls.length > 0
+                  ? expandedArticle.image_urls[imageViewerIdx]
+                  : expandedArticle.image}
+                alt={expandedArticle.headline}
+                className="max-h-[90vh] max-w-[95vw] rounded-xl shadow-2xl object-contain bg-white"
+                style={{ background: 'white' }}
+              />
+              {/* Next Button */}
+              {expandedArticle.image_urls && expandedArticle.image_urls.length > 1 && (
+                <button
+                  onClick={e => { e.stopPropagation(); nextViewerImage(); }}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 hover:bg-opacity-80 text-white w-10 h-10 rounded-full flex items-center justify-center z-20"
+                  aria-label="Next image"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+              {/* Close Button */}
+              <button
+                onClick={closeImageViewer}
+                className="absolute top-6 right-6 bg-black bg-opacity-60 hover:bg-opacity-80 text-white w-10 h-10 rounded-full flex items-center justify-center z-30"
+                aria-label="Close viewer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         </>
