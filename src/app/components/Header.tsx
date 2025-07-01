@@ -31,7 +31,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Desktop Navigation - Centered */}
-        <div className="hidden md:flex flex-grow justify-center items-center">
+        <div className="hidden md:flex flex-grow justify-center items-center gap-11">
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
             <NavButton href="/">Home</NavButton>
             <NavButton href="/Election_Results">Results</NavButton>
@@ -44,6 +44,7 @@ const Header: React.FC = () => {
             )}
           </nav>
         </div>
+        
 
         {/* Mobile Menu Button - Right Side */}
         <div className="md:hidden flex items-center gap-4">
@@ -107,7 +108,7 @@ const MobileNavButton: React.FC<{ href: string; children: React.ReactNode; onCli
 const MobileSignInButton: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
   <Link 
     href={href} 
-    className="w-24 px-3 py-2 bg-gradient-to-br from-stone-600 to-orange-300 rounded-[999px] shadow-[1px_2px_6px_0px_rgba(0,0,0,0.40)] shadow-[2px_4px_18px_0px_rgba(0,0,0,0.20)] shadow-[-1px_-2px_6px_0px_rgba(250,195,107,0.40)] shadow-[-2px_-4px_18px_0px_rgba(250,195,107,0.10)] outline outline-[3px] outline-offset-[-3px] outline-orange-300 inline-flex justify-center items-center gap-2 transition-all duration-300 ease-in-out hover:scale-105"
+    className="px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl inline-flex justify-center items-center gap-2"
   >
     <span className="justify-center text-white text-sm font-normal font-['Jaldi'] leading-tight">
       {children}

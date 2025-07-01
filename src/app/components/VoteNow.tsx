@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDateOnlyToSingaporeTime, formatTimeRemainingInSingaporeTime } from '@/utils/dateUtils';
 import { supabase } from '@/utils/supabaseClient';
+import VoterHeader from './VoteDash_Header';
 
 interface Candidate {
   id: string;
@@ -243,45 +244,7 @@ export default function VoteNow({ department_org }: { department_org?: string })
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-950 to-red-900 flex flex-col">
         {/* Header */}
-        <div className="w-full h-32 bg-rose-950 shadow-lg flex items-center justify-between px-8">
-          <div className="flex items-center gap-4">
-            <img className="w-28 h-28" src="/Website Logo.png" alt="Logo" />
-            <h1 className="text-white text-5xl font-normal font-['Abyssinica_SIL']">UniVote</h1>
-          </div>
-          <div className="flex items-center gap-11">
-            <button
-              onClick={() => handleNavigation('home')}
-              className="text-white text-xl font-medium font-['Inter'] cursor-pointer transition-all duration-300 hover:text-orange-300 hover:scale-105 relative group"
-            >
-              Home
-              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-300 transition-all duration-300 group-hover:w-full"></div>
-            </button>
-            <div className="text-white text-xl font-medium font-['Inter'] cursor-pointer transition-all duration-300 hover:text-orange-300 hover:scale-105 relative group">
-              Candidates
-              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-300 transition-all duration-300 group-hover:w-full"></div>
-            </div>
-            <button
-              onClick={() => handleNavigation('results')}
-              className="text-white text-xl font-medium font-['Inter'] cursor-pointer transition-all duration-300 hover:text-orange-300 hover:scale-105 relative group"
-            >
-              Results
-              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-300 transition-all duration-300 group-hover:w-full"></div>
-            </button>
-            <button
-              onClick={() => handleNavigation('updates')}
-              className="text-white text-xl font-medium font-['Inter'] cursor-pointer transition-all duration-300 hover:text-orange-300 hover:scale-105 relative group"
-            >
-              Updates
-              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-300 transition-all duration-300 group-hover:w-full"></div>
-            </button>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl"
-          >
-            LOGOUT
-          </button>
-        </div>
+        <VoterHeader />
         {/* Main Content */}
         <div className="flex-1 bg-stone-50 overflow-y-auto">
           <div className="p-4 bg-gradient-to-r from-red-50 to-yellow-50 min-h-full">

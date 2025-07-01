@@ -12,9 +12,10 @@ const NavButton: React.FC<NavButtonProps> = ({ children, href }) => {
   return (
     <button
       onClick={() => router.push(href)}
-      className="text-white text-sm md:text-lg lg:text-xl font-medium font-['Inter'] leading-tight md:leading-loose transition-all duration-300 ease-in-out transform-gpu hover:text-yellow-400 hover:drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] hover:scale-105 cursor-pointer"
+      className="text-white text-xl font-medium font-['Inter'] cursor-pointer transition-all duration-300 hover:text-orange-300 relative group"
     >
       {children}
+      <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-orange-300 transition-all duration-300 group-hover:w-full"></span>
     </button>
   );
 };

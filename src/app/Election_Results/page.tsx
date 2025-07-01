@@ -7,12 +7,28 @@ import ElectionResultsDisplay from '../components/ElectionResultsDisplay';
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
 
 const Results: NextPage = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Election_Results');
-  
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is signed in
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsSignedIn(!!user);
+    };
+    checkUser();
+  }, []);
+
+  // Only show VoteDash_Header if user is signed in AND on dashboard or coming from dashboard
+  const isVoterDashboard = isSignedIn && (
+    pathname.startsWith('/Voterdashboard') ||
+    searchParams.get('from') === 'dashboard'
+  );
+
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -35,7 +51,7 @@ const Results: NextPage = () => {
   return (
     <div className="flex flex-col min-h-screen w-full bg-gradient-to-t from-yellow-900 to-red-900 text-white font-inter">
       {/* Header */}
-      {isVoterRoute ? <VoterHeader /> : <Header />}
+      {isVoterDashboard ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <main className="flex-1 w-full px-4 sm:px-6 lg:px-8">

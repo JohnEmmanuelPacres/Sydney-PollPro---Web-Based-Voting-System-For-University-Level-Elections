@@ -4,7 +4,8 @@ import { gsap } from 'gsap';
 import Header from '../components/Header';
 import VoterHeader from '../components/VoteDash_Header';
 import Footer from '../components/Footer';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
 
 // Types
 type Article = {
@@ -50,12 +51,28 @@ const ARTICLES: Article[] = [
 
 const UpdatesPage = () => {
   const pathname = usePathname();
-  const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Update_Section');
+  const searchParams = useSearchParams();
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [activeFilter, setActiveFilter] = useState<Filter>('All Updates');
   const articlesRef = useRef<(HTMLDivElement | null)[]>([]);
   const filtersRef = useRef<(HTMLButtonElement | null)[]>([]);
   const pageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Check if user is signed in
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsSignedIn(!!user);
+    };
+    checkUser();
+  }, []);
+
+  // Only show VoteDash_Header if user is signed in AND on dashboard or coming from dashboard
+  const isVoterDashboard = isSignedIn && (
+    pathname.startsWith('/Voterdashboard') ||
+    searchParams.get('from') === 'dashboard'
+  );
 
   const filteredArticles = activeFilter === 'All Updates' 
     ? ARTICLES 
@@ -191,7 +208,7 @@ const UpdatesPage = () => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {isVoterRoute ? <VoterHeader /> : <Header />}
+      {isVoterDashboard ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-4 py-8">
