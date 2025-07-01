@@ -125,7 +125,20 @@ export default function VoteNow({ department_org }: { department_org?: string })
         router.push('/Voterdashboard');
         break;
       case 'results':
-        router.push('/Election_Results');
+        // Pass election information to results page
+        if (elections.length > 0) {
+          const election = elections[0];
+          const params = new URLSearchParams({
+            election_id: election.id,
+            type: department_org ? 'organization' : 'university'
+          });
+          if (department_org) {
+            params.append('department_org', department_org);
+          }
+          router.push(`/Election_Results?${params.toString()}`);
+        } else {
+          router.push('/Election_Results');
+        }
         break;
       case 'updates':
         router.push('/Update_Section');
@@ -433,13 +446,16 @@ export default function VoteNow({ department_org }: { department_org?: string })
                 </div>
                 {/* Elections Section */}
                 <div className="space-y-6">
-                  <div className={hasVoted && elections.length > 0 && elections[0].is_uni_level ? "pointer-events-none" : ""}>
-                    <div className="space-y-6">
-                      {(!elections[0]?.is_uni_level && hasVoted) ? (
-                        <div className="bg-green-50 border border-green-300 rounded-lg p-6 text-center">
-                          <div className="text-green-700 text-xl font-semibold mb-2">✓ You have already voted in this election</div>
-                          <p className="text-green-600">Thank you for participating in the democratic process!</p>
-                        </div>
+                  {hasVoted && (
+                    <div className="bg-green-50 border border-green-300 rounded-lg p-6 text-center">
+                      <div className="text-green-700 text-xl font-semibold mb-2">✓ You have already voted in this election</div>
+                      <p className="text-green-600 mb-4">Thank you for participating in the democratic process!</p>
+                      <button
+                        onClick={() => handleNavigation('results')}
+                        className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                      >
+                        View Results
+                      </button>
                       ) : (
                         <>
                           {elections.map((election) => {
