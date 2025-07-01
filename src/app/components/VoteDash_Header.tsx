@@ -61,7 +61,7 @@ const VoterHeader: React.FC = () => {
         <div className="hidden md:flex flex-grow justify-center items-center">
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
             <NavButton href="/Voterdashboard">Home</NavButton>
-            <NavButton href="/">Candidates</NavButton>
+            <NavButton href="/Candidates">Candidates</NavButton>
             <NavButton href="/Election_Results">Results</NavButton>
             <NavButton href="/Update_Section">Updates</NavButton>
             <LogOutButton onClick={handleLogout}>LOGOUT</LogOutButton>
