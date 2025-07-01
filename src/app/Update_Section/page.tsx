@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import Header from '../components/Header';
 import VoterHeader from '../components/VoteDash_Header';
 import Footer from '../components/Footer';
@@ -19,6 +20,7 @@ type Article = {
   isUniLevel: boolean;
   image_urls?: string[];
   org_id?: string;
+  org_name?: string | null;
 };
 
 type Filter = 'All Updates' | 'Announcements' | 'System Updates' | 'Election News';
@@ -110,14 +112,14 @@ const UpdatesPage = () => {
           // Check admin profile first
           const { data: adminProfile, error: adminError } = await supabase
             .from('admin_profiles')
-            .select('department_org')
+            .select('administered_org')
             .eq('id', user.id)
             .single();
 
           if (!adminError && adminProfile) {
             console.log('Admin profile found:', adminProfile);
             setUserType('admin');
-            setDepartmentOrg(adminProfile.department_org);
+            setDepartmentOrg(adminProfile.administered_org);
             return;
           }
 
@@ -218,6 +220,7 @@ const UpdatesPage = () => {
           isUniLevel: post.is_uni_lev,
           image_urls: post.image_urls,
           org_id: post.org_id,
+          org_name: post.organizations?.organization_name || null,
         };
       });
 
@@ -501,7 +504,7 @@ const UpdatesPage = () => {
 
   // Helper to determine if user can comment
   const isVoter = currentUser && userType === 'voter';
-  const canView = expandedArticle?.isUniLevel || (isVoter && departmentOrg && departmentOrg === expandedArticle?.org_id);
+  const canView = expandedArticle?.isUniLevel || (isVoter && departmentOrg && departmentOrg === expandedArticle?.org_name);
   const canComment = isVoter && canView;
 
   return (

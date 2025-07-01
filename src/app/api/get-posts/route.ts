@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
       .from('posts')
       .select(`
         *,
+        organizations!posts_org_id_fkey(organization_name),
         admin_profiles!posts_admin_id_fkey(
           email,
           administered_org
@@ -35,12 +36,22 @@ export async function POST(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     // Apply filters based on user type and organization
-    if (user_type === 'admin' && department_org) {
-      // Admins can see posts from their organization and university level posts
-      query = query.or(`org_id.eq.${department_org},is_uni_lev.eq.true`);
-    } else if (user_type === 'voter' && department_org) {
-      // Voters can see posts from their department/organization and university level posts
-      query = query.or(`org_id.eq.${department_org},is_uni_lev.eq.true`);
+    if ((user_type === 'admin' || user_type === 'voter') && department_org) {
+      // First, look up the organization UUID using the organization name
+      const { data: org, error: orgError } = await supabaseAdmin
+        .from('organizations')
+        .select('id')
+        .eq('organization_name', department_org)
+        .single();
+
+      if (orgError) {
+        console.error('Error fetching organization:', orgError);
+        // If organization lookup fails, just show university level posts
+        query = query.eq('is_uni_lev', true);
+      } else {
+        // Use the organization UUID in the query
+        query = query.or(`org_id.eq.${org.id},is_uni_lev.eq.true`);
+      }
     } else if (user_type === 'admin' || user_type === 'voter') {
       // If no department_org, just show university level posts
       query = query.eq('is_uni_lev', true);
