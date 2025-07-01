@@ -49,17 +49,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message || 'Failed to submit votes' }, { status: 500 });
     }
 
-    // Update voter_profiles to mark as voted
-    const { error: updateError } = await supabaseAdmin
-      .from('voter_profiles')
-      .update({ isvoted: true })
-      .eq('id', userId);
-
-    if (updateError) {
-      console.error('Error updating voter profile:', updateError);
-      // Optionally, you can also return this error if you want
-    }
-
     return NextResponse.json({ 
       success: true, 
       message: 'Votes submitted successfully',
