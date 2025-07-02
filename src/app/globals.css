@@ -143,4 +143,10 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  [data-nextjs-router-state-elements],
+.nextjs-loading-bar,
+[data-nextjs-loading-bar] {
+  display: none !important;
+  visibility: hidden !important;
+}
 }
