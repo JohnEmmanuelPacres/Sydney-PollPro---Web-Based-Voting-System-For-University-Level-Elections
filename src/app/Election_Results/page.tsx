@@ -97,7 +97,7 @@ const Results: NextPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-gradient-to-t from-yellow-900 to-red-900 text-white font-inter">
+    <div className="flex flex-col min-h-screen w-full bg-[#52100D] text-white font-inter">
       {/* Header */}
       {headerComponent}
 
@@ -105,7 +105,7 @@ const Results: NextPage = () => {
       <main className="flex-1 w-full px-4 sm:px-6 lg:px-8">
         <h1 
           ref={titleRef}
-          className="mt-24 md:mt-32 lg:mt-40 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-center md:text-left mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+          className="mt-24 md:mt-32 lg:mt-40 text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-center mx-auto max-w-7xl px-4 sm:px-6 lg:px-10"
         >
           Election Results
         </h1>

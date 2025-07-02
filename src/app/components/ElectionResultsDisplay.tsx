@@ -123,10 +123,10 @@ export default function ElectionResultsDisplay({
 
   if (loading) {
     return (
-      <div className={`flex items-center justify-center p-4 ${className}`}>
+      <div className={`flex items-center justify-center p-4 min-h-screen ${className}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto mb-2"></div>
-          <p className="text-sm text-gray-600">Loading results...</p>
+          <p className="text-sm text-gray-200">Loading results...</p>
         </div>
       </div>
     );
@@ -134,7 +134,7 @@ export default function ElectionResultsDisplay({
 
   if (error) {
     return (
-      <div className={`p-4 ${className}`}>
+      <div className={`p-4 min-h-screen ${className}`}>
         <div className="bg-red-50 border border-red-300 rounded-lg p-4 text-center">
           <p className="text-red-600 text-sm mb-2">⚠️ {error}</p>
           {showRefreshButton && (
@@ -152,73 +152,80 @@ export default function ElectionResultsDisplay({
 
   if (pollsData.length === 0) {
     return (
-      <div className={`p-4 ${className}`}>
+      <div className={`p-4 min-h-screen ${className}`}>
         <div className="text-center py-4">
-          <p className="text-gray-500 text-sm">No results available</p>
+          <p className="text-gray-200 text-sm">No results available</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Header with live indicator and last updated */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="text-2xl font-semibold text-white">Election Results</h3>
-          {isLive && (
-            <span className="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              LIVE
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {showRefreshButton && (
-            <button
-              onClick={fetchVoteData}
-              className="text-sm text-blue-400 hover:text-blue-300 underline"
-            >
-              Refresh
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Full Results */}
-      <div className="space-y-6">
+    <div className={`py-8 px-2 md:px-0 ${className}`}>
+      <div className="space-y-12 rounded-2xl p-4 sm:p-8 md:p-12 bg-gray-900/10 backdrop-blur-md border border-gray-200">
         {sortedPollsData.map((poll, index) => (
-          <div key={index} className="bg-white/10 rounded-lg border border-white/20 p-6">
-            <h4 className="text-xl font-semibold text-white mb-4">{poll.position}</h4>
-            <div className="space-y-3">
+          <div
+            key={index}
+            className="bg-white rounded-2xl shadow-lg p-6 sm:p-10 lg:p-14 mb-10 max-w-full sm:max-w-3xl md:max-w-4xl lg:max-w-6xl w-full mx-auto"
+          >
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#2D0907] mb-6 sm:mb-8">
+              {poll.position}
+            </h3>
+            <div className="space-y-8">
               {poll.candidates.map((candidate, candidateIndex) => {
-                const percent = totalVoters && totalVoters > 0 ? (candidate.votes / totalVoters) * 100 : 0;
+                const percent =
+                  totalVoters && totalVoters > 0
+                    ? (candidate.votes / totalVoters) * 100
+                    : 0;
                 return (
-                  <div key={candidate.id} className="flex flex-col gap-1 p-3 bg-white/5 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                          {candidateIndex + 1}
-                        </div>
-                        <div>
-                          <p className="text-lg font-medium text-white">{candidate.name}</p>
-                          <p className="text-sm text-gray-300">{candidate.course_year}</p>
-                        </div>
-                      </div>
-                      <div className="text-right min-w-[80px]">
-                        <p className="text-2xl font-bold text-yellow-400">{candidate.votes}</p>
-                        <p className="text-sm text-gray-300">votes</p>
-                        {totalVoters !== null && (
-                          <p className="text-xs text-gray-400">{percent.toFixed(1)}%</p>
-                        )}
-                      </div>
+                  <div
+                    key={candidate.id}
+                    className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 mb-6"
+                  >
+                    {/* Candidate Picture */}
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center shadow-md mb-2 sm:mb-0 border-4 border-gray-400">
+                      {candidate.picture_url ? (
+                        <img
+                          src={candidate.picture_url}
+                          alt={candidate.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-gray-500 text-2xl sm:text-3xl font-bold">
+                          {candidate.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')
+                            .toUpperCase()}
+                        </span>
+                      )}
                     </div>
-                    {/* Progress Bar */}
-                    <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden mt-1">
-                      <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all duration-700"
-                        style={{ width: `${percent}%` }}
-                      />
+                    {/* Candidate Info and Progress */}
+                    <div className="flex-1 w-full flex flex-col sm:flex-row items-center sm:items-stretch gap-2 sm:gap-0">
+                      <div className="flex-1 w-full flex flex-col justify-center">
+                        <div className="font-semibold text-[#2D0907] text-lg sm:text-xl lg:text-2xl">
+                          {candidate.name}
+                        </div>
+                        <div className="text-sm sm:text-md text-[#3B2321] mb-1">
+                          {candidate.course_year}
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="w-full h-3 sm:h-4 bg-gray-200 rounded-full overflow-hidden border border-gray-500">
+                          <div
+                            className="h-full bg-[#52100D] transition-all duration-700"
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                      {/* Vote Count and Percentage */}
+                      <div className="flex flex-row sm:flex-col items-end sm:items-end justify-end min-w-[90px] sm:min-w-[100px] ml-0 sm:ml-6 mt-2 sm:mt-0">
+                        <span className="text-base text-[#2D0907] font-bold text-right block">
+                          {candidate.votes.toLocaleString()} votes
+                        </span>
+                        <span className="text-base text-[#3B2321] font-semibold text-right block ml-4 sm:ml-0">
+                          {percent.toFixed(1)}%
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -226,15 +233,13 @@ export default function ElectionResultsDisplay({
             </div>
           </div>
         ))}
-      </div>
-
       {/* Summary */}
-      <div className="text-center pt-4">
-        <p className="text-gray-300 text-sm">
-          Total Positions: {sortedPollsData.length} | 
-          Total Candidates: {sortedPollsData.reduce((sum, poll) => sum + poll.candidates.length, 0)}
+        <div className="text-center pt-4 text-white">
+          <p className="text-gray-200 text-base sm:text-lg">
+            Total Positions: {sortedPollsData.length} | Total Candidates: {sortedPollsData.reduce((sum, poll) => sum + poll.candidates.length, 0)}
           {totalVoters !== null && ` | Registered Voters: ${totalVoters}`}
         </p>
+        </div>
       </div>
     </div>
   );
