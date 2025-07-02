@@ -439,6 +439,14 @@ const formatTimeAgo = (date: Date) => {
     }
   };
 
+  // Only show VoteDash_Header if user is signed in AND on dashboard or coming from dashboard
+  const isVoterDashboard = isSignedIn;
+
+  let headerComponent = <Header />;
+  if (isVoterDashboard || (isSignedIn && departmentOrg)) {
+    headerComponent = <VoterHeader />;
+  }
+
   // Fetch comments for a post
   const fetchComments = async (postId: string) => {
     const res = await fetch(`/api/get-comments?post_id=${postId}`);
@@ -620,7 +628,7 @@ const formatTimeAgo = (date: Date) => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {isVoterRoute ? <VoterHeader /> : <Header />}
+      {headerComponent}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
