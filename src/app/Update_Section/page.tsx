@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import VoterHeader from '../components/VoteDash_Header';
 import Footer from '../components/Footer';
 import { supabase } from '@/utils/supabaseClient';
+import { Pencil } from 'lucide-react';
 
 // Types
 type Article = {
@@ -598,12 +599,17 @@ const formatTimeAgo = (date: Date) => {
   const handleDeleteComment = async (commentId: string) => {
     if (!expandedArticle) return;
     if (!window.confirm('Are you sure you want to delete this comment?')) return;
-    await fetch('/api/delete-comment', {
+    const res = await fetch('/api/delete-comment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ comment_id: commentId }),
     });
-    fetchComments(expandedArticle.id);
+    if (res.ok) {
+      fetchComments(expandedArticle.id);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setCommentError(data.error || 'Failed to delete comment. Please try again.');
+    }
   };
 
   // Add delete reply function
@@ -620,7 +626,7 @@ const formatTimeAgo = (date: Date) => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {isVoterRoute ? <VoterHeader /> : <Header />}
+      {userType === 'admin' ? <Header /> : isVoterRoute ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
@@ -994,9 +1000,14 @@ const formatTimeAgo = (date: Date) => {
                                 {/* Delete button */}
                                 {currentUser?.id === comment.user_id && (
                                   <button
-                                    className="text-red-600 text-xs font-semibold ml-2 hover:underline"
+                                    className="text-blue-600 text-xs font-semibold ml-2 hover:underline flex items-center gap-1"
                                     onClick={() => handleDeleteComment(comment.comment_id)}
-                                  >Delete</button>
+                                    title="Delete Comment"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
                                 )}
                               </div>
                             </div>
