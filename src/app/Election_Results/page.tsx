@@ -27,10 +27,7 @@ const Results: NextPage = () => {
   }, []);
 
   // Only show VoteDash_Header if user is signed in AND on dashboard or coming from dashboard
-  const isVoterDashboard = isSignedIn && (
-    pathname.startsWith('/Voterdashboard') ||
-    searchParams.get('from') === 'dashboard'
-  );
+  const isVoterDashboard = isSignedIn;
 
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [type, setElectionType] = useState<string>();

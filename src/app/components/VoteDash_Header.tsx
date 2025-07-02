@@ -42,13 +42,15 @@ const VoterHeader: React.FC = () => {
     );
   };
 
-  const MobileLogOutButton = () => (
-    <button
-      onClick={handleLogout}
-      className="w-full px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl text-center"
+  const MobileLogOutButton: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
+    <Link 
+      href={href} 
+      className="px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl inline-flex justify-center items-center gap-2"
     >
-      LOG OUT
-    </button>
+      <span className="justify-center text-white text-sm font-normal font-['Jaldi'] leading-tight">
+        {children}
+      </span>
+    </Link>
   );
 
   return (
@@ -77,7 +79,6 @@ const VoterHeader: React.FC = () => {
             <NavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</NavButton>
             <NavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</NavButton>
             <NavButton href="/Update_Section">Updates</NavButton>
-            <LogOutButton onClick={handleLogout}>LOGOUT</LogOutButton>
           </nav>
         </div>
 
@@ -108,12 +109,17 @@ const VoterHeader: React.FC = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg z-40">
           <div className="flex flex-col space-y-4 p-6">
-            <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
+            <MobileNavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</MobileNavButton>
             <MobileNavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</MobileNavButton>
             <MobileNavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</MobileNavButton>
             <MobileNavButton href="/Update_Section">Updates</MobileNavButton>
-            <div className="px-4 py-3">
-              <LogOutButton onClick={handleLogout}>Log Out</LogOutButton>
+            <div className="mt-4">
+              <button
+                onClick={handleLogout}
+                className="w-full px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl text-center"
+              >
+                LOG OUT
+              </button>
             </div>
           </div>
         </div>

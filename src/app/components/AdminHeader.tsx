@@ -1,27 +1,58 @@
-'use client';
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import NavButton from './NavButton';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
+import NavButton from './NavButton';
+import LogOutButton from './VoteDash_LogOutButton';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
-const Header: React.FC = () => {
+const AdminHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const administeredOrg = searchParams.get('administered_Org');
+  const useParams = useSearchParams();
+  const email = useParams.get('email');
+  const departmentOrg = useParams.get('department_org');
 
   const handleLogout = async () => {
-      try {
-        await supabase.auth.signOut();
-        router.push('/User_RegxLogin');
-      } catch (error) {
-        console.error('Error logging out:', error);
-      }
-    };
+    try {
+      await supabase.auth.signOut();
+      router.push('/User_RegxLogin');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  const MobileNavButton = ({ 
+    href, 
+    children 
+  }: { 
+    href: string; 
+    children: React.ReactNode 
+  }) => {
+    return (
+      <button
+        onClick={() => {
+          router.push(href);
+          setIsMenuOpen(false);
+        }}
+        className="text-white text-lg font-medium font-['Inter'] w-full text-left px-4 py-3 transition-all duration-300 ease-in-out hover:text-yellow-400 hover:drop-shadow-[0_0_10px_rgba(255,255,0,0.8)]"
+      >
+        {children}
+      </button>
+    );
+  };
+
+  const MobileLogOutButton = () => (
+    <button
+      onClick={handleLogout}
+      className="w-full px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl text-center"
+    >
+      LOG OUT
+    </button>
+  );
 
   return (
-    <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-[#5C1110] shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">
+    <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">
       <div className="container mx-auto h-full px-4 flex items-center justify-between">
         {/* Logo and Title - Left Side */}
         <div className="flex items-center flex-shrink-0">
@@ -39,28 +70,23 @@ const Header: React.FC = () => {
           </h1>
         </div>
 
-
-        {/* Desktop Navigation - Centered */}
-        <div className="hidden md:flex flex-grow justify-center items-center">
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex flex-grow justify-center items-center gap-11">
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
-            <NavButton href={`/dashboard/Admin?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Home</NavButton>
-            <NavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</NavButton>
-            <NavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</NavButton>
-            <NavButton href="/Updates">Update</NavButton>
-            <button
-              onClick={handleLogout}
-              className="w-24 md:w-32 px-3 md:px-6 py-2.5 md:py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-[999px] shadow-[1px_2px_6px_0px_rgba(0,0,0,0.40)] shadow-[2px_4px_18px_0px_rgba(0,0,0,0.20)] shadow-[-1px_-2px_6px_0px_rgba(250,195,107,0.40)] shadow-[-2px_-4px_18px_0px_rgba(250,195,107,0.10)] outline outline-[3px] outline-offset-[-3px] outline-orange-300 inline-flex justify-center items-center gap-2 transition-all duration-300 ease-in-out hover:scale-105"
-            >
-              <span className="justify-center text-white text-sm font-bold font-['Jaldi Bold'] leading-tight">
-                LOG OUT
-              </span>
-            </button>
+            <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
+            <NavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</NavButton>
+            <NavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</NavButton>
+            <NavButton href="/Update_Section">Updates</NavButton>
           </nav>
         </div>
 
-        {/* Mobile Menu Button - Right Side */}
-        <div className="md:hidden flex items-center gap-4">
-          <MobileSignInButton href="/User_RegxLogin">SIGN IN</MobileSignInButton>
+        {/* Desktop Logout Button */}
+        <div className="hidden md:block">
+          <LogOutButton onClick={handleLogout}>LOGOUT</LogOutButton>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <div className="flex items-center gap-4 ml-auto md:hidden">
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="text-white focus:outline-none"
@@ -79,13 +105,15 @@ const Header: React.FC = () => {
 
       {/* Mobile Menu Dropdown */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg">
+        <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg z-40">
           <div className="flex flex-col space-y-4 p-6">
-            <MobileNavButton href={`/dashboard/Admin?administered_Org=${encodeURIComponent(administeredOrg || '')}`} onClick={() => setIsMenuOpen(false)}>Home</MobileNavButton>
-            <MobileNavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`} onClick={() => setIsMenuOpen(false)}>Candidates</MobileNavButton>
-            <MobileNavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`} onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
-            <MobileNavButton href="/Updates" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
-            <MobileNavButton href="/About" onClick={() => setIsMenuOpen(false)}>About</MobileNavButton>
+            <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
+            <MobileNavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</MobileNavButton>
+            <MobileNavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</MobileNavButton>
+            <MobileNavButton href="/Update_Section">Updates</MobileNavButton>
+            <div className="px-4 py-3">
+              <LogOutButton onClick={handleLogout}>Log Out</LogOutButton>
+            </div>
           </div>
         </div>
       )}
@@ -93,37 +121,4 @@ const Header: React.FC = () => {
   );
 };
 
-// Mobile NavButton component
-const MobileNavButton: React.FC<{ href: string; children: React.ReactNode; onClick: () => void }> = ({ 
-  href, 
-  children, 
-  onClick 
-}) => {
-  const router = useRouter();
-  
-  return (
-    <button
-      onClick={() => {
-        router.push(href);
-        onClick();
-      }}
-      className="text-white text-lg font-medium font-['Inter'] w-full text-left px-4 py-3 transition-all duration-300 ease-in-out hover:text-yellow-400 hover:drop-shadow-[0_0_10px_rgba(255,255,0,0.8)]"
-    >
-      {children}
-    </button>
-  );
-};
-
-// Mobile SignInButton
-const MobileSignInButton: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
-  <Link 
-    href={href} 
-    className="w-24 px-3 py-2 bg-gradient-to-br from-stone-600 to-orange-300 rounded-[999px] shadow-[1px_2px_6px_0px_rgba(0,0,0,0.40)] shadow-[2px_4px_18px_0px_rgba(0,0,0,0.20)] shadow-[-1px_-2px_6px_0px_rgba(250,195,107,0.40)] shadow-[-2px_-4px_18px_0px_rgba(250,195,107,0.10)] outline outline-[3px] outline-offset-[-3px] outline-orange-300 inline-flex justify-center items-center gap-2 transition-all duration-300 ease-in-out hover:scale-105"
-  >
-    <span className="justify-center text-white text-sm font-normal font-['Jaldi'] leading-tight">
-      {children}
-    </span>
-  </Link>
-);
-
-export default Header;
+export default AdminHeader;

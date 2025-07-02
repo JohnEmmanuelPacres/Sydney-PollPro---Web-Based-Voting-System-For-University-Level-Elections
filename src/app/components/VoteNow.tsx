@@ -49,19 +49,47 @@ export default function VoteNow({ department_org, }: { department_org?: string }
   const [elections, setElections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
     fetchElectionData();
   }, [department_org]);
+
+  useEffect(() => {
+    // Get user ID and check if already voted for the first election (if any)
+    const checkVoted = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
+      if (elections.length > 0) {
+        const electionId = elections[0].id;
+        const { data: existingVotes, error } = await supabase
+          .from('votes')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('election_id', electionId);
+        if (!error && existingVotes && existingVotes.length > 0) {
+          setHasVoted(true);
+        } else {
+          setHasVoted(false);
+        }
+      }
+    };
+    checkVoted();
+  }, [elections]);
 
   const fetchElectionData = async () => {
     try {
       setLoading(true);
       let url = '';
       if (department_org) {
-        url = `/api/get-voting-data?type=organization&department_org=${encodeURIComponent(department_org)}`;
+        url = `/api/get-voting-data?scope=organization&department_org=${encodeURIComponent(department_org)}`;
       } else {
-        url = `/api/get-voting-data?type=university`;
+        url = `/api/get-voting-data?scope=university`;
       }
       const response = await fetch(url);
       if (!response.ok) {
@@ -111,10 +139,36 @@ export default function VoteNow({ department_org, }: { department_org?: string }
     }));
   };
 
-  const handleSubmitVote = () => {
-    console.log('Votes submitted:', selectedCandidates);
-    alert('Your vote has been submitted successfully!');
-    router.push('/Voterdashboard');
+  const handleSubmitVote = async () => {
+    setSubmitError(null);
+    setSubmitSuccess(false);
+    setSubmitLoading(true);
+    try {
+      if (!userId) throw new Error('User not found');
+      if (elections.length === 0) throw new Error('No election found');
+      const electionId = elections[0].id;
+      const response = await fetch('/api/submit-votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          votes: selectedCandidates,
+          electionId,
+          userId,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit votes');
+      }
+      setSubmitSuccess(true);
+      setHasVoted(true);
+      alert('Your vote has been submitted successfully!');
+      router.push('/Voterdashboard');
+    } catch (err: any) {
+      setSubmitError(err.message || 'Failed to submit votes');
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const formatTimeRemaining = (endDate: string) => {
@@ -194,6 +248,26 @@ export default function VoteNow({ department_org, }: { department_org?: string }
         {/* Footer */}
         <div className="w-full h-40 bg-rose-950 shadow-lg flex items-center justify-center">
           <div className="text-white text-sm">© 2024 UniVote. All rights reserved.</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasVoted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-red-950 to-red-900 flex flex-col">
+        <VoterHeader />
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg p-8 mt-20 text-center max-w-lg">
+            <h2 className="text-2xl font-bold text-red-700 mb-4">You have already voted in this election.</h2>
+            <p className="text-gray-700 mb-4">Thank you for participating! You can only vote once per election.</p>
+            <button
+              onClick={handleBackToDashboard}
+              className="px-6 py-3 bg-red-700 text-white rounded-lg font-semibold hover:bg-red-800 transition"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -354,11 +428,15 @@ export default function VoteNow({ department_org, }: { department_org?: string }
               <div className="flex justify-center pt-6 pb-8">
                 <button
                   onClick={handleSubmitVote}
-                  className="px-8 py-4 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
+                  disabled={submitLoading}
+                  className={`px-8 py-4 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all duration-300 hover:scale-105 ${submitLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Submit Vote
+                  {submitLoading ? 'Submitting...' : 'Submit Vote'}
                 </button>
               </div>
+              {submitError && (
+                <div className="text-center text-red-600 font-medium mt-2">{submitError}</div>
+              )}
             </div>
           </div>
         </div>
