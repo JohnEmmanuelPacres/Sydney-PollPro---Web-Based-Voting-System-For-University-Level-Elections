@@ -2,6 +2,7 @@
 import { NextPage } from 'next';
 import Header from '../components/Header';
 import VoterHeader from '../components/VoteDash_Header';
+import AdminHeader from '../components/AdminHeader';
 import Footer from '../components/Footer';
 import ElectionResultsDisplay from '../components/ElectionResultsDisplay';
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +13,8 @@ import { supabase } from '@/utils/supabaseClient';
 const Results: NextPage = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const departmentOrg = searchParams.get('department_org');
+  const administeredOrg = searchParams.get('administered_Org');
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
@@ -28,8 +31,20 @@ const Results: NextPage = () => {
     pathname.startsWith('/Voterdashboard') ||
     searchParams.get('from') === 'dashboard'
   );
-
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const [type, setElectionType] = useState<string>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [electionID, setRelevantElectionID] = useState<string>();
+  const [isLive, setIsLive] = useState(false);
+
+  // Header selection logic
+  let headerComponent = <Header />;
+  if (administeredOrg) {
+    headerComponent = <AdminHeader />;
+  } else if (isVoterDashboard || (isSignedIn && departmentOrg)) {
+    headerComponent = <VoterHeader />;
+  }
 
   useEffect(() => {
     // Animate title on mount
@@ -43,6 +58,41 @@ const Results: NextPage = () => {
       ease: "power2.out"
     });
 
+    const fetchElectionScope = async () => {
+      try {
+        let type = 'university';
+        if (departmentOrg) {
+          const typeRes = await fetch(`/api/get-relevant-elections?department_org=${encodeURIComponent(departmentOrg)}`);
+          if(!typeRes){
+            setError("API Error");
+            console.log(`Error: ${error}`);
+          }
+          const typeData = await typeRes.json();
+          if (typeData && typeData.type && typeData.election) {
+            type = typeData.type;
+            setElectionType(type);
+            setRelevantElectionID(typeData.election.id);
+            // Determine if the election is ongoing
+            const now = new Date();
+            const start = new Date(typeData.election.start_date);
+            const end = new Date(typeData.election.end_date);
+            setIsLive(now >= start && now <= end);
+          } else{
+            setError("Error fetching election scope/type.")
+            console.log(`Error: ${error}`);
+            setIsLive(false);
+          }
+        } else {
+          setIsLive(false);
+        }
+      } catch (err) {
+        setError('Failed to load candidates.');
+        console.log(`Error: ${error}`);
+        setIsLive(false);
+      }
+    };
+    fetchElectionScope();
+
     return () => {
       tl.kill();
     };
@@ -51,7 +101,7 @@ const Results: NextPage = () => {
   return (
     <div className="flex flex-col min-h-screen w-full bg-gradient-to-t from-yellow-900 to-red-900 text-white font-inter">
       {/* Header */}
-      {isVoterDashboard ? <VoterHeader /> : <Header />}
+      {headerComponent}
 
       {/* Main Content */}
       <main className="flex-1 w-full px-4 sm:px-6 lg:px-8">
@@ -65,10 +115,10 @@ const Results: NextPage = () => {
         <div className="mt-12 md:mt-16 lg:mt-20 flex flex-col items-center gap-6 md:gap-8 lg:gap-10 pb-20 md:pb-24 lg:pb-32 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
             <ElectionResultsDisplay 
-              electionId={searchParams.get('election_id') || undefined}
-              type={(searchParams.get('type') as 'university' | 'organization') || 'university'}
-              department_org={searchParams.get('department_org') || undefined}
-              isLive={true}
+              electionId={electionID || undefined}
+              type={type} 
+              department_org={departmentOrg || undefined}
+              isLive={isLive}
               showRefreshButton={true}
               className="text-white"
             />
