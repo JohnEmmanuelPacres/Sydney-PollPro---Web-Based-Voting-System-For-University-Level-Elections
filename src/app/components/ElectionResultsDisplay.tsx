@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { motion } from 'framer-motion';
 
 interface Candidate {
   id: string;
@@ -211,9 +212,12 @@ export default function ElectionResultsDisplay({
                         </div>
                         {/* Progress Bar */}
                         <div className="w-full h-3 sm:h-4 bg-gray-200 rounded-full overflow-hidden border border-gray-500">
-                          <div
-                            className="h-full bg-[#52100D] transition-all duration-700"
-                            style={{ width: `${percent}%` }}
+                          <motion.div
+                            className="h-full bg-[#52100D]"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percent}%` }}
+                            transition={{ duration: 0.7, ease: 'easeOut' }}
+                            style={{ borderRadius: '9999px' }}
                           />
                         </div>
                       </div>

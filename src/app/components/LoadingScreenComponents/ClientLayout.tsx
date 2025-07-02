@@ -44,6 +44,18 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     }
   }, [nextJsLoading, isLoading, startLoading, stopLoading]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        stopLoading();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [stopLoading]);
+
   const showLoading = isLoading || initialLoad || nextJsLoading;
 
   return (
