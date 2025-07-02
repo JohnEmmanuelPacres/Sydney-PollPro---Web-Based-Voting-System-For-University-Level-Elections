@@ -35,9 +35,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearchChange, placeholder = "Se
   };
 
   return (
-    <div className="relative">
+    <div className="w-full">
       {/* Search Bar Container */}
-      <div className="absolute top-[696px] left-[665px] w-[470px] h-[34px] bg-[#fef2f2] rounded-[24px] shadow-[0_4px_4px_rgba(0,0,0,0.25)] flex items-center px-4">
+      <div className="w-full bg-[#fef2f2] rounded-[24px] shadow-[0_4px_4px_rgba(0,0,0,0.25)] flex items-center px-4 py-2">
         {/* Search Icon */}
         <svg
           className="w-4 h-4 text-gray-500 mr-3 flex-shrink-0"

@@ -7,11 +7,10 @@ const CreateElectionSection = () => {
     const searchParams = useSearchParams();
     const administered_Org = searchParams.get('administered_Org');
     return (
-        <section>
-            <b className="absolute top-[438px] left-[475px] text-[26px] leading-[150%] text-center">
-            No current elections in session...
+        <section className="w-full flex flex-col items-center justify-center gap-4 py-8">
+            <b className="text-[20px] md:text-[26px] leading-[150%] text-center">
+                No current elections in session...
             </b>
-
             <button
                 onClick={() => router.push(`/dashboard/Admin/CreateElectionPage?administered_Org=${encodeURIComponent(administered_Org || '')}`)}
                 className="absolute top-[503px] left-[530px] w-[305px] h-[73px] 
