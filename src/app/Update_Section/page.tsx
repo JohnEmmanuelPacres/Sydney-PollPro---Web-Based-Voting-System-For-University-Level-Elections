@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { motion } from 'framer-motion';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Header from '../components/Header';
 import VoterHeader from '../components/VoteDash_Header';
 import Footer from '../components/Footer';
@@ -66,6 +66,7 @@ type Comment = {
 const UpdatesPage = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Update_Section');
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [activeFilter, setActiveFilter] = useState<Filter>('All Updates');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -619,7 +620,7 @@ const formatTimeAgo = (date: Date) => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {isVoterDashboard ? <VoterHeader /> : <Header />}
+      {isVoterRoute ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
