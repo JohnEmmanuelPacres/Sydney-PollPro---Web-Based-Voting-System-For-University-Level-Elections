@@ -37,6 +37,32 @@ const getCategoryColor = (category: string) => {
   return colors[category] || 'bg-gray-500';
 };
 
+// --- Comments & Replies Types ---
+type Reply = {
+  reply_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  user_type: string;
+  display_name: string;
+  user_email: string;
+  avatar_initial: string;
+};
+type Comment = {
+  comment_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  user_type: string;
+  display_name: string;
+  user_email: string;
+  avatar_initial: string;
+  reply_count: number;
+  replies: Reply[];
+};
+
 const UpdatesPage = () => {
   const pathname = usePathname();
   const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Update_Section');
@@ -56,7 +82,9 @@ const UpdatesPage = () => {
   const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
   // State for comments (UI only, not persisted)
   const [commentInput, setCommentInput] = useState('');
-  const [comments, setComments] = useState<Record<string, {name: string, time: string, text: string}[]>>({});
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   // State for modal
   const [expandedArticle, setExpandedArticle] = useState<Article | null>(null);
@@ -72,6 +100,13 @@ const UpdatesPage = () => {
   // State for modal view: 'article' or 'comments'
   const [modalView, setModalView] = useState<'article' | 'comments'>('article');
 
+  // State for messages
+  const [commentMessage, setCommentMessage] = useState<string | null>(null);
+  const [commentError, setCommentError] = useState<string | null>(null);
+
+  // Add this state for sort order
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
   // Get current user and determine user type
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -79,6 +114,14 @@ const UpdatesPage = () => {
       try {
         // First check if we have an active session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // Debug logging
+        console.log('=== SESSION DEBUG ===');
+        console.log('Session:', session);
+        console.log('Session error:', sessionError);
+        console.log('User ID:', session?.user?.id);
+        console.log('User email:', session?.user?.email);
+        console.log('=====================');
         
         if (sessionError) {
           console.error('Session error:', sessionError);
@@ -395,21 +438,11 @@ const UpdatesPage = () => {
     }
   };
 
-  // Add comment handler
-  const handleAddComment = (articleId: string) => {
-    if (!commentInput.trim()) return;
-    setComments(prev => ({
-      ...prev,
-      [articleId]: [
-        ...(prev[articleId] || []),
-        {
-          name: currentUser?.user_metadata?.full_name || 'Anonymous',
-          time: 'just now',
-          text: commentInput.trim(),
-        }
-      ]
-    }));
-    setCommentInput('');
+  // Fetch comments for a post
+  const fetchComments = async (postId: string) => {
+    const res = await fetch(`/api/get-comments?post_id=${postId}`);
+    const data = await res.json();
+    setComments(data.comments || []);
   };
 
   // Image navigation functions
@@ -425,7 +458,7 @@ const UpdatesPage = () => {
     }
   };
 
-  // Open modal with GSAP animation (centered modal)
+  // Open modal: fetch comments
   const openModal = (article: Article) => {
     setExpandedArticle(article);
     setModalImageIdx(0);
@@ -439,6 +472,8 @@ const UpdatesPage = () => {
         );
       }
     }, 10);
+    fetchComments(article.id);
+    setModalView('article');
   };
 
   // Close modal with GSAP animation
@@ -504,8 +539,83 @@ const UpdatesPage = () => {
 
   // Helper to determine if user can comment
   const isVoter = currentUser && userType === 'voter';
-  const canView = expandedArticle?.isUniLevel || (isVoter && departmentOrg && departmentOrg === expandedArticle?.org_name);
-  const canComment = isVoter && canView;
+  const isAdmin = currentUser && userType === 'admin';
+  const canView = expandedArticle?.isUniLevel || 
+    (isVoter && departmentOrg && departmentOrg === expandedArticle?.org_name) ||
+    (isAdmin && departmentOrg && departmentOrg === expandedArticle?.org_name);
+  const canComment = (isVoter || isAdmin) && canView;
+
+  // Add comment handler (API)
+  const handleAddComment = async () => {
+    if (!commentInput.trim() || !expandedArticle || !currentUser) return;
+    setCommentError(null);
+    setCommentMessage(null);
+    try {
+      const res = await fetch('/api/add-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          post_id: expandedArticle.id,
+          user_id: currentUser.id,
+          user_type: userType,
+          content: commentInput.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setCommentError(data.error || 'Failed to post comment');
+        return;
+      }
+      setCommentInput('');
+      setCommentMessage('Comment posted');
+      fetchComments(expandedArticle.id);
+      setTimeout(() => setCommentMessage(null), 2500);
+    } catch (err: any) {
+      setCommentError('Failed to post comment');
+    }
+  };
+
+  // Add reply handler (API)
+  const handleAddReply = async (commentId: string) => {
+    if (!replyInputs[commentId]?.trim() || !currentUser) return;
+    await fetch('/api/add-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        comment_id: commentId,
+        user_id: currentUser.id,
+        user_type: userType,
+        content: replyInputs[commentId].trim(),
+      }),
+    });
+    setReplyInputs(inputs => ({ ...inputs, [commentId]: '' }));
+    setReplyingTo(null);
+    if (expandedArticle) fetchComments(expandedArticle.id);
+  };
+
+  // Add this function:
+  const handleDeleteComment = async (commentId: string) => {
+    if (!expandedArticle) return;
+    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    await fetch('/api/delete-comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment_id: commentId }),
+    });
+    fetchComments(expandedArticle.id);
+  };
+
+  // Add delete reply function
+  const handleDeleteReply = async (replyId: string) => {
+    if (!expandedArticle) return;
+    if (!window.confirm('Are you sure you want to delete this reply?')) return;
+    await fetch('/api/delete-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reply_id: replyId }),
+    });
+    fetchComments(expandedArticle.id);
+  };
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
@@ -791,49 +901,138 @@ const UpdatesPage = () => {
                     </svg>
                     Back to Article
                   </button>
-                  <h4 className="text-lg font-semibold mb-3 text-gray-900">Comments</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-lg font-semibold text-black">Comments</h4>
+                    <select
+                      className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
+                      value={sortOrder}
+                      onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
+                    >
+                      <option value="newest">Newest</option>
+                      <option value="oldest">Oldest</option>
+                    </select>
+                  </div>
                   {/* Comments List */}
                   <div className="space-y-3 flex-1 min-h-0 overflow-y-auto mb-4">
-                    {(comments[expandedArticle.id] || []).length === 0 ? (
-                      <p className="text-gray-400 text-sm italic">No comments yet. Be the first to comment!</p>
-                    ) : (
-                      (comments[expandedArticle.id] || []).map((comment, idx) => (
-                        <div key={idx} className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
-                            {comment.name[0]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-gray-800 text-sm">{comment.name}</span>
-                              <span className="text-xs text-gray-400">{comment.time}</span>
+                    {(() => {
+                      const sortedComments = [...comments].sort((a, b) => {
+                        const dateA = new Date(a.created_at).getTime();
+                        const dateB = new Date(b.created_at).getTime();
+                        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                      });
+                      return sortedComments.length === 0 ? (
+                        <p className="text-gray-400 text-sm italic">No comments yet. Be the first to comment!</p>
+                      ) : (
+                        sortedComments.map((comment) => (
+                          <div key={comment.comment_id} className="flex flex-col gap-2">
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
+                                {comment.avatar_initial || 'U'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold text-gray-800 text-sm">{comment.display_name}</span>
+                                  <span className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleString()}</span>
+                                  {/* Reply count indicator */}
+                                  {comment.reply_count > 0 && (
+                                    <span className="ml-2 text-xs text-blue-500 font-semibold">{comment.reply_count} repl{comment.reply_count === 1 ? 'y' : 'ies'}</span>
+                                  )}
+                                </div>
+                                <p className="text-gray-700 text-sm">{comment.content}</p>
+                                <button
+                                  className="text-black text-xs font-semibold mt-1 hover:underline"
+                                  onClick={() => setReplyingTo(comment.comment_id)}
+                                >Reply</button>
+                                {/* Replies */}
+                                {comment.replies.length > 0 && (
+                                  <div className="ml-8 mt-2 space-y-2">
+                                    {comment.replies.map(reply => (
+                                      <div key={reply.reply_id} className="flex items-start gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs flex-shrink-0">
+                                          {reply.avatar_initial || 'U'}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2 mb-0.5">
+                                            <span className="font-semibold text-gray-800 text-xs">{reply.display_name}</span>
+                                            <span className="text-xs text-gray-400">{new Date(reply.created_at).toLocaleString()}</span>
+                                          </div>
+                                          <p className="text-gray-700 text-xs">{reply.content}</p>
+                                          {/* Delete reply button */}
+                                          {currentUser?.id === reply.user_id && (
+                                            <button
+                                              className="text-red-600 text-xs font-semibold mt-1 hover:underline"
+                                              onClick={() => handleDeleteReply(reply.reply_id)}
+                                            >Delete</button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {/* Reply input */}
+                                {replyingTo === comment.comment_id && canComment && (
+                                  <div className="flex items-center gap-2 mt-2 ml-8">
+                                    <input
+                                      type="text"
+                                      className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                                      placeholder="Write a reply..."
+                                      value={replyInputs[comment.comment_id] || ''}
+                                      onChange={e => setReplyInputs(inputs => ({ ...inputs, [comment.comment_id]: e.target.value }))}
+                                      onKeyPress={e => e.key === 'Enter' && handleAddReply(comment.comment_id)}
+                                    />
+                                    <button
+                                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
+                                      onClick={() => handleAddReply(comment.comment_id)}
+                                    >Post</button>
+                                    <button
+                                      className="text-gray-400 text-xs ml-1 hover:underline"
+                                      onClick={() => setReplyingTo(null)}
+                                    >Cancel</button>
+                                  </div>
+                                )}
+                                {/* Delete button */}
+                                {currentUser?.id === comment.user_id && (
+                                  <button
+                                    className="text-red-600 text-xs font-semibold ml-2 hover:underline"
+                                    onClick={() => handleDeleteComment(comment.comment_id)}
+                                  >Delete</button>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-gray-700 text-sm">{comment.text}</p>
                           </div>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      );
+                    })()}
                   </div>
                   {/* Comment Input or Permission Message */}
                   {canComment ? (
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
-                        {currentUser?.user_metadata?.full_name?.[0] || 'A'}
-                      </div>
-                      <div className="flex-1 flex gap-2">
-                        <input
-                          type="text"
-                          className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-                          placeholder="Write a comment..."
-                          value={commentInput}
-                          onChange={e => setCommentInput(e.target.value)}
-                          onKeyPress={e => e.key === 'Enter' && handleAddComment(expandedArticle.id)}
-                        />
-                        <button
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold text-sm shadow transition-colors duration-200 flex-shrink-0"
-                          onClick={() => handleAddComment(expandedArticle.id)}
-                        >
-                          Post
-                        </button>
+                    <div className="flex flex-col gap-1 w-full">
+                      {commentMessage && (
+                        <div className="text-green-600 text-xs font-semibold mb-1">{commentMessage}</div>
+                      )}
+                      {commentError && (
+                        <div className="text-red-600 text-xs font-semibold mb-1">{commentError}</div>
+                      )}
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
+                          {currentUser?.user_metadata?.full_name?.[0] || currentUser?.email?.[0] || 'A'}
+                        </div>
+                        <div className="flex-1 flex gap-2">
+                          <input
+                            type="text"
+                            className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm text-black focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                            placeholder="Write a comment..."
+                            value={commentInput}
+                            onChange={e => setCommentInput(e.target.value)}
+                            onKeyPress={e => e.key === 'Enter' && handleAddComment()}
+                          />
+                          <button
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold text-sm shadow transition-colors duration-200 flex-shrink-0"
+                            onClick={() => handleAddComment()}
+                          >
+                            Post
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
