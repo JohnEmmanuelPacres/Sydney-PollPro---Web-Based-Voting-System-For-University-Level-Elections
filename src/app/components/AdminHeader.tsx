@@ -11,7 +11,7 @@ const AdminHeader: React.FC = () => {
   const router = useRouter();
   const useParams = useSearchParams();
   const email = useParams.get('email');
-  const departmentOrg = useParams.get('department_org');
+  const administeredOrg = useParams.get('administered_Org'); //ayaw ni hilabta
 
   const handleLogout = async () => {
     try {
@@ -73,9 +73,9 @@ const AdminHeader: React.FC = () => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex flex-grow justify-center items-center gap-11">
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
-            <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
-            <NavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</NavButton>
-            <NavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</NavButton>
+            <NavButton href={`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administeredOrg || '')}`}`}>Home</NavButton>
+            <NavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</NavButton>
+            <NavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</NavButton>
             <NavButton href="/Update_Section">Updates</NavButton>
           </nav>
         </div>
@@ -107,9 +107,9 @@ const AdminHeader: React.FC = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg z-40">
           <div className="flex flex-col space-y-4 p-6">
-            <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
-            <MobileNavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</MobileNavButton>
-            <MobileNavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</MobileNavButton>
+            <NavButton href={`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administeredOrg || '')}`}`}>Home</NavButton>
+            <MobileNavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</MobileNavButton>
+            <MobileNavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</MobileNavButton>
             <MobileNavButton href="/Update_Section">Updates</MobileNavButton>
             <div className="px-4 py-3">
               <LogOutButton onClick={handleLogout}>Log Out</LogOutButton>

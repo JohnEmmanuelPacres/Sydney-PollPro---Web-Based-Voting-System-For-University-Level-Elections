@@ -59,8 +59,8 @@ const Results: NextPage = () => {
     const fetchElectionScope = async () => {
       try {
         let type = 'university';
-        if (departmentOrg) {
-          const typeRes = await fetch(`/api/get-relevant-elections?department_org=${encodeURIComponent(departmentOrg)}`);
+        if (departmentOrg || administeredOrg) {
+          const typeRes = await fetch(`/api/get-relevant-elections?department_org=${encodeURIComponent(departmentOrg ?? '')}&administered_Org=${encodeURIComponent(administeredOrg ?? '')}`);
           if(!typeRes){
             setError("API Error");
             console.log(`Error: ${error}`);
