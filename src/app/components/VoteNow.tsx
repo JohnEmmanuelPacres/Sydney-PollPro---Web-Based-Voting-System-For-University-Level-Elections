@@ -116,22 +116,6 @@ export default function VoteNow({ department_org, }: { department_org?: string }
     router.push('/');
   };
 
-  const handleNavigation = (route: string) => {
-    switch (route) {
-      case 'home':
-        router.push('/Voterdashboard');
-        break;
-      case 'results':
-        router.push('/Election_Results?from=dashboard');
-        break;
-      case 'updates':
-        router.push('/Update_Section?from=dashboard');
-        break;
-      default:
-        break;
-    }
-  };
-
   const handleCandidateSelect = (positionId: string, candidateId: string) => {
     setSelectedCandidates(prev => ({
       ...prev,

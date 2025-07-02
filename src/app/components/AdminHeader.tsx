@@ -76,7 +76,7 @@ const AdminHeader: React.FC = () => {
             <NavButton href={`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administeredOrg || '')}`}`}>Home</NavButton>
             <NavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</NavButton>
             <NavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</NavButton>
-            <NavButton href="/Update_Section">Updates</NavButton>
+            <NavButton href={`/dashboard/Admin/AdminUpdate_Section?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Updates</NavButton>
           </nav>
         </div>
 
@@ -110,7 +110,7 @@ const AdminHeader: React.FC = () => {
             <NavButton href={`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administeredOrg || '')}`}`}>Home</NavButton>
             <MobileNavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</MobileNavButton>
             <MobileNavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</MobileNavButton>
-            <MobileNavButton href="/Update_Section">Updates</MobileNavButton>
+            <MobileNavButton href={`/dashboard/Admin/AdminUpdate_Section?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Updates</MobileNavButton>
             <div className="px-4 py-3">
               <LogOutButton onClick={handleLogout}>Log Out</LogOutButton>
             </div>

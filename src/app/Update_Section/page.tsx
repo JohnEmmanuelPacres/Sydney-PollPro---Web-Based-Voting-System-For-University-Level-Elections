@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Header from '../components/Header';
 import VoterHeader from '../components/VoteDash_Header';
+import AdminHeader from '../components/AdminHeader';
 import Footer from '../components/Footer';
 import { supabase } from '@/utils/supabaseClient';
 
@@ -628,7 +629,7 @@ const formatTimeAgo = (date: Date) => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {headerComponent}
+      {userType === 'admin' ? <AdminHeader /> : userType === 'voter' ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">

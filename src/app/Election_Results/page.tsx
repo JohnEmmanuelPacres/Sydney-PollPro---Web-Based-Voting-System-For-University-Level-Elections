@@ -81,6 +81,7 @@ const Results: NextPage = () => {
             setIsLive(false);
           }
         } else {
+          setElectionType('university');
           setIsLive(false);
         }
       } catch (err) {

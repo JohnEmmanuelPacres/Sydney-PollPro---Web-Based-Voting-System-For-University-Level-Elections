@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
         // Admins can see all elections (active, completed, upcoming)
         // No additional filtering needed
       } else {
-        // For voters/public, show completed elections or active elections
-        electionQuery = electionQuery.or(`end_date.lt.${currentTime},and(start_date.lte.${currentTime},end_date.gte.${currentTime})`);
+        // For voters/public, show only active elections
+        electionQuery = electionQuery.lte('start_date', currentTime).gte('end_date', currentTime);
       }
 
       const { data: elections, error: electionError } = await electionQuery;
