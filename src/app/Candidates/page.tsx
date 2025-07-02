@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import VoteDash_Header from '../components/VoteDash_Header';
+import AdminHeader from '../components/AdminHeader';
+import { useSearchParams } from 'next/navigation';
 
 interface Candidate {
   id: string;
@@ -44,13 +46,28 @@ const CandidatesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<string>('all');
+  const searchParams = useSearchParams();
+  const departmentOrg = searchParams.get('department_org') || searchParams.get('administered_Org');
+  const isAdmin = searchParams.get('administered_Org') !== null;
 
   useEffect(() => {
     const fetchElection = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/get-voting-data?type=university');
+        // First, get the type of the relevant election
+        let type = 'university';
+        if (departmentOrg) {
+          const typeRes = await fetch(`/api/get-relevant-elections?department_org=${encodeURIComponent(departmentOrg)}`);
+          const typeData = await typeRes.json();
+          if (typeData && typeData.type) {
+            type = typeData.type;
+          }
+        }
+        // Now fetch the election data using the determined type
+        const params = [`scope=${type}`];
+        if (departmentOrg) params.push(`department_org=${encodeURIComponent(departmentOrg)}`);
+        const response = await fetch(`/api/get-voting-data?${params.join('&')}`);
         const result = await response.json();
         if (result.elections && result.elections.length > 0) {
           setElection(result.elections[0]);
@@ -73,7 +90,7 @@ const CandidatesPage = () => {
   if (error || !election) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
-        <VoteDash_Header />
+        {isAdmin ? <AdminHeader /> : <VoteDash_Header />}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-2xl text-red-700 font-bold text-center">
             There are no elections at this time.
@@ -116,7 +133,7 @@ const CandidatesPage = () => {
 
   return (
     <div className="w-screen min-h-screen bg-white flex flex-col">
-      <VoteDash_Header />
+      {isAdmin ? <AdminHeader /> : <VoteDash_Header />}
       <div className="flex-1 w-full px-0 md:px-0 py-8 flex flex-col">
         <div className="w-full h-full p-0 flex-1">
           <h1 className="text-3xl font-bold text-center text-red-700 mb-8 pt-8">Candidates for {election.name}</h1>

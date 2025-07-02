@@ -1,15 +1,15 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import NavButton from './NavButton';
 import { supabase } from '@/utils/supabaseClient';
-import { useAdminOrg } from '../dashboard/Admin/AdminedOrgContext';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
-  const { administeredOrg } = useAdminOrg();
+  const searchParams = useSearchParams();
+  const administeredOrg = searchParams.get('administered_Org');
 
   const handleLogout = async () => {
       try {
@@ -43,9 +43,9 @@ const Header: React.FC = () => {
         {/* Desktop Navigation - Centered */}
         <div className="hidden md:flex flex-grow justify-center items-center">
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
-            <NavButton href={`/dashboard/Admin?administered_Org=${administeredOrg}`}>Home</NavButton>
-            <NavButton href="/Candidates">Candidates</NavButton>
-            <NavButton href="/Election_Results">Results</NavButton>
+            <NavButton href={`/dashboard/Admin?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Home</NavButton>
+            <NavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</NavButton>
+            <NavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</NavButton>
             <NavButton href="/Updates">Update</NavButton>
             <button
               onClick={handleLogout}
@@ -81,9 +81,9 @@ const Header: React.FC = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg">
           <div className="flex flex-col space-y-4 p-6">
-            <MobileNavButton href={`/dashboard/Admin?administered_Org=${administeredOrg}`} onClick={() => setIsMenuOpen(false)}>Home</MobileNavButton>
-            <MobileNavButton href="/Candidates" onClick={() => setIsMenuOpen(false)}>Candidates</MobileNavButton>
-            <MobileNavButton href="/Election_Results" onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
+            <MobileNavButton href={`/dashboard/Admin?administered_Org=${encodeURIComponent(administeredOrg || '')}`} onClick={() => setIsMenuOpen(false)}>Home</MobileNavButton>
+            <MobileNavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`} onClick={() => setIsMenuOpen(false)}>Candidates</MobileNavButton>
+            <MobileNavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`} onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
             <MobileNavButton href="/Updates" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
             <MobileNavButton href="/About" onClick={() => setIsMenuOpen(false)}>About</MobileNavButton>
           </div>

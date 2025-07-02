@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const electionId = searchParams.get('election_id');
-    const type = searchParams.get('type'); // 'university' or 'organization'
+    const type = searchParams.get('scope'); // 'university' or 'organization'
     const department_org = searchParams.get('department_org');
     const accessLevel = searchParams.get('access_level'); // 'voter', 'admin', 'public'
     const showLiveResults = searchParams.get('live') === 'true';
