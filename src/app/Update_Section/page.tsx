@@ -975,7 +975,7 @@ const formatTimeAgo = (date: Date) => {
                                   <div className="flex items-center gap-2 mt-2 ml-8">
                                     <input
                                       type="text"
-                                      className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                                      className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
                                       placeholder="Write a reply..."
                                       value={replyInputs[comment.comment_id] || ''}
                                       onChange={e => setReplyInputs(inputs => ({ ...inputs, [comment.comment_id]: e.target.value }))}
