@@ -4,8 +4,27 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import StatsCard from "./components/StatsCard";
 import Threads from "./components/Threads";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [votersCount, setVotersCount] = useState<string | null>(null);
+  const [votesCount, setVotesCount] = useState<string | null>(null);
+  const [participation, setParticipation] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      setLoading(true);
+      const res = await fetch('/api/global-stats');
+      const data = await res.json();
+      setVotersCount(data.voters !== undefined ? data.voters.toLocaleString() : 'N/A');
+      setVotesCount(data.votes !== undefined ? data.votes.toLocaleString() : 'N/A');
+      setParticipation(data.participation !== undefined ? `${data.participation}%` : 'N/A');
+      setLoading(false);
+    }
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-t from-yellow-950 to-red-950">
       <Header />
@@ -56,28 +75,26 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold font-['Inter'] text-white mb-8">
               Current Election Stats
             </h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <StatsCard 
                 title="Total Registered Voters"
-                value="2,847"
+                value={loading ? 'Loading...' : votersCount ?? 'N/A'}
                 subtitle="Active Student Voters"
               />
               <StatsCard 
                 title="Total Votes Cast"
-                value="847"
+                value={loading ? 'Loading...' : votesCount ?? 'N/A'}
                 subtitle="Type of Election"
               />
               <StatsCard 
                 title="Avg. Participation"
-                value="25%"
+                value={loading ? 'Loading...' : participation ?? 'N/A'}
                 subtitle="Student Engagement"
               />
             </div>
           </div>
         </section>
       </main>
-  
       <Footer />
     </div>
   );
