@@ -43,12 +43,12 @@ const YearDropdown: React.FC<YearDropdownProps> = ({ completedElections, onFilte
   };
 
   return (
-    <div className="relative">
-      {/* Button container with absolute position */}
-      <div className="absolute top-[696px] left-[1159px] w-[106px] h-[34px] bg-[#fdf1f1] rounded-[6px] border border-[#00000020] shadow-sm flex items-center justify-start px-[14px]">
+    <div className="relative w-full max-w-xs">
+      {/* Button container */}
+      <div className="w-full bg-[#fdf1f1] rounded-[6px] border border-[#00000020] shadow-sm flex items-center justify-start px-4 py-2">
         <button
           onClick={() => setOpen(!open)}
-          className="flex items-center justify-between w-full h-full text-black text-sm font-bold"
+          className="flex items-center justify-between w-full text-black text-sm font-bold"
         >
           <span>{selectedYear}</span>
           <svg
@@ -67,7 +67,7 @@ const YearDropdown: React.FC<YearDropdownProps> = ({ completedElections, onFilte
 
       {/* Dropdown list */}
       {open && (
-        <ul className="absolute top-[734px] left-[1159px] w-[106px] bg-[#fdf1f1] border border-[#ddd] rounded-lg shadow z-10 text-black max-h-[200px] overflow-y-auto">
+        <ul className="absolute left-0 right-0 mt-1 bg-[#fdf1f1] border border-[#ddd] rounded-lg shadow z-10 text-black max-h-[200px] overflow-y-auto">
           {availableYears.map((year) => (
             <li
               key={year}

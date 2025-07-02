@@ -31,6 +31,7 @@ const Results: NextPage = () => {
     pathname.startsWith('/Voterdashboard') ||
     searchParams.get('from') === 'dashboard'
   );
+
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [type, setElectionType] = useState<string>();
   const [loading, setLoading] = useState(true);
