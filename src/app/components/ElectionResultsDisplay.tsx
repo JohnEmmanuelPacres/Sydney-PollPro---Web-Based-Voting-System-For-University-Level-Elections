@@ -19,7 +19,7 @@ interface PositionResult {
 
 interface ElectionResultsDisplayProps {
   electionId?: string;
-  type?: 'university' | 'organization';
+  type?: string;
   department_org?: string;
   isLive?: boolean;
   showRefreshButton?: boolean;
@@ -41,7 +41,7 @@ const positionOrder = [
 
 export default function ElectionResultsDisplay({
   electionId,
-  type = 'university',
+  type,
   department_org,
   isLive = false,
   showRefreshButton = true,
@@ -58,7 +58,7 @@ export default function ElectionResultsDisplay({
       setLoading(true);
       setError(null);
       
-      let url = `/api/get-vote-counts?type=${type}`;
+      let url = `/api/get-vote-counts?scope=${type}`;
       if (electionId) {
         url += `&election_id=${electionId}`;
       }
@@ -101,11 +101,13 @@ export default function ElectionResultsDisplay({
   }, [electionId, type, department_org]);
 
   const handleViewFullResults = () => {
-    const params = new URLSearchParams({
-      type,
-      ...(electionId && { election_id: electionId }),
-      ...(department_org && { department_org })
-    });
+    const params = new URLSearchParams(
+      Object.entries({
+        ...(type ? { type } : {}),
+        ...(electionId ? { election_id: electionId } : {}),
+        ...(department_org ? { department_org } : {})
+      }) as [string, string][]
+    );
     router.push(`/Election_Results?${params.toString()}`);
   };
 

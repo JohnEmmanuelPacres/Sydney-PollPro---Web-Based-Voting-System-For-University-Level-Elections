@@ -9,11 +9,11 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the election ID, orgId, and type from query parameters
+    // Get the scope, election ID, orgId, and departmentOrg from query parameters
     const { searchParams } = new URL(request.url);
     const electionId = searchParams.get('electionId');
     const orgId = searchParams.get('orgId');
-    const type = searchParams.get('type');
+    const type = searchParams.get('scope');
     const departmentOrg = searchParams.get('department_org');
     console.log('[API] get-voting-data params:', { electionId, orgId, type, departmentOrg });
 
@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       .from('elections')
       .select('*');
 
+    // Priority: electionId > scope=university > departmentOrg > orgId > default university-level
     if (electionId) {
       query = query.eq('id', electionId);
     } else if (type === 'university') {
@@ -30,7 +31,8 @@ export async function GET(request: NextRequest) {
     } else if (orgId) {
       query = query.eq('org_id', orgId);
     } else {
-      return NextResponse.json({ error: 'Missing type or orgId parameter' }, { status: 400 });
+      // Default to university-level elections
+      query = query.eq('is_uni_level', true);
     }
 
     // Fetch active elections (current time between start_date and end_date)
@@ -39,8 +41,7 @@ export async function GET(request: NextRequest) {
     console.log('Current UTC time for comparison:', currentTime);
     
     const { data: elections, error: electionsError } = await query
-      .lte('start_date', currentTime)
-      .gte('end_date', currentTime)
+      .gte('end_date', currentTime) // end_date in the future (ongoing or upcoming)
       .order('start_date', { ascending: true });
 
     if (electionsError) {

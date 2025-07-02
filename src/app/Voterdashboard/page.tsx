@@ -8,6 +8,7 @@ import CurrentElections from "../components/VoteDash_CurrentElections";
 import RecentActivity from "../components/VoteDash_RecentActivity";
 
 export default function VotingDashboard() {
+  
   return (
     <div className="min-h-screen bg-gradient-to-t from-yellow-950 to-red-950">
       <VoterHeader />
