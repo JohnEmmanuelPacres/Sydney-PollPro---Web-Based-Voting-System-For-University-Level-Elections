@@ -624,6 +624,31 @@ const formatTimeAgo = (date: Date) => {
     fetchComments(expandedArticle.id);
   };
 
+  // Add edit comment function
+  const handleEditComment = async (commentId: string) => {
+    if (!expandedArticle) return;
+    if (!window.confirm('Are you sure you want to edit this comment?')) return;
+    const res = await fetch('/api/edit-comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        comment_id: commentId,
+        user_id: currentUser.id,
+        user_type: userType,
+        content: commentInput.trim(),
+      }),
+    });
+    if (res.ok) {
+      fetchComments(expandedArticle.id);
+      setCommentInput('');
+      setCommentMessage('Comment updated');
+      setTimeout(() => setCommentMessage(null), 2500);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setCommentError(data.error || 'Failed to update comment');
+    }
+  };
+
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
       {userType === 'admin' ? <Header /> : isVoterRoute ? <VoterHeader /> : <Header />}
@@ -945,11 +970,35 @@ const formatTimeAgo = (date: Date) => {
                                     <span className="ml-2 text-xs text-blue-500 font-semibold">{comment.reply_count} repl{comment.reply_count === 1 ? 'y' : 'ies'}</span>
                                   )}
                                 </div>
-                                <p className="text-gray-700 text-sm">{comment.content}</p>
-                                <button
-                                  className="text-black text-xs font-semibold mt-1 hover:underline"
-                                  onClick={() => setReplyingTo(comment.comment_id)}
-                                >Reply</button>
+                                <p className="text-gray-700 text-sm mb-1">{comment.content}</p>
+                                <div className="flex items-center justify-between gap-2 mt-1">
+                                  <button
+                                    className="text-black text-xs font-semibold hover:underline"
+                                    onClick={() => setReplyingTo(comment.comment_id)}
+                                  >Reply</button>
+                                  <div className="flex items-center gap-1 ml-auto">
+                                    {currentUser?.id === comment.user_id && (
+                                      <>
+                                        <button
+                                          className="text-gray-400 text-xs p-1 rounded hover:text-red-600 transition-colors duration-150"
+                                          style={{ fontSize: '14px', lineHeight: 1 }}
+                                          onClick={() => handleDeleteComment(comment.comment_id)}
+                                          title="Delete Comment"
+                                        >
+                                          ×
+                                        </button>
+                                        <button
+                                          className="text-blue-500 text-xs p-1 rounded hover:bg-blue-100 transition-colors duration-150 flex items-center"
+                                          style={{ fontSize: '14px', lineHeight: 1 }}
+                                          onClick={() => handleEditComment(comment.comment_id)}
+                                          title="Edit Comment"
+                                        >
+                                          <Pencil className="w-3.5 h-3.5" />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
                                 {/* Replies */}
                                 {comment.replies.length > 0 && (
                                   <div className="ml-8 mt-2 space-y-2">
@@ -996,18 +1045,6 @@ const formatTimeAgo = (date: Date) => {
                                       onClick={() => setReplyingTo(null)}
                                     >Cancel</button>
                                   </div>
-                                )}
-                                {/* Delete button */}
-                                {currentUser?.id === comment.user_id && (
-                                  <button
-                                    className="text-blue-600 text-xs font-semibold ml-2 hover:underline flex items-center gap-1"
-                                    onClick={() => handleDeleteComment(comment.comment_id)}
-                                    title="Delete Comment"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                  </button>
                                 )}
                               </div>
                             </div>
