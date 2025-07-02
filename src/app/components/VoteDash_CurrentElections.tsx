@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ElectionCard from "./VoteDash_ElectionCard";
+import ElectionResultsDisplay from "./ElectionResultsDisplay";
 
 export default function CurrentElections() {
   const [elections, setElections] = useState([
@@ -13,7 +14,8 @@ export default function CurrentElections() {
       participation: "41%",
       participationWidth: "w-[72px]",
       viewed: false,
-      expanded: false // New state for expanded view
+      expanded: false,
+      showResults: false
     },
     {
       id: 2,
@@ -25,7 +27,8 @@ export default function CurrentElections() {
       participation: "41%",
       participationWidth: "w-[96px]",
       viewed: false,
-      expanded: false
+      expanded: false,
+      showResults: false
     },
     {
       id: 3,
@@ -37,7 +40,8 @@ export default function CurrentElections() {
       participation: "41%",
       participationWidth: "w-full",
       viewed: false,
-      expanded: false
+      expanded: false,
+      showResults: false
     }
   ]);
 
@@ -46,7 +50,8 @@ export default function CurrentElections() {
       election.id === id ? { 
         ...election, 
         viewed: true,
-        expanded: !election.expanded // Toggle expanded state
+        expanded: !election.expanded,
+        showResults: !election.showResults // Toggle results display
       } : election
     ));
     console.log(`Viewing status for election ${id}`);
@@ -64,11 +69,21 @@ export default function CurrentElections() {
       </div>
       <div className="space-y-4">
         {elections.map((election) => (
-          <ElectionCard 
-            key={election.id}
-            {...election}
-            onViewStatus={() => handleViewStatus(election.id)}
-          />
+          <div key={election.id}>
+            <ElectionCard 
+              {...election}
+              onViewStatus={() => handleViewStatus(election.id)}
+            />
+            {election.showResults && (
+              <div className="mt-4 p-4 bg-white/10 rounded-lg border border-yellow-900/50">
+                <ElectionResultsDisplay 
+                  isLive={true}
+                  showRefreshButton={false}
+                  className="text-white"
+                />
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>

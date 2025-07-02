@@ -138,14 +138,14 @@ const AdminDashboardNoSession: NextPage = () => {
   };
 
   return (
-    <div className="relative w-full min-h-[1717px] bg-[#52100d] text-left text-[20px] text-[#fef2f2] font-inter overflow-hidden">
+    <div className="relative w-full min-h-screen bg-[#52100d] text-left text-[20px] text-[#fef2f2] font-inter overflow-x-auto">
       <AdminHeader />
 
       {/* Powered by Section */}
-      <div className="absolute top-[184px] left-[269px] w-[827px] flex flex-col items-center justify-center text-center text-[32px]">
+      <div className="w-full flex flex-col items-center justify-center text-center text-[32px] mt-32 md:mt-44 px-2">
         <div className="w-full font-black h-[55px]">Powered by:</div>
         <div
-          className="w-full font-black text-[128px] mt-[-24px] leading-none"
+          className="w-full font-black text-[48px] md:text-[128px] mt-0 md:mt-[-24px] leading-none"
           style={{
             textShadow:
               '5px 0 0 #5d0404, 0 5px 0 #5d0404, -5px 0 0 #5d0404, 0 -5px 0 #5d0404',
@@ -155,66 +155,51 @@ const AdminDashboardNoSession: NextPage = () => {
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="absolute top-[400px] left-1/2 transform -translate-x-1/2 text-red-300 text-xl">
-          {error}
-        </div>
-      )}
+      {/* Election Status or Create Election Section */}
+      <div className="w-full flex flex-col items-center justify-center gap-4 mt-8 px-2">
+        {activeElection ? (
+          <div className="w-full max-w-4xl">
+            <ElectionStatusBar election={activeElection} />
+          </div>
+        ) : (
+          <div className="w-full max-w-2xl">
+            <CreateElectionSection />
+          </div>
+        )}
+      </div>
 
       {/* Review Elections Section - Show if there are completed elections */}
-      {completedElections.length > 0 ? (
-        <>
-          {/* Review Elections Title */}
-          <div className="absolute top-[650px] left-1/2 -translate-x-[calc(1130px/2)] text-[48px] font-semibold tracking-[-0.02em] w-[390px]">
-            Review Elections
-          </div>
-
-          {/* Review Elections Panel - Scrollable Container */}
-          <div className="absolute top-[750px] left-[100px] w-[1165px] h-[666px] rounded-[20px] bg-[#fef2f2] border-[3px] border-[rgba(254,242,242,0.96)] flex flex-col px-[20px] py-6 text-[34px] text-black font-baloo overflow-hidden">
-            <div className="flex-1 overflow-y-auto pl-4 pr-2 space-y-4">
+      <div className="w-full flex flex-col items-center justify-center mt-12 px-2">
+        <div className="w-full flex justify-center text-[32px] md:text-[48px] font-semibold tracking-[-0.02em] mb-4">
+          Review Elections
+        </div>
+        <div className="w-full flex justify-center">
+          <div className="w-full max-w-5xl rounded-[20px] bg-[#fef2f2] border-[3px] border-[rgba(254,242,242,0.96)] flex flex-col px-2 md:px-6 py-6 text-[20px] md:text-[34px] text-black font-baloo overflow-hidden">
+            {/* Search and Year Dropdown inside card */}
+            <div className="w-full flex flex-col md:flex-row items-center justify-between gap-2 mb-6">
+              <div className="w-full md:w-3/4 max-w-2xl">
+                <SearchBar onSearchChange={handleSearchChange} />
+              </div>
+              <div className="w-full md:w-1/4 max-w-xs flex justify-center md:justify-end">
+                <YearDropdown completedElections={completedElections} onFilterChange={handleYearFilterChange} />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto pl-0 md:pl-4 pr-0 md:pr-2 space-y-4">
               <ReviewElectionPanel 
                 completedElections={filteredElections} 
                 totalCompletedElections={completedElections.length}
               />
             </div>
           </div>
-        </>
-      ) : (
-        <>
-          {/* No Completed Elections Message */}
-          <div className="absolute top-[650px] left-1/2 -translate-x-[calc(1130px/2)] text-[48px] font-semibold tracking-[-0.02em] w-[390px]">
-            Review Elections
-          </div>
-          
-          <div className="absolute top-[750px] left-[100px] w-[1165px] h-[666px] rounded-[20px] bg-[#fef2f2] border-[3px] border-[rgba(254,242,242,0.96)] flex flex-col items-center justify-center px-[14px] pb-4 gap-4 text-[34px] text-black font-baloo">
-            <div className="flex flex-col items-center justify-center text-center space-y-6">
-              <div className="text-[64px] text-gray-400 mb-4">
-                📊
-              </div>
-              <div className="text-[32px] font-semibold text-gray-600">
-                No Completed Elections Yet
-              </div>
-              <div className="text-[20px] text-gray-500 max-w-[600px] leading-relaxed">
-                There are currently no completed elections to review. 
-                Once elections are finished, they will appear here for your review and analysis.
-              </div>
-              <div className="text-[16px] text-gray-400 mt-4">
-                Create and manage elections to get started!
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="w-full flex justify-center mt-8 text-red-300 text-xl">
+          {error}
+        </div>
       )}
-
-      {/* Year Dropdown */}
-      <YearDropdown 
-        completedElections={completedElections}
-        onFilterChange={handleYearFilterChange}
-      />
-
-      {/* Search Bar */}
-      <SearchBar onSearchChange={handleSearchChange} />
 
       {/* Bottom Bar */}
       <div className="absolute w-full top-[1561px] left-0 h-[156px] bg-[#5c1110] shadow-[0_-5px_4px_rgba(0,0,0,0.5)] overflow-hidden">
@@ -222,13 +207,6 @@ const AdminDashboardNoSession: NextPage = () => {
           <div className="w-[57px] h-[30px] relative" />
         </div>
       </div>
-
-      {/* Create or Status Section */}
-      {activeElection ? (
-        <ElectionStatusBar election={activeElection}/>
-      ) : (
-        <CreateElectionSection />
-      )}
     </div>
   );
 };

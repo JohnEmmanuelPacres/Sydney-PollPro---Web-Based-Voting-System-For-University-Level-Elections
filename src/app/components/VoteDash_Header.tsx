@@ -1,13 +1,17 @@
-// components/VoteDash_Header.tsx
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import NavButton from './NavButton';
 import LogOutButton from './VoteDash_LogOutButton';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 const VoterHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
+  const useParams = useSearchParams();
+  const email = useParams.get('email');
+  const departmentOrg = useParams.get('department_org');
 
   const handleLogout = async () => {
     try {
@@ -38,6 +42,15 @@ const VoterHeader: React.FC = () => {
     );
   };
 
+  const MobileLogOutButton = () => (
+    <button
+      onClick={handleLogout}
+      className="w-full px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl text-center"
+    >
+      LOG OUT
+    </button>
+  );
+
   return (
     <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">
       <div className="container mx-auto h-full px-4 flex items-center justify-between">
@@ -58,14 +71,19 @@ const VoterHeader: React.FC = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex flex-grow justify-center items-center">
+        <div className="hidden md:flex flex-grow justify-center items-center gap-11">
           <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
-            <NavButton href="/Voterdashboard">Home</NavButton>
-            <NavButton href="/">Candidates</NavButton>
-            <NavButton href="/Election_Results">Results</NavButton>
+            <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
+            <NavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</NavButton>
+            <NavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</NavButton>
             <NavButton href="/Update_Section">Updates</NavButton>
             <LogOutButton onClick={handleLogout}>LOGOUT</LogOutButton>
           </nav>
+        </div>
+
+        {/* Desktop Logout Button */}
+        <div className="hidden md:block">
+          <LogOutButton onClick={handleLogout}>LOGOUT</LogOutButton>
         </div>
 
         {/* Mobile Menu Button */}
@@ -90,9 +108,9 @@ const VoterHeader: React.FC = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg z-40">
           <div className="flex flex-col space-y-4 p-6">
-            <MobileNavButton href="/Voterdashboard">Home</MobileNavButton>
-            <MobileNavButton href="/">Candidates</MobileNavButton>
-            <MobileNavButton href="/Election_Results">Results</MobileNavButton>
+            <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
+            <MobileNavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</MobileNavButton>
+            <MobileNavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</MobileNavButton>
             <MobileNavButton href="/Update_Section">Updates</MobileNavButton>
             <div className="px-4 py-3">
               <LogOutButton onClick={handleLogout}>Log Out</LogOutButton>

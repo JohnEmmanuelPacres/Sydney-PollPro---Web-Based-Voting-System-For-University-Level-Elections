@@ -36,8 +36,12 @@ const ReviewElectionPanel: React.FC<ReviewElectionPanelProps> = ({ completedElec
   };
 
   const handleElectionClick = (election: CompletedElection) => {
-    // TODO: Add navigation or modal functionality for completed elections
-    console.log('Clicked on completed election:', election.name);
+    // Navigate to election results page
+    const params = new URLSearchParams({
+      election_id: election.id,
+      type: election.is_Uni_level ? 'university' : 'organization'
+    });
+    window.open(`/Election_Results?${params.toString()}`, '_blank');
   };
 
   if (loading) {

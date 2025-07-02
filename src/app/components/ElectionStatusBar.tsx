@@ -77,10 +77,10 @@ const ElectionStatusBar: React.FC<ElectionStatusBarProps> = ({ election }) => {
   };
 
   return (
-    <div className="relative">
+    <div className="w-full flex justify-center my-4">
       <button
         onClick={handleClick}
-        className={`absolute top-[438px] left-[50%] transform -translate-x-1/2 text-[26px] leading-[150%] text-center w-[85%] rounded-xl shadow-md bg-[#fef2f2] border-4 p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 text-black transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:ring-opacity-50 ${
+        className={`w-full max-w-4xl text-[20px] md:text-[26px] leading-[150%] text-center rounded-xl shadow-md bg-[#fef2f2] border-4 p-4 md:p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 text-black transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:ring-opacity-50 ${
           isClickable 
             ? `hover:bg-[#f5f5f5] hover:scale-105 hover:${borderColor}` 
             : 'opacity-75 cursor-not-allowed hover:bg-[#fef2f2]'

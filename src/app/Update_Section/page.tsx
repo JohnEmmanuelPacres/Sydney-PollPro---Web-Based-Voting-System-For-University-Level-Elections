@@ -65,7 +65,8 @@ type Comment = {
 
 const UpdatesPage = () => {
   const pathname = usePathname();
-  const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Update_Section');
+  const searchParams = useSearchParams();
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [activeFilter, setActiveFilter] = useState<Filter>('All Updates');
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,227 +79,226 @@ const UpdatesPage = () => {
   const pageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // State for expanded article
-  const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
-  // State for comments (UI only, not persisted)
-  const [commentInput, setCommentInput] = useState('');
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+// State for expanded article
+const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
+// State for comments (UI only, not persisted)
+const [commentInput, setCommentInput] = useState('');
+const [comments, setComments] = useState<Comment[]>([]);
+const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
+const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  // State for modal
-  const [expandedArticle, setExpandedArticle] = useState<Article | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const [modalImageIdx, setModalImageIdx] = useState(0);
+// State for modal
+const [expandedArticle, setExpandedArticle] = useState<Article | null>(null);
+const [modalVisible, setModalVisible] = useState(false);
+const modalRef = useRef<HTMLDivElement>(null);
+const [modalImageIdx, setModalImageIdx] = useState(0);
 
-  // State for fullscreen image viewer
-  const [imageViewerOpen, setImageViewerOpen] = useState(false);
-  const [imageViewerIdx, setImageViewerIdx] = useState(0);
-  const imageViewerRef = useRef<HTMLDivElement>(null);
+// State for fullscreen image viewer
+const [imageViewerOpen, setImageViewerOpen] = useState(false);
+const [imageViewerIdx, setImageViewerIdx] = useState(0);
+const imageViewerRef = useRef<HTMLDivElement>(null);
 
-  // State for modal view: 'article' or 'comments'
-  const [modalView, setModalView] = useState<'article' | 'comments'>('article');
+// State for modal view: 'article' or 'comments'
+const [modalView, setModalView] = useState<'article' | 'comments'>('article');
 
-  // State for messages
-  const [commentMessage, setCommentMessage] = useState<string | null>(null);
-  const [commentError, setCommentError] = useState<string | null>(null);
+// State for messages
+const [commentMessage, setCommentMessage] = useState<string | null>(null);
+const [commentError, setCommentError] = useState<string | null>(null);
 
-  // Add this state for sort order
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+// Add this state for sort order
+const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
-  // Get current user and determine user type
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      setIsLoading(true); // Start loading when we begin user check
-      try {
-        // First check if we have an active session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        // Debug logging
-        console.log('=== SESSION DEBUG ===');
-        console.log('Session:', session);
-        console.log('Session error:', sessionError);
-        console.log('User ID:', session?.user?.id);
-        console.log('User email:', session?.user?.email);
-        console.log('=====================');
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          setUserType('guest');
-          setCurrentUser(null);
-          return;
-        }
-
-        if (!session) {
-          console.log('No active session found, setting as guest');
-          setUserType('guest');
-          setCurrentUser(null);
-          return;
-        }
-
-        // Get user from session
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError) {
-          console.error('Auth error:', authError);
-          setUserType('guest');
-          setCurrentUser(null);
-          return;
-        }
-        
-        setCurrentUser(user || null);
-
-        if (user) {
-          console.log('User found:', user.id);
-          
-          // Check admin profile first
-          const { data: adminProfile, error: adminError } = await supabase
-            .from('admin_profiles')
-            .select('administered_org')
-            .eq('id', user.id)
-            .single();
-
-          if (!adminError && adminProfile) {
-            console.log('Admin profile found:', adminProfile);
-            setUserType('admin');
-            setDepartmentOrg(adminProfile.administered_org);
-            return;
-          }
-
-          // If not admin, check voter profile
-          const { data: voterProfile, error: voterError } = await supabase
-            .from('voter_profiles')
-            .select('department_org')
-            .eq('id', user.id)
-            .single();
-
-          if (!voterError && voterProfile) {
-            console.log('Voter profile found:', voterProfile);
-            setUserType('voter');
-            setDepartmentOrg(voterProfile.department_org);
-            return;
-          }
-
-          // If neither profile exists but user is authenticated
-          console.log('User authenticated but no profile found, setting as guest');
-          setUserType('guest');
-        } else {
-          console.log('No user found, setting as guest');
-          setUserType('guest');
-        }
-      } catch (error) {
-        console.error('Error getting user:', error);
+// Get current user and determine user type
+useEffect(() => {
+  const getCurrentUser = async () => {
+    setIsLoading(true); // Start loading when we begin user check
+    try {
+      // First check if we have an active session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      // Debug logging
+      console.log('=== SESSION DEBUG ===');
+      console.log('Session:', session);
+      console.log('Session error:', sessionError);
+      console.log('User ID:', session?.user?.id);
+      console.log('User email:', session?.user?.email);
+      console.log('=====================');
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
         setUserType('guest');
         setCurrentUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getCurrentUser();
-  }, []);
-
-  // Load articles based on user type and organization
-  useEffect(() => {
-    if (userType !== null) { // Changed from currentUser check
-      loadArticles();
-    }
-  }, [userType, departmentOrg]); // Added dependencies
-
-  const loadArticles = async () => {
-    setIsLoading(true);
-    
-    try {
-      console.log('Loading articles with:', {
-        user_id: currentUser?.id,
-        user_type: userType,
-        department_org: departmentOrg
-      });
-
-      // For guest users, don't send user_id
-      const requestBody = {
-        user_id: userType === 'guest' ? null : currentUser?.id || null,
-        user_type: userType,
-        department_org: departmentOrg || null
-      };
-
-      console.log('Request body:', requestBody);
-
-      const response = await fetch('/api/get-posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', response.status, errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        return;
       }
 
-      const data = await response.json();
-      console.log('API Response:', data);
+      if (!session) {
+        console.log('No active session found, setting as guest');
+        setUserType('guest');
+        setCurrentUser(null);
+        return;
+      }
+
+      // Get user from session
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (data.error) {
-        throw new Error(data.error);
+      if (authError) {
+        console.error('Auth error:', authError);
+        setUserType('guest');
+        setCurrentUser(null);
+        return;
       }
+      
+      setCurrentUser(user || null);
 
-      const transformedArticles: Article[] = (data.posts || []).map((post: any) => {
-        let imageUrl = '/default-news.jpg';
-        if (post.image_urls && Array.isArray(post.image_urls) && post.image_urls.length > 0) {
-          imageUrl = post.image_urls[0];
+      if (user) {
+        console.log('User found:', user.id);
+        
+        // Check admin profile first
+        const { data: adminProfile, error: adminError } = await supabase
+          .from('admin_profiles')
+          .select('administered_org')
+          .eq('id', user.id)
+          .single();
+
+        if (!adminError && adminProfile) {
+          console.log('Admin profile found:', adminProfile);
+          setUserType('admin');
+          setDepartmentOrg(adminProfile.administered_org);
+          return;
         }
 
-        return {
-          id: post.id,
-          headline: post.title,
-          details: post.content,
-          category: post.category,
-          timeAgo: formatTimeAgo(new Date(post.created_at)),
-          bgColor: getCategoryBgColor(post.category),
-          image: imageUrl,
-          isUniLevel: post.is_uni_lev,
-          image_urls: post.image_urls,
-          org_id: post.org_id,
-          org_name: post.organizations?.organization_name || null,
-        };
-      });
+        // If not admin, check voter profile
+        const { data: voterProfile, error: voterError } = await supabase
+          .from('voter_profiles')
+          .select('department_org')
+          .eq('id', user.id)
+          .single();
 
-      console.log('Transformed articles:', transformedArticles);
-      setArticles(transformedArticles);
+        if (!voterError && voterProfile) {
+          console.log('Voter profile found:', voterProfile);
+          setUserType('voter');
+          setDepartmentOrg(voterProfile.department_org);
+          return;
+        }
+
+        // If neither profile exists but user is authenticated
+        console.log('User authenticated but no profile found, setting as guest');
+        setUserType('guest');
+      } else {
+        console.log('No user found, setting as guest');
+        setUserType('guest');
+      }
     } catch (error) {
-      console.error('Error loading articles:', error);
-      setArticles([]);
+      console.error('Error getting user:', error);
+      setUserType('guest');
+      setCurrentUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getCategoryBgColor = (category: string) => {
-    const colors: Record<string, string> = {
-      'Election News': 'bg-blue-100',
-      'Announcements': 'bg-yellow-100', 
-      'System Updates': 'bg-green-100'
+  getCurrentUser();
+}, []);
+
+// Load articles based on user type and organization
+useEffect(() => {
+  if (userType !== null) { // Changed from currentUser check
+    loadArticles();
+  }
+}, [userType, departmentOrg]); // Added dependencies
+
+const loadArticles = async () => {
+  setIsLoading(true);
+  
+  try {
+    console.log('Loading articles with:', {
+      user_id: currentUser?.id,
+      user_type: userType,
+      department_org: departmentOrg
+    });
+
+    // For guest users, don't send user_id
+    const requestBody = {
+      user_id: userType === 'guest' ? null : currentUser?.id || null,
+      user_type: userType,
+      department_org: departmentOrg || null
     };
-    return colors[category] || 'bg-gray-100';
+
+    console.log('Request body:', requestBody);
+
+    const response = await fetch('/api/get-posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', response.status, errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('API Response:', data);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    const transformedArticles: Article[] = (data.posts || []).map((post: any) => {
+      let imageUrl = '/default-news.jpg';
+      if (post.image_urls && Array.isArray(post.image_urls) && post.image_urls.length > 0) {
+        imageUrl = post.image_urls[0];
+      }
+
+      return {
+        id: post.id,
+        headline: post.title,
+        details: post.content,
+        category: post.category,
+        timeAgo: formatTimeAgo(new Date(post.created_at)),
+        bgColor: getCategoryBgColor(post.category),
+        image: imageUrl,
+        isUniLevel: post.is_uni_lev,
+        image_urls: post.image_urls,
+        org_id: post.org_id,
+        org_name: post.organizations?.organization_name || null,
+      };
+    });
+
+    console.log('Transformed articles:', transformedArticles);
+    setArticles(transformedArticles);
+  } catch (error) {
+    console.error('Error loading articles:', error);
+    setArticles([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const getCategoryBgColor = (category: string) => {
+  const colors: Record<string, string> = {
+    'Election News': 'bg-blue-100',
+    'Announcements': 'bg-yellow-100', 
+    'System Updates': 'bg-green-100'
   };
+  return colors[category] || 'bg-gray-100';
+};
 
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
+const formatTimeAgo = (date: Date) => {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
 
-    if (minutes < 1) return 'Posted just now';
-    if (minutes < 60) return `Posted ${minutes} min${minutes > 1 ? 's' : ''} ago`;
-    if (hours < 24) return `Posted ${hours} hour${hours > 1 ? 's' : ''} ago`;
-    const days = Math.floor(hours / 24);
-    return `Posted ${days} day${days > 1 ? 's' : ''} ago`;
-  };
-
+  if (minutes < 1) return 'Posted just now';
+  if (minutes < 60) return `Posted ${minutes} min${minutes > 1 ? 's' : ''} ago`;
+  if (hours < 24) return `Posted ${hours} hour${hours > 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  return `Posted ${days} day${days > 1 ? 's' : ''} ago`;
+};
   const filteredArticles = activeFilter === 'All Updates' 
     ? articles 
     : articles.filter(article => article.category === activeFilter);
@@ -619,7 +619,7 @@ const UpdatesPage = () => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {isVoterRoute ? <VoterHeader /> : <Header />}
+      {isVoterDashboard ? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
