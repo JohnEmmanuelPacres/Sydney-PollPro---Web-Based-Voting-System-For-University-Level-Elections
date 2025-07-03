@@ -1,5 +1,8 @@
 // app/dashboard/page.tsx
 'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
 import VoterHeader from "../components/VoteDash_Header";
 import WelcomeSection from "../components/VoteDash_WelcomeSection";
 import StatsSection from "../components/VoteDash_StatSection";
@@ -7,8 +10,17 @@ import SessionStatusBar from "../components/VoteDash_SessionStatusBar";
 import CurrentElections from "../components/VoteDash_CurrentElections";
 import RecentActivity from "../components/VoteDash_RecentActivity";
 
-export default function VotingDashboard() {
-  
+export default function VoterDashboard() {
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push('/User_RegxLogin');
+      }
+    });
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-gradient-to-t from-yellow-950 to-red-950">
       <VoterHeader />

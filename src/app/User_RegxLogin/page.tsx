@@ -14,6 +14,7 @@ const SIGNIN: NextPage = () => {
   const [emailError, setEmailError] = useState("");
   const [signInError, setSignInError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const handleSignIn = async () => {
@@ -167,17 +168,17 @@ const SIGNIN: NextPage = () => {
     }
   }, [signInError]);
 
-  // Add useEffect to check session on component mount
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         router.push('/Voterdashboard');
+      } else {
+        setLoading(false); // Show login form
       }
-    };
-    
-    checkSession();
+    });
   }, [router]);
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="min-h-screen flex flex-col bg-red-950 overflow-hidden text-left text-xl text-white font-['Actor'] pt-24 md:pt-32">
