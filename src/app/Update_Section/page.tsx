@@ -90,6 +90,11 @@ const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
 const [replyingTo, setReplyingTo] = useState<string | null>(null);
 const [editingComment, setEditingComment] = useState<string | null>(null);
 const [editCommentInput, setEditCommentInput] = useState('');
+const [editingReply, setEditingReply] = useState<string | null>(null);
+const [editReplyInput, setEditReplyInput] = useState('');
+const [isRefreshingComments, setIsRefreshingComments] = useState(false);
+const [lastCommentCount, setLastCommentCount] = useState(0);
+const [autoRefreshInterval, setAutoRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
 // State for modal
 const [expandedArticle, setExpandedArticle] = useState<Article | null>(null);
@@ -444,9 +449,23 @@ const formatTimeAgo = (date: Date) => {
 
   // Fetch comments for a post
   const fetchComments = async (postId: string) => {
-    const res = await fetch(`/api/get-comments?post_id=${postId}`);
-    const data = await res.json();
-    setComments(data.comments || []);
+    try {
+      const res = await fetch(`/api/get-comments?post_id=${postId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const newComments = data.comments || [];
+        setComments(newComments);
+        
+        // Only set initial count and start auto-refresh if this is the first load
+        if (lastCommentCount === 0) {
+          setLastCommentCount(newComments.length);
+          startAutoRefresh();
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      // Don't start auto-refresh on error
+    }
   };
 
   // Image navigation functions
@@ -482,6 +501,9 @@ const formatTimeAgo = (date: Date) => {
 
   // Close modal with GSAP animation
   const closeModal = () => {
+    // Stop auto-refresh when closing modal
+    stopAutoRefresh();
+    
     if (modalRef.current) {
       gsap.to(modalRef.current, {
         x: '-100vw',
@@ -695,6 +717,102 @@ const formatTimeAgo = (date: Date) => {
       setCommentError('Failed to update comment');
     }
   };
+
+  // Start editing reply
+  const startEditReply = (replyId: string, currentContent: string) => {
+    setEditingReply(replyId);
+    setEditReplyInput(currentContent);
+  };
+
+  // Cancel editing reply
+  const cancelEditReply = () => {
+    setEditingReply(null);
+    setEditReplyInput('');
+  };
+
+  // Save edited reply
+  const saveEditReply = async (replyId: string) => {
+    if (!expandedArticle || !editReplyInput.trim()) return;
+    
+    try {
+      const res = await fetch('/api/edit-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reply_id: replyId,
+          user_id: currentUser.id,
+          user_type: userType,
+          content: editReplyInput.trim(),
+        }),
+      });
+      
+      if (res.ok) {
+        fetchComments(expandedArticle.id);
+        setEditingReply(null);
+        setEditReplyInput('');
+        setCommentMessage('Reply updated');
+        setTimeout(() => setCommentMessage(null), 2500);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setCommentError(data.error || 'Failed to update reply');
+      }
+    } catch (error: any) {
+      setCommentError('Failed to update reply');
+    }
+  };
+
+  // Check for new comments and auto-refresh
+  const checkForNewComments = async () => {
+    if (!expandedArticle || isRefreshingComments || modalView !== 'comments') return; // Don't check if not in comments view
+    
+    try {
+      const res = await fetch(`/api/get-comments?post_id=${expandedArticle.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        const currentCommentCount = data.comments?.length || 0;
+        
+        // Only refresh if we have more comments than before AND we had comments before
+        if (currentCommentCount > lastCommentCount && lastCommentCount > 0) {
+          setIsRefreshingComments(true);
+          await fetchComments(expandedArticle.id);
+          setTimeout(() => setIsRefreshingComments(false), 1000);
+        }
+        
+        // Update the count only if it's different
+        if (currentCommentCount !== lastCommentCount) {
+          setLastCommentCount(currentCommentCount);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for new comments:', error);
+      // Don't update lastCommentCount on error to avoid false positives
+    }
+  };
+
+  // Start auto-refresh interval
+  const startAutoRefresh = () => {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+    }
+    
+    const interval = setInterval(checkForNewComments, 5000); // Check every 5 seconds instead of 3
+    setAutoRefreshInterval(interval);
+  };
+
+  // Stop auto-refresh interval
+  const stopAutoRefresh = () => {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+      setAutoRefreshInterval(null);
+    }
+  };
+
+  // Cleanup auto-refresh on component unmount
+  useEffect(() => {
+    return () => {
+      stopAutoRefresh();
+    };
+  }, []);
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
@@ -980,16 +1098,37 @@ const formatTimeAgo = (date: Date) => {
                     </svg>
                     Back to Article
                   </button>
+                  {/* Auto-refresh loading indicator */}
+                  {isRefreshingComments && (
+                    <div className="flex items-center justify-center mb-2 p-1 bg-blue-50 border border-blue-200 rounded text-xs">
+                      <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-blue-600 mr-1"></div>
+                      <span className="text-blue-700 text-xs">New comments detected, refreshing...</span>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-lg font-semibold text-black">Comments</h4>
-                    <select
-                      className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
-                      value={sortOrder}
-                      onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
-                    >
-                      <option value="newest">Newest</option>
-                      <option value="oldest">Oldest</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setIsRefreshingComments(true);
+                          fetchComments(expandedArticle.id);
+                          setTimeout(() => setIsRefreshingComments(false), 1000);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                        title="Refresh comments"
+                      >
+                        ↻ Refresh
+                      </button>
+                      <select
+                        className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
+                        value={sortOrder}
+                        onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
+                      >
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                      </select>
+                    </div>
                   </div>
                   {/* Comments List */}
                   <div className="space-y-3 flex-1 min-h-0 overflow-y-auto mb-4">
@@ -1080,13 +1219,48 @@ const formatTimeAgo = (date: Date) => {
                                             <span className="font-semibold text-gray-800 text-xs">{reply.display_name}</span>
                                             <span className="text-xs text-gray-400">{new Date(reply.created_at).toLocaleString()}</span>
                                           </div>
-                                          <p className="text-gray-700 text-xs">{reply.content}</p>
-                                          {/* Delete reply button */}
+                                          {editingReply === reply.reply_id ? (
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <input
+                                                type="text"
+                                                className="flex-1 border border-gray-300 rounded-full px-2 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
+                                                placeholder="Edit your reply..."
+                                                value={editReplyInput}
+                                                onChange={e => setEditReplyInput(e.target.value)}
+                                                onKeyPress={e => e.key === 'Enter' && saveEditReply(reply.reply_id)}
+                                              />
+                                              <button
+                                                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
+                                                onClick={() => saveEditReply(reply.reply_id)}
+                                              >Save</button>
+                                              <button
+                                                className="text-gray-400 text-xs ml-1 hover:underline"
+                                                onClick={cancelEditReply}
+                                              >Cancel</button>
+                                            </div>
+                                          ) : (
+                                            <p className="text-gray-700 text-xs">{reply.content}</p>
+                                          )}
+                                          {/* Edit and Delete reply buttons */}
                                           {currentUser?.id === reply.user_id && (
-                                            <button
-                                              className="text-red-600 text-xs font-semibold mt-1 hover:underline"
-                                              onClick={() => handleDeleteReply(reply.reply_id)}
-                                            >Delete</button>
+                                            <div className="flex items-center gap-1 mt-1">
+                                              <button
+                                                className="text-gray-400 text-xs p-1 rounded hover:text-red-600 transition-colors duration-150"
+                                                style={{ fontSize: '12px', lineHeight: 1 }}
+                                                onClick={() => handleDeleteReply(reply.reply_id)}
+                                                title="Delete Reply"
+                                              >
+                                                ×
+                                              </button>
+                                              <button
+                                                className="text-blue-500 text-xs p-1 rounded hover:bg-blue-100 transition-colors duration-150 flex items-center"
+                                                style={{ fontSize: '12px', lineHeight: 1 }}
+                                                onClick={() => startEditReply(reply.reply_id, reply.content)}
+                                                title="Edit Reply"
+                                              >
+                                                <Pencil className="w-3 h-3" />
+                                              </button>
+                                            </div>
                                           )}
                                         </div>
                                       </div>
