@@ -7,11 +7,10 @@ import Footer from '../components/Footer';
 import ElectionResultsDisplay from '../components/ElectionResultsDisplay';
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 
 const Results: NextPage = () => {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const departmentOrg = searchParams.get('department_org');
   const administeredOrg = searchParams.get('administered_Org');
@@ -33,8 +32,9 @@ const Results: NextPage = () => {
   const [type, setElectionType] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [electionID, setRelevantElectionID] = useState<string>();
+  //const [electionID, setRelevantElectionID] = useState<string>();
   const [isLive, setIsLive] = useState(false);
+  const [Org, setOrg] = useState<string>();
 
   // Header selection logic
   let headerComponent = <Header />;
@@ -66,10 +66,13 @@ const Results: NextPage = () => {
             console.log(`Error: ${error}`);
           }
           const typeData = await typeRes.json();
-          if (typeData && typeData.type && typeData.election) {
+          if (typeData && typeData.type && typeData.election && typeData.Org) {
             type = typeData.type;
+            const ID = typeData.election.id
+            const Org = typeData.Org
             setElectionType(type);
-            setRelevantElectionID(typeData.election.id);
+            //setRelevantElectionID(ID);
+            setOrg(Org);
             // Determine if the election is ongoing
             const now = new Date();
             const start = new Date(typeData.election.start_date);
@@ -114,9 +117,9 @@ const Results: NextPage = () => {
         <div className="mt-12 md:mt-16 lg:mt-20 flex flex-col items-center gap-6 md:gap-8 lg:gap-10 pb-20 md:pb-24 lg:pb-32 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
             <ElectionResultsDisplay 
-              electionId={electionID || undefined}
+              //electionId={electionID || undefined}
               type={type} 
-              department_org={departmentOrg || undefined}
+              department_org={Org || undefined}
               isLive={isLive}
               showRefreshButton={true}
               className="text-white"

@@ -18,7 +18,7 @@ interface PositionResult {
 }
 
 interface ElectionResultsDisplayProps {
-  electionId?: string;
+  //electionId?: string;
   type?: string;
   department_org?: string;
   isLive?: boolean;
@@ -40,10 +40,10 @@ const positionOrder = [
 ];
 
 export default function ElectionResultsDisplay({
-  electionId,
+  //electionId,
   type,
   department_org,
-  isLive = false,
+  isLive,
   showRefreshButton = true,
   className = ''
 }: ElectionResultsDisplayProps) {
@@ -59,23 +59,20 @@ export default function ElectionResultsDisplay({
       setError(null);
       
       let url = `/api/get-vote-counts?scope=${type}`;
-      if (electionId) {
-        url += `&election_id=${electionId}`;
-      }
+      //if (electionId) {
+      //  url += `&election_id=${electionId}`;
+      //}
       if (department_org) {
         url += `&department_org=${encodeURIComponent(department_org)}`;
       }
       
       const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch vote data');
-      }
       
       const data = await response.json();
       if (data.success) {
         setPollsData(data.results);
       } else {
-        throw new Error(data.error || 'Failed to load vote data');
+        setError(data.error || 'Failed to load vote data');
       }
     } catch (err) {
       console.error('Error fetching vote data:', err);
@@ -98,18 +95,7 @@ export default function ElectionResultsDisplay({
 
   useEffect(() => {
     fetchVoteData();
-  }, [electionId, type, department_org]);
-
-  const handleViewFullResults = () => {
-    const params = new URLSearchParams(
-      Object.entries({
-        ...(type ? { type } : {}),
-        ...(electionId ? { election_id: electionId } : {}),
-        ...(department_org ? { department_org } : {})
-      }) as [string, string][]
-    );
-    router.push(`/Election_Results?${params.toString()}`);
-  };
+  }, [/*electionId,*/ type, department_org]);
 
   // Sort positions by power before rendering
   const sortedPollsData = [...pollsData].sort((a, b) => {

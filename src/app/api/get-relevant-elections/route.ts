@@ -9,8 +9,8 @@ const supabaseAdmin = createClient(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const departmentOrg = searchParams.get('department_org') || searchParams.get('administered_Org');
-    if (!departmentOrg) {
+    const Org = searchParams.get('department_org') || searchParams.get('administered_Org');
+    if (!Org) {
       return NextResponse.json({ error: 'Missing department_org parameter' }, { status: 400 });
     }
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const { data: orgs, error: orgError } = await supabaseAdmin
       .from('organizations')
       .select('id')
-      .eq('organization_name', departmentOrg)
+      .eq('organization_name', Org)
       .limit(1);
 
     if (orgError || !orgs || orgs.length === 0) {
@@ -46,14 +46,14 @@ export async function GET(request: NextRequest) {
       const now = new Date(currentTime);
       relevantElection = elections.find(e => new Date(e.start_date) <= now && new Date(e.end_date) >= now)
         || elections[0]; // fallback to the next upcoming if none ongoing
-    }
+    } //WALAY SURE NI AY
 
     let type = null;
     if (relevantElection) {
       type = relevantElection.is_uni_level ? 'university' : 'organization';
     }
 
-    return NextResponse.json({ type, election: relevantElection }, { status: 200 });
+    return NextResponse.json({ type, election: relevantElection, Org: Org }, { status: 200 });
 
   } catch (error) {
     return NextResponse.json(
