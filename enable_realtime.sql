@@ -1,5 +1,3 @@
--- Enable real-time for comments and replies tables
--- Run this in your Supabase SQL editor
 
 -- Enable real-time for comments table
 ALTER PUBLICATION supabase_realtime ADD TABLE comments;

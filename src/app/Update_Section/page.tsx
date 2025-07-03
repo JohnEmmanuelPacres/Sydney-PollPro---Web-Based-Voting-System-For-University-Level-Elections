@@ -115,6 +115,9 @@ const [commentError, setCommentError] = useState<string | null>(null);
 // Add this state for sort order
 const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
+// Add this state for tracking the last update source
+const lastUpdateSource = useRef<'realtime' | 'polling' | null>(null);
+
 // Get current user and determine user type
 useEffect(() => {
   const getCurrentUser = async () => {
@@ -989,6 +992,7 @@ const formatTimeAgo = (date: Date) => {
                 return [newComment, ...prev];
               });
               
+              lastUpdateSource.current = 'realtime';
               setIsRefreshingComments(true);
               setTimeout(() => setIsRefreshingComments(false), 1500);
             }
@@ -1002,19 +1006,14 @@ const formatTimeAgo = (date: Date) => {
             },
             (payload) => {
               console.log('Real-time: Comment updated:', payload);
-              
-              // Check if this comment belongs to the current post
-              const commentBelongsToPost = comments.some(comment => comment.comment_id === payload.new.id);
-              
-              if (commentBelongsToPost) {
-                              setComments(prev => prev.map(comment => 
-                comment.comment_id === payload.new.id 
+              setComments(prev => prev.map(comment =>
+                comment.comment_id === payload.new.id
                   ? { ...comment, content: payload.new.content, updated_at: payload.new.updated_at }
                   : comment
               ));
+              lastUpdateSource.current = 'realtime';
               setIsRefreshingComments(true);
               setTimeout(() => setIsRefreshingComments(false), 800);
-              }
             }
           )
           .on(
@@ -1028,6 +1027,7 @@ const formatTimeAgo = (date: Date) => {
             (payload) => {
               console.log('Real-time: Comment deleted:', payload);
               setComments(prev => prev.filter(comment => comment.comment_id !== payload.old.id));
+              lastUpdateSource.current = 'realtime';
               setIsRefreshingComments(true);
               setTimeout(() => setIsRefreshingComments(false), 800);
             }
@@ -1100,6 +1100,7 @@ const formatTimeAgo = (date: Date) => {
                     : comment
                 ));
                 
+                lastUpdateSource.current = 'realtime';
                 setIsRefreshingComments(true);
                 setTimeout(() => setIsRefreshingComments(false), 800);
               }
@@ -1114,24 +1115,19 @@ const formatTimeAgo = (date: Date) => {
             },
             (payload) => {
               console.log('Real-time: Reply updated:', payload);
-              
-              // Check if this reply belongs to a comment in the current post
-              const replyBelongsToPost = comments.some(comment => 
-                comment.replies.some(reply => reply.reply_id === payload.new.id)
-              );
-              
-              if (replyBelongsToPost) {
-                setComments(prev => prev.map(comment => ({
+              setComments(prev => prev.map(comment => {
+                return {
                   ...comment,
-                  replies: comment.replies.map(reply => 
-                    reply.reply_id === payload.new.id 
+                  replies: comment.replies.map(reply =>
+                    reply.reply_id === payload.new.id
                       ? { ...reply, content: payload.new.content, updated_at: payload.new.updated_at }
                       : reply
                   )
-                })));
-                setIsRefreshingComments(true);
-                setTimeout(() => setIsRefreshingComments(false), 800);
-              }
+                };
+              }));
+              lastUpdateSource.current = 'realtime';
+              setIsRefreshingComments(true);
+              setTimeout(() => setIsRefreshingComments(false), 800);
             }
           )
           .on(
@@ -1148,6 +1144,7 @@ const formatTimeAgo = (date: Date) => {
                   replies: comment.replies.filter(reply => reply.reply_id !== payload.old.id),
                   reply_count: Math.max(0, comment.reply_count - 1)
                 })));
+                lastUpdateSource.current = 'realtime';
                 setIsRefreshingComments(true);
                 setTimeout(() => setIsRefreshingComments(false), 800);
             }
@@ -1170,6 +1167,10 @@ const formatTimeAgo = (date: Date) => {
     const startPolling = () => {
       console.log('🔄 Starting fallback polling for comments...');
       pollingInterval = setInterval(async () => {
+        if (lastUpdateSource.current === 'realtime') {
+          lastUpdateSource.current = null;
+          return; // Skip this polling update if a real-time event just happened
+        }
         try {
           const res = await fetch(`/api/get-comments?post_id=${expandedArticle.id}`);
           if (res.ok) {
@@ -1188,6 +1189,7 @@ const formatTimeAgo = (date: Date) => {
               setComments(newComments);
               lastCommentCount = currentCommentCount;
               lastReplyCount = currentReplyCount;
+              lastUpdateSource.current = 'polling';
               setIsRefreshingComments(true);
               setTimeout(() => setIsRefreshingComments(false), 800);
             } else {
@@ -1219,6 +1221,7 @@ const formatTimeAgo = (date: Date) => {
               if (hasContentChanges) {
                 console.log('🔄 Polling detected content changes, updating comments...');
                 setComments(newComments);
+                lastUpdateSource.current = 'polling';
                 setIsRefreshingComments(true);
                 setTimeout(() => setIsRefreshingComments(false), 800);
               }
