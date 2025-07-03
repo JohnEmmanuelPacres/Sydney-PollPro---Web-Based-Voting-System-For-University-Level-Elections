@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
-import { motion } from 'framer-motion';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Header from '../components/Header';
 import VoterHeader from '../components/VoteDash_Header';
@@ -67,19 +66,19 @@ type Comment = {
 const UpdatesPage = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isVoterRoute = pathname.startsWith('/Voterdashboard') || pathname.startsWith('/Update_Section');
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const checkAdministered_Org = searchParams.get("administered_Org") !== null;
+  const checkDepartment_org = searchParams.get("department_org") !== null;
   const [activeFilter, setActiveFilter] = useState<Filter>('All Updates');
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userType, setUserType] = useState<'admin' | 'voter' | 'guest' | null>(null);
   const [departmentOrg, setDepartmentOrg] = useState<string>('');
-  
   const articlesRef = useRef<(HTMLDivElement | null)[]>([]);
   const filtersRef = useRef<(HTMLButtonElement | null)[]>([]);
   const pageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+    //const [isSignedIn, setIsSignedIn] = useState(false);
 
 // State for expanded article
 const [expandedArticleId, setExpandedArticleId] = useState<string | null>(null);
@@ -440,14 +439,6 @@ const formatTimeAgo = (date: Date) => {
     }
   };
 
-  // Only show VoteDash_Header if user is signed in AND on dashboard or coming from dashboard
-  const isVoterDashboard = isSignedIn;
-
-  let headerComponent = <Header />;
-  if (isVoterDashboard || (isSignedIn && departmentOrg)) {
-    headerComponent = <VoterHeader />;
-  }
-
   // Fetch comments for a post
   const fetchComments = async (postId: string) => {
     const res = await fetch(`/api/get-comments?post_id=${postId}`);
@@ -629,7 +620,7 @@ const formatTimeAgo = (date: Date) => {
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
-      {userType === 'admin' ? <AdminHeader /> : userType === 'voter' ? <VoterHeader /> : <Header />}
+      {userType === 'admin' && checkAdministered_Org? <AdminHeader /> : userType === 'voter' || checkDepartment_org? <VoterHeader /> : <Header />}
 
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
