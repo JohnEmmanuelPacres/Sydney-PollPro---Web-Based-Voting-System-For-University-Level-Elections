@@ -88,6 +88,8 @@ const [commentInput, setCommentInput] = useState('');
 const [comments, setComments] = useState<Comment[]>([]);
 const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
 const [replyingTo, setReplyingTo] = useState<string | null>(null);
+const [editingComment, setEditingComment] = useState<string | null>(null);
+const [editCommentInput, setEditCommentInput] = useState('');
 
 // State for modal
 const [expandedArticle, setExpandedArticle] = useState<Article | null>(null);
@@ -552,6 +554,27 @@ const formatTimeAgo = (date: Date) => {
     if (!commentInput.trim() || !expandedArticle || !currentUser) return;
     setCommentError(null);
     setCommentMessage(null);
+    
+    // Create optimistic comment for immediate display
+    const optimisticComment: Comment = {
+      comment_id: `temp-${Date.now()}`,
+      content: commentInput.trim(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user_id: currentUser.id,
+      user_type: userType || 'voter',
+      display_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
+      user_email: currentUser.email || '',
+      avatar_initial: (currentUser.user_metadata?.full_name?.[0] || currentUser.email?.[0] || 'U').toUpperCase(),
+      reply_count: 0,
+      replies: []
+    };
+    
+    // Add optimistic comment to state immediately
+    setComments(prev => [optimisticComment, ...prev]);
+    const originalInput = commentInput;
+    setCommentInput('');
+    
     try {
       const res = await fetch('/api/add-comment', {
         method: 'POST',
@@ -560,19 +583,25 @@ const formatTimeAgo = (date: Date) => {
           post_id: expandedArticle.id,
           user_id: currentUser.id,
           user_type: userType,
-          content: commentInput.trim(),
+          content: originalInput.trim(),
         }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
+        // Remove optimistic comment and show error
+        setComments(prev => prev.filter(c => c.comment_id !== optimisticComment.comment_id));
+        setCommentInput(originalInput);
         setCommentError(data.error || 'Failed to post comment');
         return;
       }
-      setCommentInput('');
       setCommentMessage('Comment posted');
+      // Refresh comments to get the real data from server
       fetchComments(expandedArticle.id);
       setTimeout(() => setCommentMessage(null), 2500);
     } catch (err: any) {
+      // Remove optimistic comment and show error
+      setComments(prev => prev.filter(c => c.comment_id !== optimisticComment.comment_id));
+      setCommentInput(originalInput);
       setCommentError('Failed to post comment');
     }
   };
@@ -624,28 +653,46 @@ const formatTimeAgo = (date: Date) => {
     fetchComments(expandedArticle.id);
   };
 
-  // Add edit comment function
-  const handleEditComment = async (commentId: string) => {
-    if (!expandedArticle) return;
-    if (!window.confirm('Are you sure you want to edit this comment?')) return;
-    const res = await fetch('/api/edit-comment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        comment_id: commentId,
-        user_id: currentUser.id,
-        user_type: userType,
-        content: commentInput.trim(),
-      }),
-    });
-    if (res.ok) {
-      fetchComments(expandedArticle.id);
-      setCommentInput('');
-      setCommentMessage('Comment updated');
-      setTimeout(() => setCommentMessage(null), 2500);
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setCommentError(data.error || 'Failed to update comment');
+  // Start editing comment
+  const startEditComment = (commentId: string, currentContent: string) => {
+    setEditingComment(commentId);
+    setEditCommentInput(currentContent);
+  };
+
+  // Cancel editing comment
+  const cancelEditComment = () => {
+    setEditingComment(null);
+    setEditCommentInput('');
+  };
+
+  // Save edited comment
+  const saveEditComment = async (commentId: string) => {
+    if (!expandedArticle || !editCommentInput.trim()) return;
+    
+    try {
+      const res = await fetch('/api/edit-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          comment_id: commentId,
+          user_id: currentUser.id,
+          user_type: userType,
+          content: editCommentInput.trim(),
+        }),
+      });
+      
+      if (res.ok) {
+        fetchComments(expandedArticle.id);
+        setEditingComment(null);
+        setEditCommentInput('');
+        setCommentMessage('Comment updated');
+        setTimeout(() => setCommentMessage(null), 2500);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setCommentError(data.error || 'Failed to update comment');
+      }
+    } catch (error: any) {
+      setCommentError('Failed to update comment');
     }
   };
 
@@ -799,7 +846,7 @@ const formatTimeAgo = (date: Date) => {
       {/* Modal for expanded article */}
       {modalVisible && expandedArticle && (
         <>
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={closeModal}></div>
+          <div className="fixed inset-0 backdrop-blur-md bg-black/20 z-40" onClick={closeModal}></div>
           <div
             ref={modalRef}
             className="fixed left-1/2 top-1/2 z-50 bg-white rounded-xl shadow-2xl flex flex-col"
@@ -970,7 +1017,28 @@ const formatTimeAgo = (date: Date) => {
                                     <span className="ml-2 text-xs text-blue-500 font-semibold">{comment.reply_count} repl{comment.reply_count === 1 ? 'y' : 'ies'}</span>
                                   )}
                                 </div>
-                                <p className="text-gray-700 text-sm mb-1">{comment.content}</p>
+                                {editingComment === comment.comment_id ? (
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <input
+                                      type="text"
+                                      className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
+                                      placeholder="Edit your comment..."
+                                      value={editCommentInput}
+                                      onChange={e => setEditCommentInput(e.target.value)}
+                                      onKeyPress={e => e.key === 'Enter' && saveEditComment(comment.comment_id)}
+                                    />
+                                    <button
+                                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
+                                      onClick={() => saveEditComment(comment.comment_id)}
+                                    >Save</button>
+                                    <button
+                                      className="text-gray-400 text-xs ml-1 hover:underline"
+                                      onClick={cancelEditComment}
+                                    >Cancel</button>
+                                  </div>
+                                ) : (
+                                  <p className="text-gray-700 text-sm mb-1">{comment.content}</p>
+                                )}
                                 <div className="flex items-center justify-between gap-2 mt-1">
                                   <button
                                     className="text-black text-xs font-semibold hover:underline"
@@ -990,7 +1058,7 @@ const formatTimeAgo = (date: Date) => {
                                         <button
                                           className="text-blue-500 text-xs p-1 rounded hover:bg-blue-100 transition-colors duration-150 flex items-center"
                                           style={{ fontSize: '14px', lineHeight: 1 }}
-                                          onClick={() => handleEditComment(comment.comment_id)}
+                                          onClick={() => startEditComment(comment.comment_id, comment.content)}
                                           title="Edit Comment"
                                         >
                                           <Pencil className="w-3.5 h-3.5" />
