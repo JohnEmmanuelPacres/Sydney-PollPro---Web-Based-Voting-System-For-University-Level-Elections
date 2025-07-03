@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
+import { motion } from 'framer-motion';
 type FormData = {
   password: string;
   confirmPassword: string;
@@ -128,62 +129,118 @@ const SetPassword = () => {
   ), []);
   if (!email) return null;
   return (
-<div className="h-screen flex bg-gradient-to-b from-[#bb8b1b] to-[#b01818] text-white font-['Actor']">
-<div className="w-1/2 flex flex-col items-center justify-center p-8 relative">
-<div className="mb-8 flex flex-col items-center">
-<Image width={147} height={147} alt="Website Logo" src="/Website Logo.png" className="mb-4" priority />
-<h1 className="text-[50px] font-black">SET YOUR PASSWORD</h1>
-</div>
-<div className="text-center max-w-md">
-<p className="text-xl font-bold mb-8">Create a secure password for your account</p>
-<div className="text-lg">
-<p className="mb-4">Email: {email}</p>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-b from-yellow-900 to-red-900 overflow-hidden text-left text-xl text-white font-['Actor']">
+      {/* Mobile Header */}
+      <div className="lg:hidden flex flex-col items-center p-4 pt-8">
+        <Image
+          width={100}
+          height={100}
+          alt="Website Logo"
+          src="/Website Logo.png"
+          className="mb-4"
+          priority
+        />
+        <h1 className="text-3xl font-black text-center mb-4">SET YOUR PASSWORD</h1>
+      </div>
+      {/* Left Content Section - Hidden on mobile */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-8 relative">
+        <div className="mb-8 flex flex-col items-center">
+          <Image
+            width={147}
+            height={147}
+            alt="Website Logo"
+            src="/Website Logo.png"
+            className="mb-4"
+            priority
+          />
+          <h1 className="text-[50px] font-black">SET YOUR PASSWORD</h1>
+        </div>
+        <div className="text-center max-w-md">
+          <p className="text-xl font-bold mb-8">Create a secure password for your account</p>
+          <div className="text-lg">
+            <p className="mb-4">Email: {email}</p>
             {administered_Org && <p className="mb-2">Organization: {administered_Org}</p>}
-<p className="text-sm opacity-80">PIN verified successfully</p>
-</div>
-</div>
-</div>
-<div className="w-1/2 relative flex items-center justify-center">
-<div className="absolute inset-0 flex items-center justify-start z-0 pt-18 pr-25">
-<Image src="/form.png" alt="Form background" width={700} height={700} className="object-contain object-left" priority />
-</div>
-<div className="absolute z-10 w-full max-w-screen-md p-10 pr-30 pl-30">
-<h2 className="text-[40px] text-[#f3e2e2] mb-12 text-center">Set Password</h2>
-<form onSubmit={handleSubmit} className="space-y-6" noValidate>
-<div>
-<div className="relative">
-<input type={showPassword ? "text" : "password"} name="password" placeholder="New Password" className={inputClasses} value={formData.password} onChange={handleChange} required minLength={6} autoComplete="new-password" />
-<button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
-                  {showPassword ? "Hide" : "Show"}
-</button>
-</div>
-<p className="text-[#899499] text-xs italic mt-2">Password must be at least 6 characters long</p>
-</div>
-<div>
-<div className="relative">
-<input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" placeholder="Confirm Password" className={inputClasses} value={formData.confirmPassword} onChange={handleChange} required autoComplete="new-password" />
-<button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
-                  {showConfirmPassword ? "Hide" : "Show"}
-</button>
-</div>
-</div>
-<div className="pt-2">
-<a href="/User_RegxLogin" className="text-xl text-white font-bold hover:text-[#fac36b] block mb-6 transition-colors">Back to Login</a>
-<button type="submit" disabled={isLoading} className="w-[184px] h-[50px] text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                {isLoading ? 'Setting...' : 'Set Password'}
-</button>
-</div>
-</form>
-</div>
-</div>
-      {(error || success) && (
-<div className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
-          error ? 'bg-white text-red-500' : 'bg-[#e6ffe6] text-green-500'
-        }`}>
-          {error || success}
-</div>
-      )}
-</div>
+            <p className="text-sm opacity-80">PIN verified successfully</p>
+          </div>
+        </div>
+      </div>
+      {/* Right Form Section - Full width on mobile */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-[790px] h-auto min-h-[auto] lg:min-h-[727px] backdrop-blur-[25px] rounded-[40px] bg-white/10 border-3 border-white/79 p-4 sm:p-6 md:p-8"
+        >
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="text-center md:text-left text-2xl sm:text-3xl md:text-4xl font-semibold font-['Baloo_Da_2'] mb-6 md:mb-8"
+          >
+            Set Password
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="w-full max-w-[500px] mx-auto"
+          >
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6" noValidate>
+              <div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">New Password</div>
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} name="password" placeholder="New Password" className={inputClasses} value={formData.password} onChange={handleChange} required minLength={6} autoComplete="new-password" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+                <p className="text-[#899499] text-xs italic mt-2">Password must be at least 6 characters long</p>
+              </div>
+              <div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Confirm Password</div>
+                <div className="relative">
+                  <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" placeholder="Confirm Password" className={inputClasses} value={formData.confirmPassword} onChange={handleChange} required autoComplete="new-password" />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                    {showConfirmPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
+              </div>
+              <div className="pt-2">
+                <motion.a 
+                  href="/User_RegxLogin" 
+                  className="text-lg sm:text-xl text-white font-bold hover:text-[#fac36b] block mb-4 sm:mb-6 transition-colors"
+                  aria-label="Login page"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  Back to Login
+                </motion.a>
+                <motion.button 
+                  type="submit"
+                  disabled={isLoading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full h-[50px] text-white text-lg sm:text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Set password"
+                >
+                  {isLoading ? 'Setting...' : 'Set Password'}
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      </div>
+      {/* Toast Notifications */}
+      <motion.div 
+        initial={{ opacity: 0, y: -50 }}
+        animate={(error || success) ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 }}
+        transition={{ duration: 0.4 }}
+        className={`fixed top-0 left-0 w-full ${error ? 'bg-[#d90429]' : 'bg-green-600'} text-white font-bold text-base sm:text-lg p-3 sm:p-4 text-center rounded-b-[10px] z-[1000]`}
+        style={{ display: error || success ? 'block' : 'none' }}
+      >
+        {error || success}
+      </motion.div>
+    </div>
   );
 };
 export default SetPassword;
