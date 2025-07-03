@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
 import { prettifyFirstName } from "@/utils/emailUtils";
 import ElectionTypeModal from "./ElectionTypeModal";
+import { useSearchParams } from "next/navigation";
 
 export default function WelcomeSection() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export default function WelcomeSection() {
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orgId, setOrgId] = useState<string>('');
+  const searchParams = useSearchParams();
+  const department_org = searchParams.get('department_org');
 
   useEffect(() => {
     async function fetchName() {
@@ -63,9 +66,9 @@ export default function WelcomeSection() {
   const handleSelectElectionType = (type: 'university' | 'organization') => {
     setIsModalOpen(false);
     if (type === 'university') {
-      router.push('/UniversityElection');
+      router.push(`/UniversityElection?department_org=${department_org}`);
     } else {
-      router.push('/OrganizationElection');
+      router.push(`/OrganizationElection?department_org=${department_org}`);
     }
   };
 

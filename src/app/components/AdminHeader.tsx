@@ -76,7 +76,7 @@ const AdminHeader: React.FC = () => {
             <NavButton href={`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administeredOrg || '')}`}`}>Home</NavButton>
             <NavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</NavButton>
             <NavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</NavButton>
-            <NavButton href="/dashboard/Admin/AdminUpdate_Section">Updates</NavButton>
+            <NavButton href={`/dashboard/Admin/AdminUpdate_Section?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Updates</NavButton>
           </nav>
         </div>
 
@@ -107,12 +107,17 @@ const AdminHeader: React.FC = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-24 left-0 right-0 bg-red-800 shadow-lg z-40">
           <div className="flex flex-col space-y-4 p-6">
-            <NavButton href={`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administeredOrg || '')}`}`}>Home</NavButton>
+            <MobileNavButton href={`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administeredOrg || '')}`}`}>Home</MobileNavButton>
             <MobileNavButton href={`/Candidates?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Candidates</MobileNavButton>
             <MobileNavButton href={`/Election_Results?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Results</MobileNavButton>
-            <MobileNavButton href="/dashboard/Admin/AdminUpdate_Section">Updates</MobileNavButton>
-            <div className="px-4 py-3">
-              <LogOutButton onClick={handleLogout}>Log Out</LogOutButton>
+            <MobileNavButton href={`/dashboard/Admin/AdminUpdate_Section?administered_Org=${encodeURIComponent(administeredOrg || '')}`}>Updates</MobileNavButton>
+            <div className="mt-4">
+              <button
+                onClick={handleLogout}
+                className="w-full px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl text-center"
+              >
+                LOG OUT
+              </button>
             </div>
           </div>
         </div>

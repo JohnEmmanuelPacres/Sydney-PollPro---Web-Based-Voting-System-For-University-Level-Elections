@@ -9,52 +9,50 @@ const supabaseAdmin = createClient(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const electionId = searchParams.get('election_id');
+    //const electionId = searchParams.get('election_id');
     const type = searchParams.get('scope'); // 'university' or 'organization'
     const department_org = searchParams.get('department_org');
     const accessLevel = searchParams.get('access_level'); // 'voter', 'admin', 'public'
     const showLiveResults = searchParams.get('live') === 'true';
+    // Use a single currentTime variable as a Date object
+    const currentTime = new Date();
+    const currentTimeISO = currentTime.toISOString();
+    let electionQuery = supabaseAdmin
+      .from('elections')
+      .select('id, start_date, end_date, is_uni_level')
+      .order('start_date', { ascending: false });
 
-    // If no election_id provided, get the most recent election based on access level
-    let targetElectionId = electionId;
-    
-    if (!targetElectionId) {
-      const currentTime = new Date().toISOString();
-      let electionQuery = supabaseAdmin
-        .from('elections')
-        .select('id, start_date, end_date, is_uni_level')
-        .order('start_date', { ascending: false })
-        .limit(1);
-
-      if (type === 'university') {
-        electionQuery = electionQuery.eq('is_uni_level', true);
-      } else if (type === 'organization' && department_org) {
-        electionQuery = electionQuery.eq('is_uni_level', false).eq('department_org', department_org);
-      }
-
-      // Filter based on access level and live results preference
-      if (showLiveResults) {
-        // For live results, only show active elections
-        electionQuery = electionQuery.lte('start_date', currentTime).gte('end_date', currentTime);
-      } else if (accessLevel === 'admin') {
-        // Admins can see all elections (active, completed, upcoming)
-        // No additional filtering needed
-      } else {
-        // For voters/public, show completed elections or active elections
-        electionQuery = electionQuery.or(`end_date.lt.${currentTime},and(start_date.lte.${currentTime},end_date.gte.${currentTime})`);
-      }
-
-      const { data: elections, error: electionError } = await electionQuery;
-      
-      if (electionError || !elections || elections.length === 0) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'No elections found' 
-        }, { status: 404 });
-      }
-      
-      targetElectionId = elections[0].id;
+    if (type === 'university') {
+      electionQuery = electionQuery.eq('is_uni_level', true);
+    } else if (type === 'organization' && department_org) {
+      electionQuery = electionQuery.eq('is_uni_level', false).eq('department_org', department_org);
     }
+
+    // Fetch active elections first
+    let { data: elections, error: electionError } = await electionQuery
+      .lte('start_date', currentTimeISO)
+      .gte('end_date', currentTimeISO);
+
+    // If no active elections, fetch recently completed elections (within 5 days after end_date)
+    if ((!elections || elections.length === 0) && !electionError) {
+      const fiveDaysAgo = new Date(currentTime.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString();
+      const completedQuery = electionQuery
+        .lt('end_date', currentTimeISO)
+        .gte('end_date', fiveDaysAgo)
+        .order('end_date', { ascending: false });
+      const completedResult = await completedQuery;
+      elections = completedResult.data;
+      electionError = completedResult.error;
+    }
+
+    if (electionError || !elections || elections.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'No elections found' 
+      }, { status: 404 });
+    }
+    
+    const targetElectionId = elections[0].id;
 
     // Get all positions for this election
     const { data: positions, error: positionsError } = await supabaseAdmin
@@ -123,7 +121,6 @@ export async function GET(request: NextRequest) {
       .eq('id', targetElectionId)
       .single();
 
-    const currentTime = new Date();
     const startDate = new Date(electionDetails?.start_date || '');
     const endDate = new Date(electionDetails?.end_date || '');
     

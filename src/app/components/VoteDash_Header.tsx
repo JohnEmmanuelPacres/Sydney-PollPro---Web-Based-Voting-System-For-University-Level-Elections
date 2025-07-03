@@ -78,7 +78,7 @@ const VoterHeader: React.FC = () => {
             <NavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</NavButton>
             <NavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</NavButton>
             <NavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</NavButton>
-            <NavButton href="/Update_Section">Updates</NavButton>
+            <NavButton href={`/Update_Section?department_org=${encodeURIComponent(departmentOrg || '')}`}>Updates</NavButton>
           </nav>
         </div>
 
@@ -112,7 +112,7 @@ const VoterHeader: React.FC = () => {
             <MobileNavButton href={`/Voterdashboard?email=${encodeURIComponent(email || '')}${`&department_org=${encodeURIComponent(departmentOrg || '')}`}`}>Home</MobileNavButton>
             <MobileNavButton href={`/Candidates?department_org=${encodeURIComponent(departmentOrg || '')}`}>Candidates</MobileNavButton>
             <MobileNavButton href={`/Election_Results?department_org=${encodeURIComponent(departmentOrg || '')}`}>Results</MobileNavButton>
-            <MobileNavButton href="/Update_Section">Updates</MobileNavButton>
+            <MobileNavButton href={`/Update_Section?department_org=${encodeURIComponent(departmentOrg || '')}`}>Updates</MobileNavButton>
             <div className="mt-4">
               <button
                 onClick={handleLogout}
