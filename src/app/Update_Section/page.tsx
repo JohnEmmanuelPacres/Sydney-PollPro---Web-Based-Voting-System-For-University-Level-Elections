@@ -118,6 +118,9 @@ const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 // Add this state for tracking the last update source
 const lastUpdateSource = useRef<'realtime' | 'polling' | null>(null);
 
+// Add a new state for the loading message:
+const [refreshMessage, setRefreshMessage] = useState('');
+
 // Get current user and determine user type
 useEffect(() => {
   const getCurrentUser = async () => {
@@ -993,8 +996,12 @@ const formatTimeAgo = (date: Date) => {
               });
               
               lastUpdateSource.current = 'realtime';
+              setRefreshMessage('Changes Detected, refreshing...');
               setIsRefreshingComments(true);
-              setTimeout(() => setIsRefreshingComments(false), 1500);
+              setTimeout(() => {
+                setIsRefreshingComments(false);
+                setRefreshMessage('');
+              }, 800);
             }
           )
           .on(
@@ -1012,8 +1019,12 @@ const formatTimeAgo = (date: Date) => {
                   : comment
               ));
               lastUpdateSource.current = 'realtime';
+              setRefreshMessage('Changes Detected, refreshing...');
               setIsRefreshingComments(true);
-              setTimeout(() => setIsRefreshingComments(false), 800);
+              setTimeout(() => {
+                setIsRefreshingComments(false);
+                setRefreshMessage('');
+              }, 800);
             }
           )
           .on(
@@ -1028,8 +1039,12 @@ const formatTimeAgo = (date: Date) => {
               console.log('Real-time: Comment deleted:', payload);
               setComments(prev => prev.filter(comment => comment.comment_id !== payload.old.id));
               lastUpdateSource.current = 'realtime';
+              setRefreshMessage('Changes Detected, refreshing...');
               setIsRefreshingComments(true);
-              setTimeout(() => setIsRefreshingComments(false), 800);
+              setTimeout(() => {
+                setIsRefreshingComments(false);
+                setRefreshMessage('');
+              }, 800);
             }
           )
           .subscribe((status) => {
@@ -1101,8 +1116,12 @@ const formatTimeAgo = (date: Date) => {
                 ));
                 
                 lastUpdateSource.current = 'realtime';
+                setRefreshMessage('Changes Detected, refreshing...');
                 setIsRefreshingComments(true);
-                setTimeout(() => setIsRefreshingComments(false), 800);
+                setTimeout(() => {
+                  setIsRefreshingComments(false);
+                  setRefreshMessage('');
+                }, 800);
               }
             }
           )
@@ -1126,8 +1145,12 @@ const formatTimeAgo = (date: Date) => {
                 };
               }));
               lastUpdateSource.current = 'realtime';
+              setRefreshMessage('Changes Detected, refreshing...');
               setIsRefreshingComments(true);
-              setTimeout(() => setIsRefreshingComments(false), 800);
+              setTimeout(() => {
+                setIsRefreshingComments(false);
+                setRefreshMessage('');
+              }, 800);
             }
           )
           .on(
@@ -1145,8 +1168,12 @@ const formatTimeAgo = (date: Date) => {
                   reply_count: Math.max(0, comment.reply_count - 1)
                 })));
                 lastUpdateSource.current = 'realtime';
+                setRefreshMessage('Changes Detected, refreshing...');
                 setIsRefreshingComments(true);
-                setTimeout(() => setIsRefreshingComments(false), 800);
+                setTimeout(() => {
+                  setIsRefreshingComments(false);
+                  setRefreshMessage('');
+                }, 800);
             }
           )
           .subscribe((status) => {
@@ -1190,8 +1217,12 @@ const formatTimeAgo = (date: Date) => {
               lastCommentCount = currentCommentCount;
               lastReplyCount = currentReplyCount;
               lastUpdateSource.current = 'polling';
+              setRefreshMessage('Changes Detected, refreshing...');
               setIsRefreshingComments(true);
-              setTimeout(() => setIsRefreshingComments(false), 800);
+              setTimeout(() => {
+                setIsRefreshingComments(false);
+                setRefreshMessage('');
+              }, 800);
             } else {
               // Only check for content changes if counts are the same (potential edits)
               const hasContentChanges = newComments.some((newComment: Comment, index: number) => {
@@ -1222,8 +1253,12 @@ const formatTimeAgo = (date: Date) => {
                 console.log('🔄 Polling detected content changes, updating comments...');
                 setComments(newComments);
                 lastUpdateSource.current = 'polling';
+                setRefreshMessage('Changes Detected, refreshing...');
                 setIsRefreshingComments(true);
-                setTimeout(() => setIsRefreshingComments(false), 800);
+                setTimeout(() => {
+                  setIsRefreshingComments(false);
+                  setRefreshMessage('');
+                }, 800);
               }
             }
           }
@@ -1334,8 +1369,9 @@ const formatTimeAgo = (date: Date) => {
                   {/* Image Section with stack indicator */}
                   <div className="relative w-32 sm:w-48 h-32 sm:h-40 flex-shrink-0 flex items-center justify-center">
                     <img
-                      src={images[0]}
+                      src={images[0] || '/plain background.jpg'}
                       alt={article.headline}
+                      onError={e => { e.currentTarget.src = '/plain background.jpg'; }}
                       className="w-full h-full object-cover rounded-lg"
                     />
                     {isStacked && (
@@ -1492,8 +1528,9 @@ const formatTimeAgo = (date: Date) => {
                         onClick={() => openImageViewer(0)}
                       >
                         <img
-                          src={expandedArticle.image}
-                          alt={expandedArticle.headline}
+                          src={expandedArticle.image || '/plain background.jpg'}
+                          alt={expandedArticle.headline || 'Article image'}
+                          onError={e => { e.currentTarget.src = '/plain background.jpg'; }}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -1538,7 +1575,7 @@ const formatTimeAgo = (date: Date) => {
                   {isRefreshingComments && (
                     <div className="flex items-center justify-center mb-2 p-1 bg-green-50 border border-green-200 rounded text-xs">
                       <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-green-600 mr-1"></div>
-                      <span className="text-green-700 text-xs">Real-time update detected, refreshing...</span>
+                      <span className="text-green-700 text-xs">{refreshMessage}</span>
                     </div>
                   )}
                   
@@ -1813,8 +1850,9 @@ const formatTimeAgo = (date: Date) => {
               <img
                 src={expandedArticle.image_urls && expandedArticle.image_urls.length > 0
                   ? expandedArticle.image_urls[imageViewerIdx]
-                  : expandedArticle.image}
-                alt={expandedArticle.headline}
+                  : expandedArticle.image || '/plain background.jpg'}
+                alt={expandedArticle.headline || 'Article image'}
+                onError={e => { e.currentTarget.src = '/plain background.jpg'; }}
                 className="max-h-[90vh] max-w-[95vw] rounded-xl shadow-2xl object-contain bg-white"
                 style={{ background: 'white' }}
               />
