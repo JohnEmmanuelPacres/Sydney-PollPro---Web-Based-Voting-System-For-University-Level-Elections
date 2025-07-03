@@ -93,8 +93,6 @@ const [editCommentInput, setEditCommentInput] = useState('');
 const [editingReply, setEditingReply] = useState<string | null>(null);
 const [editReplyInput, setEditReplyInput] = useState('');
 const [isRefreshingComments, setIsRefreshingComments] = useState(false);
-const [lastCommentCount, setLastCommentCount] = useState(0);
-const [autoRefreshInterval, setAutoRefreshInterval] = useState<NodeJS.Timeout | null>(null);
 
 // State for modal
 const [expandedArticle, setExpandedArticle] = useState<Article | null>(null);
@@ -450,17 +448,13 @@ const formatTimeAgo = (date: Date) => {
   // Fetch comments for a post
   const fetchComments = async (postId: string) => {
     try {
-      const res = await fetch(`/api/get-comments?post_id=${postId}`);
+    const res = await fetch(`/api/get-comments?post_id=${postId}`);
       if (res.ok) {
-        const data = await res.json();
+    const data = await res.json();
         const newComments = data.comments || [];
         setComments(newComments);
         
-        // Only set initial count and start auto-refresh if this is the first load
-        if (lastCommentCount === 0) {
-          setLastCommentCount(newComments.length);
-          startAutoRefresh();
-        }
+        // Comments loaded successfully
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -501,8 +495,7 @@ const formatTimeAgo = (date: Date) => {
 
   // Close modal with GSAP animation
   const closeModal = () => {
-    // Stop auto-refresh when closing modal
-    stopAutoRefresh();
+    // Real-time subscriptions are automatically cleaned up by useEffect
     
     if (modalRef.current) {
       gsap.to(modalRef.current, {
@@ -579,7 +572,7 @@ const formatTimeAgo = (date: Date) => {
     
     // Create optimistic comment for immediate display
     const optimisticComment: Comment = {
-      comment_id: `temp-${Date.now()}`,
+      comment_id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       content: commentInput.trim(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -616,9 +609,15 @@ const formatTimeAgo = (date: Date) => {
         setCommentError(data.error || 'Failed to post comment');
         return;
       }
+      
+      // Update the optimistic comment with the real data from server
+      setComments(prev => prev.map(comment => 
+        comment.comment_id === optimisticComment.comment_id 
+          ? { ...comment, comment_id: data.comment.id }
+          : comment
+      ));
+      
       setCommentMessage('Comment posted');
-      // Refresh comments to get the real data from server
-      fetchComments(expandedArticle.id);
       setTimeout(() => setCommentMessage(null), 2500);
     } catch (err: any) {
       // Remove optimistic comment and show error
@@ -631,33 +630,95 @@ const formatTimeAgo = (date: Date) => {
   // Add reply handler (API)
   const handleAddReply = async (commentId: string) => {
     if (!replyInputs[commentId]?.trim() || !currentUser) return;
-    await fetch('/api/add-reply', {
+    
+    // Create optimistic reply for immediate display
+    const optimisticReply: Reply = {
+      reply_id: `temp-reply-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      content: replyInputs[commentId].trim(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user_id: currentUser.id,
+      user_type: userType || 'voter',
+      display_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
+      user_email: currentUser.email || '',
+      avatar_initial: (currentUser.user_metadata?.full_name?.[0] || currentUser.email?.[0] || 'U').toUpperCase()
+    };
+    
+    // Add optimistic reply to state immediately
+    setComments(prev => prev.map(comment => 
+      comment.comment_id === commentId 
+        ? { 
+            ...comment, 
+            replies: [...comment.replies, optimisticReply],
+            reply_count: comment.reply_count + 1
+          }
+        : comment
+    ));
+    
+    const originalInput = replyInputs[commentId];
+    setReplyInputs(inputs => ({ ...inputs, [commentId]: '' }));
+    setReplyingTo(null);
+    
+    try {
+      const res = await fetch('/api/add-reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         comment_id: commentId,
         user_id: currentUser.id,
         user_type: userType,
-        content: replyInputs[commentId].trim(),
+          content: originalInput.trim(),
       }),
     });
-    setReplyInputs(inputs => ({ ...inputs, [commentId]: '' }));
-    setReplyingTo(null);
-    if (expandedArticle) fetchComments(expandedArticle.id);
+      
+      if (!res.ok) {
+        // Remove optimistic reply and show error
+        setComments(prev => prev.map(comment => 
+          comment.comment_id === commentId 
+            ? { 
+                ...comment, 
+                replies: comment.replies.filter(reply => reply.reply_id !== optimisticReply.reply_id),
+                reply_count: Math.max(0, comment.reply_count - 1)
+              }
+            : comment
+        ));
+        setReplyInputs(inputs => ({ ...inputs, [commentId]: originalInput }));
+        setReplyingTo(commentId);
+        setCommentError('Failed to post reply');
+      }
+    } catch (error) {
+      // Remove optimistic reply and show error
+      setComments(prev => prev.map(comment => 
+        comment.comment_id === commentId 
+          ? { 
+              ...comment, 
+              replies: comment.replies.filter(reply => reply.reply_id !== optimisticReply.reply_id),
+              reply_count: Math.max(0, comment.reply_count - 1)
+            }
+          : comment
+      ));
+      setReplyInputs(inputs => ({ ...inputs, [commentId]: originalInput }));
+      setReplyingTo(commentId);
+      setCommentError('Failed to post reply');
+    }
   };
 
   // Add this function:
   const handleDeleteComment = async (commentId: string) => {
     if (!expandedArticle) return;
     if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    
+    // Optimistically remove comment from UI
+    setComments(prev => prev.filter(comment => comment.comment_id !== commentId));
+    
     const res = await fetch('/api/delete-comment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ comment_id: commentId }),
     });
-    if (res.ok) {
+    if (!res.ok) {
+      // Restore comment if deletion failed
       fetchComments(expandedArticle.id);
-    } else {
       const data = await res.json().catch(() => ({}));
       setCommentError(data.error || 'Failed to delete comment. Please try again.');
     }
@@ -667,12 +728,36 @@ const formatTimeAgo = (date: Date) => {
   const handleDeleteReply = async (replyId: string) => {
     if (!expandedArticle) return;
     if (!window.confirm('Are you sure you want to delete this reply?')) return;
-    await fetch('/api/delete-reply', {
+    
+    // Find the comment that contains this reply
+    const commentWithReply = comments.find(comment => 
+      comment.replies.some(reply => reply.reply_id === replyId)
+    );
+    
+    if (commentWithReply) {
+      // Optimistically remove reply from UI
+      setComments(prev => prev.map(comment => 
+        comment.comment_id === commentWithReply.comment_id 
+          ? { 
+              ...comment, 
+              replies: comment.replies.filter(reply => reply.reply_id !== replyId),
+              reply_count: Math.max(0, comment.reply_count - 1)
+            }
+          : comment
+      ));
+    }
+    
+    const res = await fetch('/api/delete-reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reply_id: replyId }),
     });
+    
+    if (!res.ok && commentWithReply) {
+      // Restore reply if deletion failed
     fetchComments(expandedArticle.id);
+      setCommentError('Failed to delete reply. Please try again.');
+    }
   };
 
   // Start editing comment
@@ -691,29 +776,49 @@ const formatTimeAgo = (date: Date) => {
   const saveEditComment = async (commentId: string) => {
     if (!expandedArticle || !editCommentInput.trim()) return;
     
+    // Optimistically update comment in UI
+    setComments(prev => prev.map(comment => 
+      comment.comment_id === commentId 
+        ? { ...comment, content: editCommentInput.trim(), updated_at: new Date().toISOString() }
+        : comment
+    ));
+    
+    const originalContent = comments.find(c => c.comment_id === commentId)?.content || '';
+    
     try {
-      const res = await fetch('/api/edit-comment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          comment_id: commentId,
-          user_id: currentUser.id,
-          user_type: userType,
+    const res = await fetch('/api/edit-comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        comment_id: commentId,
+        user_id: currentUser.id,
+        user_type: userType,
           content: editCommentInput.trim(),
-        }),
-      });
+      }),
+    });
       
-      if (res.ok) {
-        fetchComments(expandedArticle.id);
+    if (res.ok) {
         setEditingComment(null);
         setEditCommentInput('');
-        setCommentMessage('Comment updated');
-        setTimeout(() => setCommentMessage(null), 2500);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setCommentError(data.error || 'Failed to update comment');
+      setCommentMessage('Comment updated');
+      setTimeout(() => setCommentMessage(null), 2500);
+    } else {
+        // Restore original content if update failed
+        setComments(prev => prev.map(comment => 
+          comment.comment_id === commentId 
+            ? { ...comment, content: originalContent }
+            : comment
+        ));
+      const data = await res.json().catch(() => ({}));
+      setCommentError(data.error || 'Failed to update comment');
       }
     } catch (error: any) {
+      // Restore original content if update failed
+      setComments(prev => prev.map(comment => 
+        comment.comment_id === commentId 
+          ? { ...comment, content: originalContent }
+          : comment
+      ));
       setCommentError('Failed to update comment');
     }
   };
@@ -734,6 +839,26 @@ const formatTimeAgo = (date: Date) => {
   const saveEditReply = async (replyId: string) => {
     if (!expandedArticle || !editReplyInput.trim()) return;
     
+    // Optimistically update reply in UI
+    setComments(prev => prev.map(comment => ({
+      ...comment,
+      replies: comment.replies.map(reply => 
+        reply.reply_id === replyId 
+          ? { ...reply, content: editReplyInput.trim(), updated_at: new Date().toISOString() }
+          : reply
+      )
+    })));
+    
+    // Find the original content
+    let originalContent = '';
+    for (const comment of comments) {
+      const reply = comment.replies.find(r => r.reply_id === replyId);
+      if (reply) {
+        originalContent = reply.content;
+        break;
+      }
+    }
+    
     try {
       const res = await fetch('/api/edit-reply', {
         method: 'POST',
@@ -747,72 +872,381 @@ const formatTimeAgo = (date: Date) => {
       });
       
       if (res.ok) {
-        fetchComments(expandedArticle.id);
         setEditingReply(null);
         setEditReplyInput('');
         setCommentMessage('Reply updated');
         setTimeout(() => setCommentMessage(null), 2500);
       } else {
+        // Restore original content if update failed
+        setComments(prev => prev.map(comment => ({
+          ...comment,
+          replies: comment.replies.map(reply => 
+            reply.reply_id === replyId 
+              ? { ...reply, content: originalContent }
+              : reply
+          )
+        })));
         const data = await res.json().catch(() => ({}));
         setCommentError(data.error || 'Failed to update reply');
       }
     } catch (error: any) {
+      // Restore original content if update failed
+      setComments(prev => prev.map(comment => ({
+        ...comment,
+        replies: comment.replies.map(reply => 
+          reply.reply_id === replyId 
+            ? { ...reply, content: originalContent }
+            : reply
+        )
+      })));
       setCommentError('Failed to update reply');
     }
   };
 
-  // Check for new comments and auto-refresh
-  const checkForNewComments = async () => {
-    if (!expandedArticle || isRefreshingComments || modalView !== 'comments') return; // Don't check if not in comments view
-    
-    try {
-      const res = await fetch(`/api/get-comments?post_id=${expandedArticle.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        const currentCommentCount = data.comments?.length || 0;
-        
-        // Only refresh if we have more comments than before AND we had comments before
-        if (currentCommentCount > lastCommentCount && lastCommentCount > 0) {
-          setIsRefreshingComments(true);
-          await fetchComments(expandedArticle.id);
-          setTimeout(() => setIsRefreshingComments(false), 1000);
-        }
-        
-        // Update the count only if it's different
-        if (currentCommentCount !== lastCommentCount) {
-          setLastCommentCount(currentCommentCount);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking for new comments:', error);
-      // Don't update lastCommentCount on error to avoid false positives
-    }
+  // Real-time comment subscription management
+  const startRealTimeSubscription = () => {
+    // Real-time subscriptions are handled by the useEffect above
+    console.log('Real-time subscriptions started for post:', expandedArticle?.id);
   };
 
-  // Start auto-refresh interval
-  const startAutoRefresh = () => {
-    if (autoRefreshInterval) {
-      clearInterval(autoRefreshInterval);
-    }
-    
-    const interval = setInterval(checkForNewComments, 5000); // Check every 5 seconds instead of 3
-    setAutoRefreshInterval(interval);
+  const stopRealTimeSubscription = () => {
+    // Real-time subscriptions are cleaned up by the useEffect above
+    console.log('Real-time subscriptions stopped for post:', expandedArticle?.id);
   };
 
-  // Stop auto-refresh interval
-  const stopAutoRefresh = () => {
-    if (autoRefreshInterval) {
-      clearInterval(autoRefreshInterval);
-      setAutoRefreshInterval(null);
-    }
-  };
-
-  // Cleanup auto-refresh on component unmount
+  // Cleanup real-time subscriptions on component unmount
   useEffect(() => {
     return () => {
-      stopAutoRefresh();
+      // Real-time subscriptions are automatically cleaned up by the other useEffect
     };
   }, []);
+
+  // Hybrid real-time + polling solution for better reliability
+  useEffect(() => {
+    if (!expandedArticle || modalView !== 'comments') return;
+
+    let commentsChannel: any = null;
+    let repliesChannel: any = null;
+    let pollingInterval: NodeJS.Timeout | null = null;
+    let lastCommentCount = comments.length;
+    let lastReplyCount = comments.reduce((total, comment) => total + comment.replies.length, 0);
+
+    // Try to establish real-time subscriptions
+    const setupRealTime = async () => {
+      try {
+        // Subscribe to new comments
+        commentsChannel = supabase
+          .channel(`comments-${expandedArticle.id}-${Date.now()}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'comments',
+              filter: `post_id=eq.${expandedArticle.id}`
+            },
+            async (payload) => {
+              console.log('Real-time: New comment detected:', payload);
+              
+              // Get user info for the new comment
+              const { data: userData } = await supabase
+                .from('voter_profiles')
+                .select('first_name, last_name, email')
+                .eq('id', payload.new.user_id)
+                .single();
+              
+              const { data: adminData } = await supabase
+                .from('admin_profiles')
+                .select('first_name, last_name, email')
+                .eq('id', payload.new.user_id)
+                .single();
+              
+              const userInfo = userData || adminData;
+              const displayName = userInfo ? `${userInfo.first_name} ${userInfo.last_name}` : 'Unknown User';
+              const avatarInitial = userInfo?.first_name?.[0] || 'U';
+              
+              // Create new comment object
+              const newComment: Comment = {
+                comment_id: payload.new.id,
+                content: payload.new.content,
+                created_at: payload.new.created_at,
+                updated_at: payload.new.updated_at,
+                user_id: payload.new.user_id,
+                user_type: payload.new.user_type,
+                display_name: displayName,
+                user_email: userInfo?.email || '',
+                avatar_initial: avatarInitial.toUpperCase(),
+                reply_count: 0,
+                replies: []
+              };
+              
+              // Add to UI immediately without API call, but check for duplicates
+              setComments(prev => {
+                const commentExists = prev.some(comment => comment.comment_id === newComment.comment_id);
+                if (commentExists) {
+                  return prev;
+                }
+                return [newComment, ...prev];
+              });
+              
+              setIsRefreshingComments(true);
+              setTimeout(() => setIsRefreshingComments(false), 1500);
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'comments'
+            },
+            (payload) => {
+              console.log('Real-time: Comment updated:', payload);
+              
+              // Check if this comment belongs to the current post
+              const commentBelongsToPost = comments.some(comment => comment.comment_id === payload.new.id);
+              
+              if (commentBelongsToPost) {
+                              setComments(prev => prev.map(comment => 
+                comment.comment_id === payload.new.id 
+                  ? { ...comment, content: payload.new.content, updated_at: payload.new.updated_at }
+                  : comment
+              ));
+              setIsRefreshingComments(true);
+              setTimeout(() => setIsRefreshingComments(false), 800);
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'comments',
+              filter: `post_id=eq.${expandedArticle.id}`
+            },
+            (payload) => {
+              console.log('Real-time: Comment deleted:', payload);
+              setComments(prev => prev.filter(comment => comment.comment_id !== payload.old.id));
+              setIsRefreshingComments(true);
+              setTimeout(() => setIsRefreshingComments(false), 800);
+            }
+          )
+          .subscribe((status) => {
+            console.log('Comments channel status:', status);
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ Real-time comments subscription active');
+            } else {
+              console.log('❌ Real-time comments subscription failed, falling back to polling');
+            }
+          });
+
+        // Subscribe to new replies
+        repliesChannel = supabase
+          .channel(`replies-${expandedArticle.id}-${Date.now()}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'replies'
+            },
+            async (payload) => {
+              console.log('Real-time: New reply detected:', payload);
+              
+              const commentId = payload.new.comment_id;
+              const hasCommentInPost = comments.some(comment => comment.comment_id === commentId);
+              
+              if (hasCommentInPost) {
+                const { data: userData } = await supabase
+                  .from('voter_profiles')
+                  .select('first_name, last_name, email')
+                  .eq('id', payload.new.user_id)
+                  .single();
+                
+                const { data: adminData } = await supabase
+                  .from('admin_profiles')
+                  .select('first_name, last_name, email')
+                  .eq('id', payload.new.user_id)
+                  .single();
+                
+                const userInfo = userData || adminData;
+                const displayName = userInfo ? `${userInfo.first_name} ${userInfo.last_name}` : 'Unknown User';
+                const avatarInitial = userInfo?.first_name?.[0] || 'U';
+                
+                const newReply: Reply = {
+                  reply_id: payload.new.id,
+                  content: payload.new.content,
+                  created_at: payload.new.created_at,
+                  updated_at: payload.new.updated_at,
+                  user_id: payload.new.user_id,
+                  user_type: payload.new.user_type,
+                  display_name: displayName,
+                  user_email: userInfo?.email || '',
+                  avatar_initial: avatarInitial.toUpperCase()
+                };
+                
+                setComments(prev => prev.map(comment => 
+                  comment.comment_id === commentId 
+                    ? { 
+                        ...comment, 
+                        replies: comment.replies.some(reply => reply.reply_id === newReply.reply_id) 
+                          ? comment.replies
+                          : [...comment.replies, newReply],
+                        reply_count: comment.replies.some(reply => reply.reply_id === newReply.reply_id)
+                          ? comment.reply_count
+                          : comment.reply_count + 1
+                      }
+                    : comment
+                ));
+                
+                setIsRefreshingComments(true);
+                setTimeout(() => setIsRefreshingComments(false), 800);
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'replies'
+            },
+            (payload) => {
+              console.log('Real-time: Reply updated:', payload);
+              
+              // Check if this reply belongs to a comment in the current post
+              const replyBelongsToPost = comments.some(comment => 
+                comment.replies.some(reply => reply.reply_id === payload.new.id)
+              );
+              
+              if (replyBelongsToPost) {
+                setComments(prev => prev.map(comment => ({
+                  ...comment,
+                  replies: comment.replies.map(reply => 
+                    reply.reply_id === payload.new.id 
+                      ? { ...reply, content: payload.new.content, updated_at: payload.new.updated_at }
+                      : reply
+                  )
+                })));
+                setIsRefreshingComments(true);
+                setTimeout(() => setIsRefreshingComments(false), 800);
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'replies'
+            },
+            (payload) => {
+              console.log('Real-time: Reply deleted:', payload);
+                              setComments(prev => prev.map(comment => ({
+                  ...comment,
+                  replies: comment.replies.filter(reply => reply.reply_id !== payload.old.id),
+                  reply_count: Math.max(0, comment.reply_count - 1)
+                })));
+                setIsRefreshingComments(true);
+                setTimeout(() => setIsRefreshingComments(false), 800);
+            }
+          )
+          .subscribe((status) => {
+            console.log('Replies channel status:', status);
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ Real-time replies subscription active');
+            } else {
+              console.log('❌ Real-time replies subscription failed, falling back to polling');
+            }
+          });
+
+      } catch (error) {
+        console.error('Error setting up real-time subscriptions:', error);
+      }
+    };
+
+    // Fallback polling mechanism
+    const startPolling = () => {
+      console.log('🔄 Starting fallback polling for comments...');
+      pollingInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/get-comments?post_id=${expandedArticle.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            const newComments = data.comments || [];
+            
+            // Check if there are new comments or replies
+            const currentCommentCount = newComments.length;
+            const currentReplyCount = newComments.reduce((total: number, comment: Comment) => total + comment.replies.length, 0);
+            
+            // Only update if there are actual changes
+            const hasCountChanges = currentCommentCount !== lastCommentCount || currentReplyCount !== lastReplyCount;
+            
+            if (hasCountChanges) {
+              console.log('🔄 Polling detected count changes, updating comments...');
+              setComments(newComments);
+              lastCommentCount = currentCommentCount;
+              lastReplyCount = currentReplyCount;
+              setIsRefreshingComments(true);
+              setTimeout(() => setIsRefreshingComments(false), 800);
+            } else {
+              // Only check for content changes if counts are the same (potential edits)
+              const hasContentChanges = newComments.some((newComment: Comment, index: number) => {
+                const oldComment = comments[index];
+                if (!oldComment || newComment.comment_id !== oldComment.comment_id) return false;
+                
+                // Check if comment content changed
+                if (newComment.content !== oldComment.content) {
+                  console.log('🔄 Polling detected comment edit:', newComment.comment_id);
+                  return true;
+                }
+                
+                // Check if any reply content changed
+                const replyChanged = newComment.replies.some((newReply: Reply, replyIndex: number) => {
+                  const oldReply = oldComment.replies[replyIndex];
+                  if (!oldReply || newReply.reply_id !== oldReply.reply_id) return false;
+                  if (newReply.content !== oldReply.content) {
+                    console.log('🔄 Polling detected reply edit:', newReply.reply_id);
+                    return true;
+                  }
+                  return false;
+                });
+                
+                return replyChanged;
+              });
+              
+              if (hasContentChanges) {
+                console.log('🔄 Polling detected content changes, updating comments...');
+                setComments(newComments);
+                setIsRefreshingComments(true);
+                setTimeout(() => setIsRefreshingComments(false), 800);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Polling error:', error);
+        }
+      }, 5000); // Poll every 5 seconds instead of 3
+    };
+
+    // Initialize both real-time and polling
+    setupRealTime();
+    startPolling();
+
+    // Cleanup function
+    return () => {
+      if (commentsChannel) {
+        supabase.removeChannel(commentsChannel);
+      }
+      if (repliesChannel) {
+        supabase.removeChannel(repliesChannel);
+      }
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [expandedArticle?.id, modalView]);
 
   return (
     <div ref={pageRef} className="min-h-screen bg-red-950 font-inter">
@@ -1039,7 +1473,7 @@ const formatTimeAgo = (date: Date) => {
                           <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
                             {expandedArticle.image_urls.map((img, idx) => (
                               <button
-                                key={img}
+                                key={`${img}-${idx}`}
                                 className={`w-2 h-2 rounded-full transition-all ${
                                   modalImageIdx === idx 
                                     ? 'bg-white' 
@@ -1098,27 +1532,38 @@ const formatTimeAgo = (date: Date) => {
                     </svg>
                     Back to Article
                   </button>
-                  {/* Auto-refresh loading indicator */}
+                  {/* Real-time update loading indicator */}
                   {isRefreshingComments && (
-                    <div className="flex items-center justify-center mb-2 p-1 bg-blue-50 border border-blue-200 rounded text-xs">
-                      <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-blue-600 mr-1"></div>
-                      <span className="text-blue-700 text-xs">New comments detected, refreshing...</span>
+                    <div className="flex items-center justify-center mb-2 p-1 bg-green-50 border border-green-200 rounded text-xs">
+                      <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-green-600 mr-1"></div>
+                      <span className="text-green-700 text-xs">Real-time update detected, refreshing...</span>
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-lg font-semibold text-black">Comments</h4>
+                                    <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-lg font-semibold text-black">Comments ({comments.length})</h4>
                     <div className="flex items-center gap-2">
+                      {isRefreshingComments && (
+                        <div className="flex items-center space-x-2 text-green-600">
+                          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span className="text-sm font-medium">Update detected</span>
+                        </div>
+                      )}
                       <button
                         onClick={() => {
                           setIsRefreshingComments(true);
                           fetchComments(expandedArticle.id);
                           setTimeout(() => setIsRefreshingComments(false), 1000);
                         }}
-                        className="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                        title="Refresh comments"
+                        className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1"
+                        title="Manual refresh"
                       >
-                        ↻ Refresh
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh
                       </button>
                       <select
                         className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
@@ -1176,7 +1621,7 @@ const formatTimeAgo = (date: Date) => {
                                     >Cancel</button>
                                   </div>
                                 ) : (
-                                  <p className="text-gray-700 text-sm mb-1">{comment.content}</p>
+                                <p className="text-gray-700 text-sm mb-1">{comment.content}</p>
                                 )}
                                 <div className="flex items-center justify-between gap-2 mt-1">
                                   <button
@@ -1239,15 +1684,15 @@ const formatTimeAgo = (date: Date) => {
                                               >Cancel</button>
                                             </div>
                                           ) : (
-                                            <p className="text-gray-700 text-xs">{reply.content}</p>
+                                          <p className="text-gray-700 text-xs">{reply.content}</p>
                                           )}
                                           {/* Edit and Delete reply buttons */}
                                           {currentUser?.id === reply.user_id && (
                                             <div className="flex items-center gap-1 mt-1">
-                                              <button
+                                            <button
                                                 className="text-gray-400 text-xs p-1 rounded hover:text-red-600 transition-colors duration-150"
                                                 style={{ fontSize: '12px', lineHeight: 1 }}
-                                                onClick={() => handleDeleteReply(reply.reply_id)}
+                                              onClick={() => handleDeleteReply(reply.reply_id)}
                                                 title="Delete Reply"
                                               >
                                                 ×
