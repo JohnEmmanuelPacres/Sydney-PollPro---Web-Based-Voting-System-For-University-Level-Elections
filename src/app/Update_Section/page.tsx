@@ -1538,7 +1538,7 @@ const formatTimeAgo = (date: Date) => {
                   {isRefreshingComments && (
                     <div className="flex items-center justify-center mb-2 p-1 bg-green-50 border border-green-200 rounded text-xs">
                       <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-green-600 mr-1"></div>
-                      <span className="text-green-700 text-xs">Real-time update detected, refreshing...</span>
+                      <span className="text-green-700 text-xs">Changes detected, refreshing...</span>
                     </div>
                   )}
                   
