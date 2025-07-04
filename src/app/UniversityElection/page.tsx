@@ -5,7 +5,9 @@ import { useSearchParams } from 'next/navigation';
 
 export default function UniversityElectionPage() {
   const searchParams = useSearchParams();
-  const orgId = searchParams.get('orgId') || 'default-org-id';
-  
-  return <VoteNow />;
+  const electionId = searchParams.get('election_id');
+
+  if (!electionId) return <div className="text-white text-xl">No election selected.</div>;
+
+  return <VoteNow electionId={electionId} />;
 } 

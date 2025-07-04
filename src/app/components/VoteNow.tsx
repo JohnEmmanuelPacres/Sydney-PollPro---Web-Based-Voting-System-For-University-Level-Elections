@@ -43,10 +43,14 @@ interface Election {
   candidatesByPosition: { [key: string]: Candidate[] };
 }
 
-export default function VoteNow({ department_org, }: { department_org?: string }) {
+interface VoteNowProps {
+  electionId: string;
+}
+
+export default function VoteNow({ electionId }: VoteNowProps) {
   const router = useRouter();
   const [selectedCandidates, setSelectedCandidates] = useState<{[key: string]: string}>({});
-  const [elections, setElections] = useState<any[]>([]);
+  const [election, setElection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
@@ -57,16 +61,16 @@ export default function VoteNow({ department_org, }: { department_org?: string }
 
   useEffect(() => {
     fetchElectionData();
-  }, [department_org]);
+  }, [electionId]);
 
   useEffect(() => {
-    // Get user ID and check if already voted for the first election (if any)
+    // Get user ID and check if already voted for the election
     const checkVoted = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setUserId(user.id);
-      if (elections.length > 0) {
-        const electionId = elections[0].id;
+      if (election) {
+        const electionId = election.id;
         const { data: existingVotes, error } = await supabase
           .from('votes')
           .select('id')
@@ -80,17 +84,12 @@ export default function VoteNow({ department_org, }: { department_org?: string }
       }
     };
     checkVoted();
-  }, [elections]);
+  }, [election]);
 
   const fetchElectionData = async () => {
     try {
       setLoading(true);
-      let url = '';
-      if (department_org) {
-        url = `/api/get-voting-data?scope=organization&department_org=${encodeURIComponent(department_org)}`;
-      } else {
-        url = `/api/get-voting-data?scope=university`;
-      }
+      const url = `/api/get-voting-data?electionId=${encodeURIComponent(electionId)}`;
       const response = await fetch(url);
       if (!response.ok) {
         const errorText = await response.text();
@@ -98,7 +97,7 @@ export default function VoteNow({ department_org, }: { department_org?: string }
         throw new Error('Failed to fetch election data');
       }
       const data = await response.json();
-      setElections(data.elections || []);
+      setElection((data.elections && data.elections.length > 0) ? data.elections[0] : null);
     } catch (err) {
       console.error('Error fetching election data:', err);
       setError('Failed to load election data. Please try again.');
@@ -116,6 +115,22 @@ export default function VoteNow({ department_org, }: { department_org?: string }
     router.push('/');
   };
 
+  const handleNavigation = (route: string) => {
+    switch (route) {
+      case 'home':
+        router.push('/Voterdashboard');
+        break;
+      case 'results':
+        router.push('/Election_Results?from=dashboard');
+        break;
+      case 'updates':
+        router.push('/Update_Section?from=dashboard');
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleCandidateSelect = (positionId: string, candidateId: string) => {
     setSelectedCandidates(prev => ({
       ...prev,
@@ -129,8 +144,8 @@ export default function VoteNow({ department_org, }: { department_org?: string }
     setSubmitLoading(true);
     try {
       if (!userId) throw new Error('User not found');
-      if (elections.length === 0) throw new Error('No election found');
-      const electionId = elections[0].id;
+      if (!election) throw new Error('No election found');
+      const electionId = election.id;
       const response = await fetch('/api/submit-votes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -187,7 +202,7 @@ export default function VoteNow({ department_org, }: { department_org?: string }
     );
   }
 
-  if (elections.length === 0) {
+  if (!election) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-950 to-red-900 flex flex-col">
         <VoterHeader />
@@ -209,11 +224,11 @@ export default function VoteNow({ department_org, }: { department_org?: string }
                 
                 <div>
                   <h1 className="text-red-700 text-3xl font-bold font-['Geist']">
-                    {department_org ? 'Organization Election' : 'Cast Your Vote'}
+                    {election ? 'Organization Election' : 'Cast Your Vote'}
                   </h1>
                   <p className="text-yellow-700 text-base font-normal font-['Geist']">
-                    {department_org 
-                      ? `Select your preferred candidates for ${department_org} election`
+                    {election 
+                      ? `Select your preferred candidates for ${election.name} election`
                       : 'Select your preferred candidates for each election'
                     }
                   </p>
@@ -239,15 +254,16 @@ export default function VoteNow({ department_org, }: { department_org?: string }
 
   if (hasVoted) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-red-950 to-red-900 flex flex-col">
+      <div className="min-h-screen bg-gradient-to-b from-red-950 to-red-900 flex flex-col relative">
         <VoterHeader />
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg p-8 mt-20 text-center max-w-lg">
+        {/* Full-page overlay */}
+        <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-md flex flex-col items-center justify-center">
+          <div className="bg-white/80 rounded-lg px-8 py-6 shadow-lg text-center">
             <h2 className="text-2xl font-bold text-red-700 mb-4">You have already voted in this election.</h2>
             <p className="text-gray-700 mb-4">Thank you for participating! You can only vote once per election.</p>
             <button
               onClick={handleBackToDashboard}
-              className="px-6 py-3 bg-red-700 text-white rounded-lg font-semibold hover:bg-red-800 transition"
+              className="px-6 py-3 bg-red-700 text-white rounded-lg font-semibold hover:bg-red-800 transition mt-2"
             >
               Back to Dashboard
             </button>
@@ -278,11 +294,11 @@ export default function VoteNow({ department_org, }: { department_org?: string }
               
               <div>
                 <h1 className="text-red-700 text-3xl font-bold font-['Geist']">
-                  {department_org ? 'Organization Election' : 'Cast Your Vote'}
+                  {election ? 'Organization Election' : 'Cast Your Vote'}
                 </h1>
                 <p className="text-yellow-700 text-base font-normal font-['Geist']">
-                  {department_org 
-                    ? `Select your preferred candidates for ${department_org} election`
+                  {election 
+                    ? `Select your preferred candidates for ${election.name} election`
                     : 'Select your preferred candidates for each election'
                   }
                 </p>
@@ -291,21 +307,7 @@ export default function VoteNow({ department_org, }: { department_org?: string }
 
             {/* Elections Section */}
             <div className="space-y-6">
-              {elections.map((election) => {
-                // Sort positions: important first, then custom
-                const importantOrder = [
-                  'President',
-                  'Vice President',
-                  'Secretary',
-                  'Treasurer',
-                ];
-                const sortedPositions = [
-                  ...election.positions.filter((pos: Position) => importantOrder.includes(pos.title))
-                    .sort((a: Position, b: Position) => importantOrder.indexOf(a.title) - importantOrder.indexOf(b.title)),
-                  ...election.positions.filter((pos: Position) => !importantOrder.includes(pos.title)),
-                ];
-                return (
-                  <div key={election.id} className="bg-stone-50 rounded-lg shadow-lg border border-yellow-300 overflow-hidden">
+              <div className="bg-stone-50 rounded-lg shadow-lg border border-yellow-300 overflow-hidden">
                     <div className="px-6 py-6 border-b border-yellow-200">
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
@@ -331,9 +333,19 @@ export default function VoteNow({ department_org, }: { department_org?: string }
                     
                     <div className="p-6">
                       <div className="space-y-8">
-                        {sortedPositions.map((position: Position) => {
-                          const positionCandidates = election.candidatesByPosition[position.id] || [];
-                          
+                    {election.positions.map((position: Position) => {
+                      // Sort positions: important first, then custom
+                      const importantOrder = [
+                        'President',
+                        'Vice President',
+                        'Secretary',
+                        'Treasurer',
+                      ];
+                      const sortedPositions = [
+                        ...election.positions.filter((pos: Position) => importantOrder.includes(pos.title))
+                          .sort((a: Position, b: Position) => importantOrder.indexOf(a.title) - importantOrder.indexOf(b.title)),
+                        ...election.positions.filter((pos: Position) => !importantOrder.includes(pos.title)),
+                      ];
                           return (
                             <div key={position.id} className="border border-yellow-200 rounded-lg p-6">
                               <div className="mb-4">
@@ -344,9 +356,9 @@ export default function VoteNow({ department_org, }: { department_org?: string }
                                 )}
                               </div>
                               
-                              {positionCandidates.length > 0 ? (
+                          {election.candidatesByPosition[position.id]?.length > 0 ? (
                                 <div className="space-y-4">
-                                  {positionCandidates.map((candidate: Candidate) => (
+                              {election.candidatesByPosition[position.id].map((candidate: Candidate) => (
                                     <div key={candidate.id} className="border border-yellow-300 rounded-lg p-4 hover:bg-yellow-50 transition-colors break-words whitespace-pre-line overflow-x-auto max-w-full">
                                       <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
                                         <button 
@@ -405,8 +417,6 @@ export default function VoteNow({ department_org, }: { department_org?: string }
                       </div>
                     </div>
                   </div>
-                );
-              })}
 
               {/* Submit Vote Button */}
               <div className="flex justify-center pt-6 pb-8">

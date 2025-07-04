@@ -724,7 +724,7 @@ const formatTimeAgo = (date: Date) => {
     });
     if (!res.ok) {
       // Restore comment if deletion failed
-      fetchComments(expandedArticle.id);
+    fetchComments(expandedArticle.id);
       const data = await res.json().catch(() => ({}));
       setCommentError(data.error || 'Failed to delete comment. Please try again.');
     }
@@ -1579,7 +1579,7 @@ const formatTimeAgo = (date: Date) => {
                     </div>
                   )}
                   
-                                    <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3">
                     <h4 className="text-lg font-semibold text-black">Comments ({comments.length})</h4>
                     <div className="flex items-center gap-2">
                       {isRefreshingComments && (
@@ -1604,14 +1604,14 @@ const formatTimeAgo = (date: Date) => {
                         </svg>
                         Refresh
                       </button>
-                      <select
-                        className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
-                        value={sortOrder}
-                        onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
-                      >
-                        <option value="newest">Newest</option>
-                        <option value="oldest">Oldest</option>
-                      </select>
+                    <select
+                      className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
+                      value={sortOrder}
+                      onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
+                    >
+                      <option value="newest">Newest</option>
+                      <option value="oldest">Oldest</option>
+                    </select>
                     </div>
                   </div>
                   {/* Comments List */}
@@ -1650,7 +1650,7 @@ const formatTimeAgo = (date: Date) => {
                                       onChange={e => setEditCommentInput(e.target.value)}
                                       onKeyPress={e => e.key === 'Enter' && saveEditComment(comment.comment_id)}
                                     />
-                                    <button
+                                <button
                                       className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
                                       onClick={() => saveEditComment(comment.comment_id)}
                                     >Save</button>
@@ -1665,8 +1665,8 @@ const formatTimeAgo = (date: Date) => {
                                 <div className="flex items-center justify-between gap-2 mt-1">
                                   <button
                                     className="text-black text-xs font-semibold hover:underline"
-                                    onClick={() => setReplyingTo(comment.comment_id)}
-                                  >Reply</button>
+                                  onClick={() => setReplyingTo(comment.comment_id)}
+                                >Reply</button>
                                   <div className="flex items-center gap-1 ml-auto">
                                     {currentUser?.id === comment.user_id && (
                                       <>
