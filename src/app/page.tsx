@@ -15,11 +15,25 @@ export default function Home() {
   useEffect(() => {
     async function fetchStats() {
       setLoading(true);
-      const res = await fetch('/api/global-stats');
-      const data = await res.json();
-      setVotersCount(data.voters !== undefined ? data.voters.toLocaleString() : 'N/A');
-      setVotesCount(data.votes !== undefined ? data.votes.toLocaleString() : 'N/A');
-      setParticipation(data.participation !== undefined ? `${data.participation}%` : 'N/A');
+      // Fetch latest university-level election
+      const uniRes = await fetch('/api/get-voting-data?scope=university');
+      const uniData = await uniRes.json();
+      const latestElection = uniData?.elections && uniData.elections.length > 0 ? uniData.elections[0] : null;
+      if (latestElection) {
+        // Fetch stats for the latest university-level election
+        const statsRes = await fetch(`/api/global-stats?electionId=${latestElection.id}`);
+        const statsData = await statsRes.json();
+        setVotersCount(statsData.voters !== undefined ? statsData.voters.toLocaleString() : 'N/A');
+        setVotesCount(statsData.votes !== undefined ? statsData.votes.toLocaleString() : 'N/A');
+        setParticipation(statsData.participation !== undefined ? `${statsData.participation}%` : 'N/A');
+      } else {
+        // Fallback: show global stats
+        const res = await fetch('/api/global-stats');
+        const data = await res.json();
+        setVotersCount(data.voters !== undefined ? data.voters.toLocaleString() : 'N/A');
+        setVotesCount(data.votes !== undefined ? data.votes.toLocaleString() : 'N/A');
+        setParticipation(data.participation !== undefined ? `${data.participation}%` : 'N/A');
+      }
       setLoading(false);
     }
     fetchStats();
