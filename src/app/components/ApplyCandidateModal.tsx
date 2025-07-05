@@ -191,7 +191,7 @@ export const ApplyCandidateModal: React.FC<ApplyCandidateModalProps> = ({ open, 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[18rem] rounded-3xl p-6">
+      <DialogContent className="max-w-[20rem] rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-red-900">Apply as Candidate</DialogTitle>
         </DialogHeader>
@@ -201,7 +201,7 @@ export const ApplyCandidateModal: React.FC<ApplyCandidateModalProps> = ({ open, 
             <Button className="mt-4" onClick={onClose}>Close</Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 text-red-900">
+          <form onSubmit={handleSubmit} className="space-y-3 text-red-900">
             <div className="flex flex-col items-center">
               <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mb-2">
                 {pictureUrl ? (
@@ -253,11 +253,11 @@ export const ApplyCandidateModal: React.FC<ApplyCandidateModalProps> = ({ open, 
             </div>
             <div>
               <Label className="text-red-900">Full Name</Label>
-              <Input value={fullName} onChange={e => setFullName(e.target.value)} required className="text-red-900 placeholder-red-300" />
+              <Input value={fullName} onChange={e => setFullName(e.target.value)} required className="text-gray-400 placeholder-red-300" />
             </div>
             <div>
               <Label className="text-red-900">Position</Label>
-              <select className="w-full border rounded p-2 text-red-900" value={positionId} onChange={e => setPositionId(e.target.value)} required>
+              <select className="w-full border rounded p-2 text-gray-400" value={positionId} onChange={e => setPositionId(e.target.value)} required>
                 <option value="" className="text-red-300">Select position</option>
                 {positions.map(pos => (
                   <option key={pos.id} value={pos.id} className="text-red-900">{pos.title}</option>
@@ -266,14 +266,30 @@ export const ApplyCandidateModal: React.FC<ApplyCandidateModalProps> = ({ open, 
             </div>
             <div>
               <Label className="text-red-900">Credentials</Label>
-              <textarea className="w-full border rounded p-2 text-red-900 placeholder-red-300" value={credentials} onChange={e => setCredentials(e.target.value)} required />
+              <textarea 
+                className="w-full border rounded p-2 text-red-900 placeholder-gray-400 resize-none" 
+                value={credentials} 
+                onChange={e => setCredentials(e.target.value)} 
+                required 
+                rows={3}
+                placeholder="Enter your credentials, achievements, and experience..."
+                style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
+              />
             </div>
             <div>
               <Label className="text-red-900">Platform Summary</Label>
-              <textarea className="w-full border rounded p-2 text-red-900 placeholder-red-300" value={platform} onChange={e => setPlatform(e.target.value)} required />
+              <textarea 
+                className="w-full border rounded p-2 text-red-900 placeholder-gray-400 resize-none" 
+                value={platform} 
+                onChange={e => setPlatform(e.target.value)} 
+                required 
+                rows={3}
+                placeholder="Describe your platform and goals..."
+                style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
+              />
             </div>
             {error && <div className="text-red-600 text-sm text-center">{error}</div>}
-            <div className="flex flex-col gap-2 pt-2">
+            <div className="flex flex-col gap-2 pt-1">
               <Button type="submit" disabled={submitting || alreadyApplied} className="bg-red-900 text-white w-full">
                 {alreadyApplied ? 'Already Applied' : (submitting ? 'Submitting...' : 'Submit Application')}
               </Button>

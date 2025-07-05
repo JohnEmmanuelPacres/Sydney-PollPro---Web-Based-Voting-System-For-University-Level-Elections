@@ -42,15 +42,6 @@ const AdminHeader: React.FC = () => {
     );
   };
 
-  const MobileLogOutButton = () => (
-    <button
-      onClick={handleLogout}
-      className="w-full px-6 py-3.5 bg-gradient-to-br from-stone-600 to-orange-300 rounded-full shadow-lg text-white text-xl font-normal font-['Jaldi'] cursor-pointer transition-all duration-300 hover:from-orange-400 hover:to-orange-500 hover:scale-105 hover:shadow-xl text-center"
-    >
-      LOG OUT
-    </button>
-  );
-
   return (
     <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">
       <div className="container mx-auto h-full px-4 flex items-center justify-between">

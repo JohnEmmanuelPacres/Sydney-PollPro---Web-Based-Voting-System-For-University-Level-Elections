@@ -89,7 +89,7 @@ export function CandidateCard({
               <FileText className="w-4 h-4 text-yellow-700 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-yellow-800">Credentials</p>
-                <p className="text-sm text-yellow-700 line-clamp-2">{candidate.credentials}</p>
+                <p className="break-words text-sm text-yellow-700 line-clamp-2">{candidate.credentials}</p>
                 <p className="text-xs text-yellow-600 mt-1 font-medium">Click to view details →</p>
               </div>
             </div>

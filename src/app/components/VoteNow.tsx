@@ -342,87 +342,103 @@ export default function VoteNow({ electionId }: VoteNowProps) {
                     
                     <div className="p-6">
                       <div className="space-y-8">
-                    {election.positions.map((position: Position) => {
-                      // Sort positions: important first, then custom
+                    {/* Sort positions by hierarchy: important first, then custom */}
+                    {(() => {
                       const importantOrder = [
-                        'President',
-                        'Vice President',
-                        'Secretary',
-                        'Treasurer',
+                        "President",
+                        "Vice President",
+                        "Vice President Internal",
+                        "Vice President External",
+                        "Secretary",
+                        "Treasurer",
+                        "Auditor",
+                        "Public Relations Officer",
+                        "Business Manager",
+                        "Board Member",
+                        "Representative",
+                        "Councilor",
+                        "Senator",
+                        "Delegate",
+                        "Committee"
                       ];
+                      
                       const sortedPositions = [
                         ...election.positions.filter((pos: Position) => importantOrder.includes(pos.title))
                           .sort((a: Position, b: Position) => importantOrder.indexOf(a.title) - importantOrder.indexOf(b.title)),
-                        ...election.positions.filter((pos: Position) => !importantOrder.includes(pos.title)),
+                        ...election.positions.filter((pos: Position) => !importantOrder.includes(pos.title))
+                          .sort((a: Position, b: Position) => a.title.localeCompare(b.title))
                       ];
-                          return (
-                            <div key={position.id} className="border border-yellow-200 rounded-lg p-6">
-                              <div className="mb-4">
-                                <h3 className="text-red-700 text-lg font-semibold font-['Geist'] mb-2">{position.title}</h3>
-                                <p className="text-yellow-700 text-sm font-normal font-['Geist']">{position.description}</p>
-                                {position.is_required && (
-                                  <span className="inline-block mt-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded">Required Position</span>
-                                )}
-                              </div>
-                              
-                          {election.candidatesByPosition[position.id]?.length > 0 ? (
-                                <div className="space-y-4">
-                              {election.candidatesByPosition[position.id].map((candidate: Candidate) => (
-                                    <div key={candidate.id} className="border border-yellow-300 rounded-lg p-4 hover:bg-yellow-50 transition-colors break-words whitespace-pre-line overflow-x-auto max-w-full">
-                                      <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
-                                        <button 
-                                          onClick={() => handleCandidateSelect(position.id, candidate.id)}
-                                          className="mt-1 flex-shrink-0"
-                                        >
-                                          <div className={`w-4 h-4 rounded-full border-2 ${selectedCandidates[position.id] === candidate.id ? 'bg-red-600 border-red-600' : 'border-red-600'}`} />
-                                        </button>
-                                        
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
-                                            <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                                              {candidate.picture_url ? (
-                                                <img src={candidate.picture_url} alt={candidate.name} className="w-full h-full object-cover" />
-                                              ) : (
-                                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                </svg>
-                                              )}
+                      
+                      return sortedPositions.map((position: Position) => {
+                        return (
+                          <div key={position.id} className="border border-yellow-200 rounded-lg p-6">
+                            <div className="mb-4">
+                              <h3 className="text-red-700 text-lg font-semibold font-['Geist'] mb-2">{position.title}</h3>
+                              <p className="text-yellow-700 text-sm font-normal font-['Geist']">{position.description}</p>
+                              {position.is_required && (
+                                <span className="inline-block mt-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded">Required Position</span>
+                              )}
+                            </div>
+                            
+                        {election.candidatesByPosition[position.id]?.length > 0 ? (
+                              <div className="space-y-4">
+                            {election.candidatesByPosition[position.id].map((candidate: Candidate) => (
+                                  <div key={candidate.id} className="border border-yellow-300 rounded-lg p-4 hover:bg-yellow-50 transition-colors break-words whitespace-pre-line overflow-x-auto max-w-full">
+                                    <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
+                                      <button 
+                                        onClick={() => handleCandidateSelect(position.id, candidate.id)}
+                                        className="mt-1 flex-shrink-0"
+                                      >
+                                        <div className={`w-4 h-4 rounded-full border-2 ${selectedCandidates[position.id] === candidate.id ? 'bg-red-600 border-red-600' : 'border-red-600'}`} />
+                                      </button>
+                                      
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
+                                          <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                                            {candidate.picture_url ? (
+                                              <img src={candidate.picture_url} alt={candidate.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                              </svg>
+                                            )}
+                                          </div>
+                                          
+                                          <div className="flex-1 space-y-2 min-w-0 break-words">
+                                            <div>
+                                              <h4 className="text-red-700 text-lg font-semibold font-['Geist'] break-words">{candidate.name}</h4>
+                                              <p className="text-yellow-700 text-sm font-medium font-['Geist'] break-words">{candidate.course_year}</p>
                                             </div>
                                             
-                                            <div className="flex-1 space-y-2 min-w-0 break-words">
-                                              <div>
-                                                <h4 className="text-red-700 text-lg font-semibold font-['Geist'] break-words">{candidate.name}</h4>
-                                                <p className="text-yellow-700 text-sm font-medium font-['Geist'] break-words">{candidate.course_year}</p>
+                                            {candidate.platform && (
+                                              <div className="space-y-1">
+                                                <p className="text-red-600 text-sm font-medium font-['Geist']">Platform:</p>
+                                                <p className="text-yellow-700 text-sm font-medium font-['Geist'] break-words whitespace-pre-line">{candidate.platform}</p>
                                               </div>
-                                              
-                                              {candidate.platform && (
-                                                <div className="space-y-1">
-                                                  <p className="text-red-600 text-sm font-medium font-['Geist']">Platform:</p>
-                                                  <p className="text-yellow-700 text-sm font-medium font-['Geist'] break-words whitespace-pre-line">{candidate.platform}</p>
-                                                </div>
-                                              )}
-                                              
-                                              {candidate.detailed_achievements && (
-                                                <div className="space-y-1">
-                                                  <p className="text-red-600 text-sm font-medium font-['Geist']">Experience & Achievements:</p>
-                                                  <p className="text-yellow-700 text-sm font-medium font-['Geist'] break-words whitespace-pre-line">{candidate.detailed_achievements}</p>
-                                                </div>
-                                              )}
-                                            </div>
+                                            )}
+                                            
+                                            {candidate.detailed_achievements && (
+                                              <div className="space-y-1">
+                                                <p className="text-red-600 text-sm font-medium font-['Geist']">Experience & Achievements:</p>
+                                                <p className="text-yellow-700 text-sm font-medium font-['Geist'] break-words whitespace-pre-line">{candidate.detailed_achievements}</p>
+                                              </div>
+                                            )}
                                           </div>
                                         </div>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                  <p>No candidates available for this position.</p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-gray-500">
+                                <p>No candidates available for this position.</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
                       </div>
                     </div>
                   </div>

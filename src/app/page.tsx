@@ -5,7 +5,7 @@ import Footer from "./components/Footer";
 import StatsCard from "./components/StatsCard";
 import Threads from "./components/Threads";
 import { useEffect, useState } from "react";
-import SignInButton from './components/SignInButton';
+import SignInButton from './components/ParticipiateNowButton';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function Home() {
