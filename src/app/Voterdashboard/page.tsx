@@ -277,7 +277,7 @@ export default function VotingDashboard() {
       </main>
       {/* Footer with quick links */}
       <footer className="w-full bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] mt-12 py-10 px-6 flex flex-col items-center justify-center gap-5 text-center">
-        <div className="text-white text-sm font-semibold tracking-wide">© 2024 UniVote. All rights reserved.</div>
+        <div className="text-white text-sm font-semibold tracking-wide">© 2025 SydneyPolls. All rights reserved.</div>
       </footer>
       {/* Election Details Modal */}
       {(modalLoading || selectedElection) && (

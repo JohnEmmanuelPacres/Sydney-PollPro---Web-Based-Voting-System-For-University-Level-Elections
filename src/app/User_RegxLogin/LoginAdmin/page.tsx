@@ -14,16 +14,41 @@ const SIGNIN_ADMIN: NextPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSignIn = async () => {
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_MINUTES = 15;
+
+  function getRateLimitInfo(email: string) {
+    const data = localStorage.getItem(`login_attempts_${email}`);
+    if (!data) return { attempts: 0, lockoutUntil: 0 };
+    try {
+      return JSON.parse(data);
+    } catch {
+      return { attempts: 0, lockoutUntil: 0 };
+    }
+  }
+
+  function setRateLimitInfo(email: string, info: { attempts: number; lockoutUntil: number }) {
+    localStorage.setItem(`login_attempts_${email}`, JSON.stringify(info));
+  }
+
+  const handleSignIn = async (event?: React.FormEvent) => {
+    if (event) event.preventDefault();
     setSignInError("");
     setIsLoading(true);
 
+    // Rate limiting logic
+    const { attempts, lockoutUntil } = getRateLimitInfo(email);
+    const now = Date.now();
+    if (lockoutUntil && now < lockoutUntil) {
+      setSignInError(`Too many failed attempts. Please try again after ${new Date(lockoutUntil).toLocaleTimeString()}.`);
+      setIsLoading(false);
+      return;
+    }
     if (!email.endsWith('@cit.edu')) {
       setSignInError('Please use your CIT email address (@cit.edu)');
       setIsLoading(false);
       return;
     }
-
     if (!credential) {
       setSignInError('Please enter your PIN or password');
       setIsLoading(false);
@@ -46,10 +71,20 @@ const SIGNIN_ADMIN: NextPage = () => {
         console.log('API Response:', data);
 
         if (!response.ok) {
-          setSignInError(data.error || 'Invalid PIN');
+          // Increment failed attempts
+          const newAttempts = attempts + 1;
+          if (newAttempts >= MAX_ATTEMPTS) {
+            setRateLimitInfo(email, { attempts: newAttempts, lockoutUntil: now + LOCKOUT_MINUTES * 60 * 1000 });
+            setSignInError(`Too many failed attempts. Please try again after ${new Date(now + LOCKOUT_MINUTES * 60 * 1000).toLocaleTimeString()}.`);
+          } else {
+            setRateLimitInfo(email, { attempts: newAttempts, lockoutUntil: 0 });
+            setSignInError(data.error || 'Invalid PIN');
+          }
           setIsLoading(false);
           return;
         }
+        // On success, reset attempts
+        setRateLimitInfo(email, { attempts: 0, lockoutUntil: 0 });
 
         router.push(`/User_RegxLogin/SetPasswordAdmin?email=${encodeURIComponent(email)}${data.courseYear ? `&courseYear=${encodeURIComponent(data.courseYear)}` : ''}${data.department_org ? `&department_org=${encodeURIComponent(data.department_org)}` : ''}${data.administered_Org ? `&administered_Org=${encodeURIComponent(data.administered_Org)}` : ''}`);
 
@@ -66,10 +101,20 @@ const SIGNIN_ADMIN: NextPage = () => {
         });
 
         if (error || !data.user) {
-          setSignInError('Invalid email or password. Please try again.');
+          // Increment failed attempts
+          const newAttempts = attempts + 1;
+          if (newAttempts >= MAX_ATTEMPTS) {
+            setRateLimitInfo(email, { attempts: newAttempts, lockoutUntil: now + LOCKOUT_MINUTES * 60 * 1000 });
+            setSignInError(`Too many failed attempts. Please try again after ${new Date(now + LOCKOUT_MINUTES * 60 * 1000).toLocaleTimeString()}.`);
+          } else {
+            setRateLimitInfo(email, { attempts: newAttempts, lockoutUntil: 0 });
+            setSignInError('Invalid email or password. Please try again.');
+          }
           setIsLoading(false);
           return;
         }
+        // On success, reset attempts
+        setRateLimitInfo(email, { attempts: 0, lockoutUntil: 0 });
 
         const { data: adminProfile, error: adminError } = await supabase
           .from('admin_profiles')
@@ -115,55 +160,57 @@ const SIGNIN_ADMIN: NextPage = () => {
           </div>
           
           <div className="w-full max-w-[500px] mx-auto">
-            <div className="text-xl mb-4">Institutional Email</div>
-            <input
-              type="email"
-              className="w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black"
-              placeholder="username@cit.edu"
-              value={email}
-              onChange={e => {
-                setEmail(e.target.value);
-                if (e.target.value && !e.target.value.endsWith('@cit.edu')) {
-                  setEmailError('Email must end with @cit.edu');
-                } else {
-                  setEmailError("");
-                }
-              }}
-            />
-
-            {emailError && <div className="mt-1 text-[#d90429] text-base font-bold">{emailError}</div>}
-            
-            <div className="text-xl mt-6">PIN or Password</div>
-            <input
-              type={showCredential ? "text" : "password"}
-              className="w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black mt-2"
-              placeholder="Enter 6-digit PIN or your password"
-              value={credential}
-              onChange={e => {
-                setCredential(e.target.value);
-              }}
-            />
-            
-            <div className="flex items-center mt-4">
+            <form onSubmit={handleSignIn}>
+              <div className="text-xl mb-4">Institutional Email</div>
               <input
-                type="checkbox"
-                id="showCredential"
-                checked={showCredential}
-                onChange={() => setShowCredential(!showCredential)}
-                className="mr-2"
+                type="email"
+                className="w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black"
+                placeholder="username@cit.edu"
+                value={email}
+                onChange={e => {
+                  setEmail(e.target.value);
+                  if (e.target.value && !e.target.value.endsWith('@cit.edu')) {
+                    setEmailError('Email must end with @cit.edu');
+                  } else {
+                    setEmailError("");
+                  }
+                }}
               />
-              <label htmlFor="showCredential" className="text-white text-sm">
-                Show {/^[\d]{6}$/.test(credential) ? 'PIN' : 'Password'}
-              </label>
-            </div>
 
-            <button 
-              onClick={handleSignIn} 
-              disabled={isLoading} 
-              className="w-full h-[50px] mt-8 flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'VERIFYING...' : 'SIGN IN'}
-            </button>
+              {emailError && <div className="mt-1 text-[#d90429] text-base font-bold">{emailError}</div>}
+              
+              <div className="text-xl mt-6">PIN or Password</div>
+              <input
+                type={showCredential ? "text" : "password"}
+                className="w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-6 text-base text-black mt-2"
+                placeholder="Enter 6-digit PIN or your password"
+                value={credential}
+                onChange={e => {
+                  setCredential(e.target.value);
+                }}
+              />
+              
+              <div className="flex items-center mt-4">
+                <input
+                  type="checkbox"
+                  id="showCredential"
+                  checked={showCredential}
+                  onChange={() => setShowCredential(!showCredential)}
+                  className="mr-2"
+                />
+                <label htmlFor="showCredential" className="text-white text-sm">
+                  Show {/^[\d]{6}$/.test(credential) ? 'PIN' : 'Password'}
+                </label>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-[50px] mt-8 flex items-center justify-center text-white text-xl font-bold cursor-pointer border-2 border-black rounded-lg transition-colors duration-200 hover:text-[#fac36b] hover:border-[#fac36b] bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'VERIFYING...' : 'SIGN IN'}
+              </button>
+            </form>
 
             <div className="text-center mt-6 text-lg">
               Don't have an account yet?
