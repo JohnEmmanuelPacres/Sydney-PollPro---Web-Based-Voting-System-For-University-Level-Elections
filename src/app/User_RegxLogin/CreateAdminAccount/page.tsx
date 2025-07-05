@@ -506,6 +506,37 @@ const CreateAccount = () => {
     setIsLoading(true);
     
     try {
+      // Validate all required fields are filled
+      if (!formData.email.trim()) {
+        setError('Please enter your institutional email address');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!formData.courseYear.trim()) {
+        setError('Please select your course and year');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!formData.department_org?.trim()) {
+        setError('Please select your department organization');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!formData.administered_Org.trim()) {
+        setError('Please select your administered organization');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!formData.orgID.trim()) {
+        setError('Please enter the organization code');
+        setIsLoading(false);
+        return;
+      }
+
       // Validate email format
       if (!formData.email.endsWith('@cit.edu')) {
         setError('Please use your CIT email address (@cit.edu)');
@@ -522,6 +553,7 @@ const CreateAccount = () => {
 
       if (!orgMatch || error) {
         setError('Invalid Organization Code.');
+        setIsLoading(false);
         return;
       }
       else {
@@ -635,7 +667,7 @@ const CreateAccount = () => {
           >
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6" noValidate>
               <div>
-                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Institutional Email</div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Institutional Email <span className="text-red-500">*</span></div>
                 <motion.input
                   whileFocus={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
@@ -652,7 +684,7 @@ const CreateAccount = () => {
 
               {/* Course Year Dropdown (same as CreateAccount) */}
               <div className="relative" ref={dropdownRefCourseYear}>
-                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Course & Year</div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Course & Year <span className="text-red-500">*</span></div>
                 <motion.div
                   whileFocus={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
@@ -737,7 +769,7 @@ const CreateAccount = () => {
 
               {/* Department Organization Dropdown */}
               <div className="relative" ref={dropdownRefDepartment}>
-                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Department Organization</div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Department Organization <span className="text-red-500">*</span></div>
                 <div
                   tabIndex={0}
                   className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
@@ -775,7 +807,7 @@ const CreateAccount = () => {
 
               {/* Administered Organization Dropdown */}
               <div className="relative" ref={dropdownRefAdminOrg}>
-                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Administered Organization</div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Administered Organization <span className="text-red-500">*</span></div>
                 <div
                   tabIndex={0}
                   className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
@@ -812,7 +844,7 @@ const CreateAccount = () => {
               </div>
 
               <div>
-                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Organization Code</div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Organization Code <span className="text-red-500">*</span></div>
                 <motion.input
                   whileFocus={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
@@ -838,7 +870,7 @@ const CreateAccount = () => {
 
                 <motion.button 
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !formData.email.trim() || !formData.courseYear.trim() || !formData.department_org?.trim() || !formData.administered_Org.trim() || !formData.orgID.trim()}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="w-full h-[50px] text-white text-lg sm:text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -846,6 +878,12 @@ const CreateAccount = () => {
                 >
                   {isLoading ? 'SENDING...' : 'REGISTER'}
                 </motion.button>
+                
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-white/80">
+                    <span className="text-red-500">*</span> Required fields
+                  </p>
+                </div>
               </div>
             </form>
           </motion.div>
