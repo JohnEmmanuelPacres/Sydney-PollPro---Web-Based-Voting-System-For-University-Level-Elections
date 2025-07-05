@@ -140,14 +140,8 @@ const SIGNIN_ADMIN: NextPage = () => {
               placeholder="Enter 6-digit PIN or your password"
               value={credential}
               onChange={e => {
-                const value = e.target.value;
-                if (/^\d*$/.test(value)) {
-                  setCredential(value.slice(0, 6));
-                } else {
-                  setCredential(value);
-                }
+                setCredential(e.target.value);
               }}
-              maxLength={credential.match(/^\d*$/) ? 6 : undefined}
             />
             
             <div className="flex items-center mt-4">
