@@ -47,15 +47,42 @@ export default function VotingDashboard() {
       // 1. Fetch all university-wide elections
       const uniRes = await fetch('/api/get-voting-data?scope=university');
       const uniData = await uniRes.json();
-      setUniversityElections(uniData?.elections || []);
 
       // 2. Fetch all organization elections (unfiltered)
       const orgRes = await fetch(`/api/get-voting-data?scope=organization${`&department_org=${departmentOrg}`}`);
       const orgData = await orgRes.json();
-      setOrganizationElections(orgData?.elections || []);
+
+      // Helper to fetch positions for an election
+      async function fetchPositions(electionId: string) {
+        const res = await fetch(`/api/get-election-details`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ electionId }),
+        });
+        const data = await res.json();
+        return data?.election?.positions || [];
+      }
+
+      // Attach positions to each election
+      const uniElectionsWithPositions = await Promise.all(
+        (uniData.elections || []).map(async (election: any) => ({
+          ...election,
+          positions: await fetchPositions(election.id),
+        }))
+      );
+      setUniversityElections(uniElectionsWithPositions);
+
+      const orgElectionsWithPositions = await Promise.all(
+        (orgData.elections || []).map(async (election: any) => ({
+          ...election,
+          positions: await fetchPositions(election.id),
+        }))
+      );
+      setOrganizationElections(orgElectionsWithPositions);
+
       setLoading(false);
       // Fetch stats for all elections
-      const allElections = [...(uniData.elections || []), ...(orgData.elections || [])];
+      const allElections = [...uniElectionsWithPositions, ...orgElectionsWithPositions];
       allElections.forEach(async (election) => {
         const statsRes = await fetch(`/api/get-vote-counts?scope=${election.is_uni_level ? 'university' : 'organization'}${election.is_uni_level ? '' : `&department_org=${encodeURIComponent(election.department_org || '')}`}`);
         const statsData = await statsRes.json();

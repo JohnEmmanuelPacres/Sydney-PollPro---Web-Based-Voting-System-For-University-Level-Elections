@@ -17,6 +17,7 @@ interface CandidateCardProps {
     year: string
     platform?: string
     picture_url?: string
+    qualifications_url?: string
   }
   onEdit?: (candidate: any) => void
   onDelete?: (id: string) => void

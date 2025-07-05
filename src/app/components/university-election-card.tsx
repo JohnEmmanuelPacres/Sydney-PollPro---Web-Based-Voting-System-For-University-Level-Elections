@@ -4,30 +4,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Vote, Eye, Calendar, Clock, Users, University, TrendingUp, CheckCircle, AlertCircle } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { supabase } from '@/utils/supabaseClient';
+import ApplyCandidateModal from './ApplyCandidateModal';
+
+// Define Position type locally
+interface Position {
+  id: string;
+  title: string;
+  description?: string;
+  maxCandidates?: number;
+  maxWinners?: number;
+  isRequired?: boolean;
+}
 
 interface UniversityElectionCardProps {
   election: {
-    id: string
-    name: string
-    description: string
-    startDate: string
-    //startTime: string
-    endDate: string
-    //endTime: string
-    organizationId: string
-    totalVotes?: number
-    voterTurnout?: number
-    candidates: any[]
-  }
+    id: string;
+    name: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    organizationId: string;
+    totalVotes?: number;
+    voterTurnout?: number;
+    candidates: any[];
+    positions: Position[];
+  };
   organization:
     | {
-        name: string
+        name: string;
       }
-    | undefined
-  hasVoted: boolean
-  onVoteNow: (electionId: string) => void
-  onViewDetails: (election: any) => void
+    | undefined;
+  hasVoted: boolean;
+  onVoteNow: (electionId: string) => void;
+  onViewDetails: (election: any) => void;
 }
 
 export function UniversityElectionCard({
@@ -40,6 +51,12 @@ export function UniversityElectionCard({
   const [votersCount, setVotersCount] = useState<string | null>(null);
   const [votesCount, setVotesCount] = useState<string | null>(null);
   const [participation, setParticipation] = useState<string | null>(null);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [applicationStatus, setApplicationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+  const justSubmitted = useRef(false);
+  const [statusLoading, setStatusLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
@@ -52,28 +69,67 @@ export function UniversityElectionCard({
     fetchStats();
   }, []);
 
+  useEffect(() => {
+    async function fetchUserAndEmail() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+      if (user?.id) {
+        const { data } = await supabase
+          .from('voter_profiles')
+          .select('email')
+          .eq('id', user.id)
+          .single();
+        if (data?.email) setUserEmail(data.email);
+      }
+    }
+    fetchUserAndEmail();
+  }, []);
+
+  // Fetch application status per election
+  useEffect(() => {
+    if (!userEmail || !election.id) return;
+    if (justSubmitted.current) return;
+    setStatusLoading(true);
+    async function fetchStatus() {
+      const emailToCheck = userEmail!.toLowerCase();
+      console.log('Checking candidate status for:', emailToCheck, election.id);
+      const { data } = await supabase
+        .from('candidates')
+        .select('status')
+        .eq('election_id', election.id)
+        .eq('email', emailToCheck)
+        .maybeSingle();
+      console.log('Candidate status result:', data);
+      if (!data) setApplicationStatus('none');
+      else if (data.status === 'pending') setApplicationStatus('pending');
+      else if (data.status === 'approved') setApplicationStatus('approved');
+      else setApplicationStatus('rejected');
+      setStatusLoading(false);
+    }
+    fetchStatus();
+  }, [userEmail, election.id, showApplyModal]);
 
   const getElectionStatusColor = (election: any) => {
     const now = new Date()
-    const startDate = new Date(`${election.startDate}T${election.startTime}`)
-    const endDate = new Date(`${election.endDate}T${election.endTime}`)
+    const startDate = new Date(election.startDate)
+    const endDate = new Date(election.endDate)
 
     if (now < startDate) return "bg-blue-100 text-blue-800 border-blue-200"
     if (now > endDate) return "bg-gray-100 text-gray-800 border-gray-200"
     return "bg-green-100 text-green-800 border-green-200"
   }
 
-  const getElectionStatus = (election: any) => {
+  const getElectionStatus = () => {
     const now = new Date()
-    const startDate = new Date(`${election.startDate}T${election.startTime}`)
-    const endDate = new Date(`${election.endDate}T${election.endTime}`)
+    const startDate = new Date(election.startDate)
+    const endDate = new Date(election.endDate)
 
     if (now < startDate) return "Upcoming"
     if (now > endDate) return "Ended"
     return "Active"
   }
 
-  const status = getElectionStatus(election)
+  const status = getElectionStatus()
   const approvedCandidates = election.candidates.filter((c: any) => c.status === "approved")
 
   return (
@@ -147,6 +203,9 @@ export function UniversityElectionCard({
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
+          {statusLoading && (
+            <Button disabled className="flex-1 bg-gray-300 text-gray-500 cursor-not-allowed">Checking...</Button>
+          )}
           {status === "Active" && !hasVoted && (
             <Button
               onClick={() => onVoteNow(election.id)}
@@ -162,7 +221,27 @@ export function UniversityElectionCard({
               Already Voted
             </Button>
           )}
-          {status === "Upcoming" && (
+          {status === "Upcoming" && userId && applicationStatus === 'none' && !statusLoading && (
+            <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowApplyModal(true)}>
+              Apply
+            </Button>
+          )}
+          {status === "Upcoming" && userId && applicationStatus === 'pending' && !statusLoading && (
+            <Button disabled className="flex-1 bg-yellow-400 text-white cursor-not-allowed">
+              Pending
+            </Button>
+          )}
+          {status === "Upcoming" && userId && applicationStatus === 'approved' && !statusLoading && (
+            <Button disabled className="flex-1 bg-green-600 text-white cursor-not-allowed">
+              Accepted
+            </Button>
+          )}
+          {status === "Upcoming" && userId && applicationStatus === 'rejected' && !statusLoading && (
+            <Button disabled className="flex-1 bg-red-600 text-white cursor-not-allowed">
+              Application Rejected
+            </Button>
+          )}
+          {status === "Upcoming" && !userId && (
             <Button disabled className="flex-1 bg-blue-400 text-white cursor-not-allowed">
               <Clock className="w-4 h-4 mr-2" />
               Voting Opens Soon
@@ -183,6 +262,20 @@ export function UniversityElectionCard({
             View Details
           </Button>
         </div>
+        {userId && userEmail && (
+          <ApplyCandidateModal
+            open={showApplyModal}
+            onClose={() => setShowApplyModal(false)}
+            electionId={election.id}
+            positions={election.positions || []}
+            userId={userId}
+            onApplicationSubmitted={() => {
+              setApplicationStatus('pending');
+              justSubmitted.current = true;
+              setTimeout(() => { justSubmitted.current = false; }, 1500); // allow DB check after 1.5s
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   )
