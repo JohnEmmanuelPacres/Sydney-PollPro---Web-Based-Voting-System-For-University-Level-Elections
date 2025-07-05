@@ -32,7 +32,7 @@ const Results: NextPage = () => {
   const [type, setElectionType] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  //const [electionID, setRelevantElectionID] = useState<string>();
+  const [electionID, setRelevantElectionID] = useState<string>();
   const [isLive, setIsLive] = useState(false);
   const [Org, setOrg] = useState<string>();
 
@@ -70,6 +70,7 @@ const Results: NextPage = () => {
             type = typeData.type;
             const ID = typeData.election.id
             const Org = typeData.Org
+            setRelevantElectionID (ID);
             setElectionType(type);
             //setRelevantElectionID(ID);
             setOrg(Org);
@@ -80,6 +81,7 @@ const Results: NextPage = () => {
             setIsLive(now >= start && now <= end);
           } else{
             setError("Error fetching election scope/type.")
+            setElectionType('university');
             console.log(`Error: ${error}`);
             setIsLive(false);
           }
@@ -100,6 +102,9 @@ const Results: NextPage = () => {
     };
   }, []);
 
+  // Add a derived loading state for when props are not ready
+  const propsReady = type || (electionID || Org);
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-[#52100D] text-white font-inter">
       {/* Header */}
@@ -116,14 +121,21 @@ const Results: NextPage = () => {
 
         <div className="mt-12 md:mt-16 lg:mt-20 flex flex-col items-center gap-6 md:gap-8 lg:gap-10 pb-20 md:pb-24 lg:pb-32 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
-            <ElectionResultsDisplay 
-              //electionId={electionID || undefined}
-              type={type} 
-              department_org={Org || undefined}
-              isLive={isLive}
-              showRefreshButton={true}
-              className="text-white"
-            />
+            {!propsReady ? (
+              <div className="flex items-center justify-center min-h-[300px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                <div className="text-white text-xl">Loading election results...</div>
+              </div>
+            ) : (
+              <ElectionResultsDisplay 
+                electionId={electionID || undefined}
+                type={type} 
+                department_org={Org || undefined}
+                isLive={isLive}
+                showRefreshButton={true}
+                className="text-white"
+              />
+            )}
           </div>
         </div>
       </main>

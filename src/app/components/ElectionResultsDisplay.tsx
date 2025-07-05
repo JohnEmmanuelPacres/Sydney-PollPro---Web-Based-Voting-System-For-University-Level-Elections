@@ -19,7 +19,7 @@ interface PositionResult {
 }
 
 interface ElectionResultsDisplayProps {
-  //electionId?: string;
+  electionId?: string;
   type?: string;
   department_org?: string;
   isLive?: boolean;
@@ -37,11 +37,18 @@ const positionOrder = [
   "Vice President",
   "Secretary",
   "Treasurer",
-  // Add more as needed
+  "Auditor",
+  "Public Relations Officer",
+  "Business Manager",
+  "Board Member",
+  "Representative",
+  "Councilor",
+  "Senator",
+  "Delegate"
 ];
 
 export default function ElectionResultsDisplay({
-  //electionId,
+  electionId,
   type,
   department_org,
   isLive,
@@ -60,10 +67,10 @@ export default function ElectionResultsDisplay({
       setError(null);
       
       let url = `/api/get-vote-counts?scope=${type}`;
-      //if (electionId) {
-      //  url += `&election_id=${electionId}`;
-      //}
-      if (department_org) {
+      if (electionId) {
+        url += `&election_id=${electionId}`;
+      }
+      else if (department_org) {
         url += `&department_org=${encodeURIComponent(department_org)}`;
       }
       

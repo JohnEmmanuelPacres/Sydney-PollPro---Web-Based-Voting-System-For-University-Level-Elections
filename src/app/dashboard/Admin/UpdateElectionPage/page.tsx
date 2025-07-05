@@ -1498,7 +1498,7 @@ export default function UpdateElectionPage() {
                     </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                    <div className="bg-gradient-to-r from-red-50 to-yellow-50 p-6 rounded-lg border border-red-200">
+                    <div className="[background:linear-gradient(90deg,_#f0fdf4,_#fefce8)] p-6 rounded-lg border border-red-200">
                         <h2 className="text-2xl font-bold text-red-900 mb-2">{election.name || "Untitled Election"}</h2>
                         <p className="text-gray-700 mb-4">{election.description || "No description provided"}</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -1578,5 +1578,5 @@ export default function UpdateElectionPage() {
             </div>
         </main>
     </div>
-  )
+  );
 }

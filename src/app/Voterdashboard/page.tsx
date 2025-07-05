@@ -129,7 +129,7 @@ export default function VotingDashboard() {
   }
 
   const handleVoteNow = (electionId: string) => {
-    router.push(`/OrganizationElection?election_id=${electionId}`); //Ma change pani siguro 
+    router.push(`/OrganizationElection?election_id=${electionId}${`&department_org=${departmentOrg}`}`);
   }
 
   // Helper to format date and time in Singapore timezone (like ElectionStatusBar)

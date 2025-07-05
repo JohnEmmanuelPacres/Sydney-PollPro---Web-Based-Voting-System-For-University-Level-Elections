@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import NavButton from './NavButton';
-import SignInButton from './SignInButton';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-
-  const isLoginPage = pathname === '/User_RegxLogin' || pathname === '/User_RegxLogin/LoginAdmin';
 
   return (
     <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">
@@ -37,11 +34,6 @@ const Header: React.FC = () => {
             <NavButton href="/Election_Results">Results</NavButton>
             <NavButton href="/Update_Section">Updates</NavButton>
             <NavButton href="/About">About</NavButton>
-            {!isLoginPage && (
-              <SignInButton href="/User_RegxLogin">
-                SIGN IN
-              </SignInButton>
-            )}
           </nav>
         </div>
         
@@ -72,10 +64,6 @@ const Header: React.FC = () => {
             <MobileNavButton href="/Election_Results" onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
             <MobileNavButton href="/Update_Section" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
             <MobileNavButton href="/About" onClick={() => setIsMenuOpen(false)}>About</MobileNavButton>
-            {/* Only show MobileSignInButton if not on login page */}
-            {!isLoginPage && (
-              <MobileSignInButton href="/User_RegxLogin">SIGN IN</MobileSignInButton>
-            )}
           </div>
         </div>
       )}

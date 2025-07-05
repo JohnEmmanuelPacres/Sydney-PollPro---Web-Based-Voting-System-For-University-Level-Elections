@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    //const electionId = searchParams.get('election_id');
+    const electionId = searchParams.get('election_id');
     const type = searchParams.get('scope'); // 'university' or 'organization'
     const department_org = searchParams.get('department_org');
     const accessLevel = searchParams.get('access_level'); // 'voter', 'admin', 'public'
@@ -17,15 +17,21 @@ export async function GET(request: NextRequest) {
     // Use a single currentTime variable as a Date object
     const currentTime = new Date();
     const currentTimeISO = currentTime.toISOString();
+
     let electionQuery = supabaseAdmin
       .from('elections')
       .select('id, start_date, end_date, is_uni_level')
       .order('start_date', { ascending: false });
-
-    if (type === 'university') {
+      
+    if(electionId){
+      electionQuery = electionQuery.eq('id', electionId);
+    } else if (type === 'university') {
       electionQuery = electionQuery.eq('is_uni_level', true);
     } else if (type === 'organization' && department_org) {
       electionQuery = electionQuery.eq('is_uni_level', false).eq('department_org', department_org);
+    }else{
+      console.log("failed to detect params");
+      throw new Error ('Failed to detect params.');
     }
 
     // Fetch active elections first
@@ -36,11 +42,25 @@ export async function GET(request: NextRequest) {
     // If no active elections, fetch recently completed elections (within 5 days after end_date)
     if ((!elections || elections.length === 0) && !electionError) {
       const fiveDaysAgo = new Date(currentTime.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString();
-      const completedQuery = electionQuery
-        .lt('end_date', currentTimeISO)
-        .gte('end_date', fiveDaysAgo)
+      
+      // Create a fresh query for completed elections
+      let completedQuery = supabaseAdmin
+        .from('elections')
+        .select('id, start_date, end_date, is_uni_level')
         .order('end_date', { ascending: false });
-      const completedResult = await completedQuery;
+      
+      // Apply the same filters as the original query
+      if(electionId){
+        completedQuery = completedQuery.eq('id', electionId);
+      } else if (type === 'university') {
+        completedQuery = completedQuery.eq('is_uni_level', true);
+      } else if (type === 'organization' && department_org) {
+        completedQuery = completedQuery.eq('is_uni_level', false).eq('department_org', department_org);
+      }
+      
+      const completedResult = await completedQuery
+        .lt('end_date', currentTimeISO)
+        .gte('end_date', fiveDaysAgo);
       elections = completedResult.data;
       electionError = completedResult.error;
     }
@@ -117,7 +137,7 @@ export async function GET(request: NextRequest) {
     // Get election details for additional context
     const { data: electionDetails, error: electionDetailsError } = await supabaseAdmin
       .from('elections')
-      .select('name, start_date, end_date, is_uni_level')
+      .select('name, description, start_date, end_date, is_uni_level')
       .eq('id', targetElectionId)
       .single();
 

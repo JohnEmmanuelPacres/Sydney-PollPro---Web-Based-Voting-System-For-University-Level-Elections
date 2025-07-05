@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       const now = new Date(currentTime);
       relevantElection = elections.find(e => new Date(e.start_date) <= now && new Date(e.end_date) >= now)
         || elections[0]; // fallback to the next upcoming if none ongoing
-    } //WALAY SURE NI AY
+    } 
 
     let type = null;
     if (relevantElection) {

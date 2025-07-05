@@ -58,6 +58,8 @@ export default function VoteNow({ electionId }: VoteNowProps) {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const searchParams = useSearchParams ();
+  const departmentOrg = searchParams.get("department_org");
 
   useEffect(() => {
     fetchElectionData();
@@ -107,7 +109,7 @@ export default function VoteNow({ electionId }: VoteNowProps) {
   };
 
   const handleBackToDashboard = () => {
-    router.push('/Voterdashboard');
+    router.push(`/Voterdashboard?department_org=${departmentOrg}`);
   };
 
   const handleLogout = async () => {
@@ -145,6 +147,13 @@ export default function VoteNow({ electionId }: VoteNowProps) {
     try {
       if (!userId) throw new Error('User not found');
       if (!election) throw new Error('No election found');
+      // Check required positions
+      const missingRequired = election.positions.filter((pos: Position) => pos.is_required && !selectedCandidates[pos.id]);
+      if (missingRequired.length > 0) {
+        setSubmitError('Please select a candidate for all required positions before submitting your vote.');
+        setSubmitLoading(false);
+        return;
+      }
       const electionId = election.id;
       const response = await fetch('/api/submit-votes', {
         method: 'POST',
@@ -422,8 +431,8 @@ export default function VoteNow({ electionId }: VoteNowProps) {
               <div className="flex justify-center pt-6 pb-8">
                 <button
                   onClick={handleSubmitVote}
-                  disabled={submitLoading}
-                  className={`px-8 py-4 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all duration-300 hover:scale-105 ${submitLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={submitLoading || (election && election.positions.some((pos: Position) => pos.is_required && !selectedCandidates[pos.id]))}
+                  className={`px-8 py-4 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white text-xl font-bold rounded-lg shadow-lg transition-all duration-300 hover:scale-105 ${submitLoading || (election && election.positions.some((pos: Position) => pos.is_required && !selectedCandidates[pos.id])) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {submitLoading ? 'Submitting...' : 'Submit Vote'}
                 </button>

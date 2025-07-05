@@ -105,10 +105,21 @@ const CandidatesPage = () => {
 
   // Sort positions: important first, then custom alphabetical
   const importantOrder = [
-    'President',
-    'Vice President',
-    'Secretary',
-    'Treasurer',
+    "President",
+    "Vice President",
+    "Vice President Internal",
+    "Vice President External",
+    "Secretary",
+    "Treasurer",
+    "Auditor",
+    "Public Relations Officer",
+    "Business Manager",
+    "Board Member",
+    "Representative",
+    "Councilor",
+    "Senator",
+    "Delegate",
+    "Committee"
   ];
   const sortedPositions = [
     ...election.positions.filter(pos => importantOrder.includes(pos.title))

@@ -11,6 +11,7 @@ import CreateElectionSection from '../../components/CreateElectionSection';
 import YearDropdown from '../../components/YearDropDown';
 import SearchBar from '../../components/SearchBar';
 import ElectionStatusBar from '../../components/ElectionStatusBar';
+import Footer from '../../components/Footer';
 
 interface Election {
   id: string;
@@ -81,7 +82,6 @@ const AdminDashboardNoSession: NextPage = () => {
 
         setCompletedElections(completed);
         setFilteredElections(completed);
-        applyFilters('All Years', '');
 
         if (upcomingOrOngoing) setActiveElection(upcomingOrOngoing);
       } catch (err: any) {
@@ -138,7 +138,7 @@ const AdminDashboardNoSession: NextPage = () => {
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-[#52100d] text-left text-[20px] text-[#fef2f2] font-inter overflow-x-auto">
+    <div className="relative w-full min-h-screen bg-[#52100d] text-left text-[20px] text-[#fef2f2] font-inter">
       <AdminHeader />
 
       {/* Powered by Section */}
@@ -169,12 +169,12 @@ const AdminDashboardNoSession: NextPage = () => {
       </div>
 
       {/* Review Elections Section - Show if there are completed elections */}
-      <div className="w-full flex flex-col items-center justify-center mt-12 px-2">
+      <div className="w-full flex flex-col items-center justify-center mt-12 px-2 mb-16">
         <div className="w-full flex justify-center text-[32px] md:text-[48px] font-semibold tracking-[-0.02em] mb-4">
           Review Elections
         </div>
         <div className="w-full flex justify-center">
-          <div className="w-full max-w-5xl rounded-[20px] bg-[#fef2f2] border-[3px] border-[rgba(254,242,242,0.96)] flex flex-col px-2 md:px-6 py-6 text-[20px] md:text-[34px] text-black font-baloo overflow-hidden">
+          <div className="w-full max-w-4xl rounded-[20px] bg-[#fef2f2] border-[3px] border-[rgba(254,242,242,0.96)] flex flex-col px-2 md:px-6 py-6 text-[20px] md:text-[34px] text-black font-baloo overflow-hidden">
             {/* Search and Year Dropdown inside card */}
             <div className="w-full flex flex-col md:flex-row items-center justify-between gap-2 mb-6">
               <div className="w-full md:w-3/4 max-w-2xl">
@@ -184,7 +184,7 @@ const AdminDashboardNoSession: NextPage = () => {
                 <YearDropdown completedElections={completedElections} onFilterChange={handleYearFilterChange} />
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto pl-0 md:pl-4 pr-0 md:pr-2 space-y-4">
+            <div className="flex-1 overflow-y-auto pl-0 md:pl-4 pr-0 md:pr-2 space-y-4 flex flex-col items-center">
               <ReviewElectionPanel 
                 completedElections={filteredElections} 
                 totalCompletedElections={completedElections.length}
@@ -201,12 +201,8 @@ const AdminDashboardNoSession: NextPage = () => {
         </div>
       )}
 
-      {/* Bottom Bar */}
-      <div className="absolute w-full top-[1561px] left-0 h-[156px] bg-[#5c1110] shadow-[0_-5px_4px_rgba(0,0,0,0.5)] overflow-hidden">
-        <div className="absolute top-[39px] left-[312px] flex flex-row items-center justify-center">
-          <div className="w-[57px] h-[30px] relative" />
-        </div>
-      </div>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

@@ -133,7 +133,7 @@ export function UniversityElectionCard({
   const approvedCandidates = election.candidates.filter((c: any) => c.status === "approved")
 
   return (
-    <Card className="border-2 border-red-100 hover:border-yellow-700 transition-all duration-200 hover:shadow-lg">
+    <Card className="border-3 border-red-100 hover:border-yellow-600 transition-all duration-200 hover:shadow-lg">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">

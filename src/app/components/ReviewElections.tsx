@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from '@/utils/supabaseClient';
 import { useAdminOrg } from '../dashboard/Admin/AdminedOrgContext';
 
@@ -21,6 +22,8 @@ interface ReviewElectionPanelProps {
 const ReviewElectionPanel: React.FC<ReviewElectionPanelProps> = ({ completedElections, totalCompletedElections = 0 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const administeredOrg = searchParams.get("administered_Org"); 
 
   // Format date for display
   const formatDateForDisplay = (dateString: string) => {
@@ -39,9 +42,9 @@ const ReviewElectionPanel: React.FC<ReviewElectionPanelProps> = ({ completedElec
     // Navigate to election results page
     const params = new URLSearchParams({
       election_id: election.id,
-      type: election.is_Uni_level ? 'university' : 'organization'
+      scope: election.is_Uni_level ? 'university' : 'organization'
     });
-    window.open(`/Election_Results?${params.toString()}`, '_blank');
+    window.open(`/dashboard/Admin/ElectionSummaryPage?administered_Org=${administeredOrg}&${params.toString()}`, '_blank');
   };
 
   if (loading) {
@@ -85,12 +88,13 @@ const ReviewElectionPanel: React.FC<ReviewElectionPanelProps> = ({ completedElec
   }
 
   return (
-    <div className="w-full space-y-4 ml-1 mt-1">
+    <div className="w-full flex flex-col items-center space-y-4 px-2 pb-2">
       {completedElections.map((election) => (
         <button
           key={election.id}
           onClick={() => handleElectionClick(election)}
-          className="w-[99%] text-center rounded-xl shadow-md bg-[#fef2f2] border-4 border-gray-500 p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 text-black transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 hover:bg-[#f5f5f5] hover:scale-[1.02] transform-gpu"
+          className="max-w-3xl w-full mx-auto text-center rounded-xl shadow-md bg-[#fef2f2] border-4 border-gray-500 p-6 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 text-black transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 hover:bg-[#f5f5f5] hover:scale-[1.02] transform-gpu"
+          style={{ transformOrigin: 'center' }}
         >
           <div className="text-left">
             <h2 className="text-xl font-bold">{election.name}</h2>
