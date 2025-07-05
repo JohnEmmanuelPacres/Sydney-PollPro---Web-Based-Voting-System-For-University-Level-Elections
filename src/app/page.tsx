@@ -100,7 +100,7 @@ export default function Home() {
           {!isLoginPage && (
             <div className="mt-8">
               <SignInButton href="/User_RegxLogin">
-                SIGN IN
+                PARTICIPATE NOW
               </SignInButton>
             </div>
           )}

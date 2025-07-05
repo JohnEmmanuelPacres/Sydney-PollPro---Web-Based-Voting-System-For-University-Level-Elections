@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import NavButton from './NavButton';
+import SignInButton from './SignInButton';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const isLoginPage = pathname === '/User_RegxLogin' || pathname === '/User_RegxLogin/LoginAdmin';
 
   return (
     <header className="w-full h-24 md:h-32 fixed top-0 z-50 bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)]">
@@ -29,11 +31,18 @@ const Header: React.FC = () => {
 
         {/* Desktop Navigation - Centered */}
         <div className="hidden md:flex flex-grow justify-center items-center gap-11">
-          <nav className="px-2 md:px-5 py-2 md:py-2.5 left-1/2 transform -translate-x-1/2 md:left-[900px] md:transform-none top-[37px] absolute inline-flex justify-start items-center gap-4 md:gap-11">
+          <nav className="flex items-center gap-4 md:gap-11">
             <NavButton href="/">Home</NavButton>
             <NavButton href="/Election_Results">Results</NavButton>
             <NavButton href="/Update_Section">Updates</NavButton>
             <NavButton href="/About">About</NavButton>
+            {!isLoginPage && (
+              <div className="scale-75">
+                <SignInButton href="/User_RegxLogin">
+                  SIGN IN
+                </SignInButton> 
+              </div>
+            )}
           </nav>
         </div>
         
@@ -64,6 +73,13 @@ const Header: React.FC = () => {
             <MobileNavButton href="/Election_Results" onClick={() => setIsMenuOpen(false)}>Results</MobileNavButton>
             <MobileNavButton href="/Update_Section" onClick={() => setIsMenuOpen(false)}>Updates</MobileNavButton>
             <MobileNavButton href="/About" onClick={() => setIsMenuOpen(false)}>About</MobileNavButton>
+            {!isLoginPage && (
+              <div className="pt-2">
+                <MobileSignInButton href="/User_RegxLogin">
+                  SIGN IN
+                </MobileSignInButton>
+              </div>
+            )}
           </div>
         </div>
       )}
