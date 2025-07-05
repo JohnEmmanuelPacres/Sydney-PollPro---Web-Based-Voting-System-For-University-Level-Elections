@@ -48,6 +48,7 @@ interface Candidate {
   detailedCredentials?: string
   achievements?: string[]
   experience?: string[]
+  qualifications_url?: string
 }
 
 interface Election {
@@ -460,6 +461,11 @@ export default function UpdateElectionPage() {
   const [isAddingCandidate, setIsAddingCandidate] = useState(false);
   const isAddingCandidateRef = useRef(false);
 
+  // Add state for qualifications upload
+  const [qualificationsFile, setQualificationsFile] = useState<File | null>(null);
+  const [qualificationsUrl, setQualificationsUrl] = useState<string | null>(null);
+  const qualificationsInputRef = useRef<HTMLInputElement>(null);
+
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
   }
@@ -525,6 +531,24 @@ export default function UpdateElectionPage() {
     setImageUploading(false);
   };
 
+  const handleQualificationsChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setQualificationsFile(file);
+    // Upload to Supabase Storage
+    const fileExt = file.name.split('.').pop();
+    const fileName = `qualifications-admin-${Date.now()}.${fileExt}`;
+    const filePath = `Qualifications/${fileName}`;
+    const { error } = await supabase.storage.from('election').upload(filePath, file, { upsert: true });
+    if (error) {
+      alert('Failed to upload qualifications image');
+      return;
+    }
+    const { data } = supabase.storage.from('election').getPublicUrl(filePath);
+    setQualificationsUrl(data.publicUrl);
+    setNewCandidate(prev => ({ ...prev, qualifications_url: data.publicUrl }));
+  };
+
   const handleAddPosition = async () => {
     if (newPosition.title && newPosition.description) {
       setIsAddingPosition(true);
@@ -586,6 +610,7 @@ export default function UpdateElectionPage() {
             year: year,
             platform: newCandidate.platform || '',
             picture_url: newCandidate.picture_url || '',
+            qualifications_url: newCandidate.qualifications_url || '',
           }),
         });
         const result = await response.json();
@@ -604,6 +629,7 @@ export default function UpdateElectionPage() {
           platform: "",
           status: "pending",
           picture_url: "",
+          qualifications_url: "",
         });
         setIsAddCandidateOpen(false);
         console.log("✅ Candidate addition completed");
@@ -629,6 +655,7 @@ export default function UpdateElectionPage() {
       platform: candidate.platform,
       status: candidate.status,
       picture_url: candidate.picture_url || "",
+      qualifications_url: candidate.qualifications_url || '',
     })
     setImageUrl(candidate.picture_url || ''); // Set the image URL for the edit dialog
     setIsEditCandidateOpen(true)
@@ -654,6 +681,7 @@ export default function UpdateElectionPage() {
                 platform: newCandidate.platform || "",
                 status: newCandidate.status || "pending",
                 picture_url: newCandidate.picture_url || "",
+                qualifications_url: newCandidate.qualifications_url || '',
               }
             : c
         ),
@@ -670,6 +698,7 @@ export default function UpdateElectionPage() {
         platform: "",
         status: "pending",
         picture_url: "",
+        qualifications_url: '',
       })
       setImageUrl(''); // Reset the image URL
       setEditingCandidate(null)
@@ -825,6 +854,7 @@ export default function UpdateElectionPage() {
             platform: "",
             status: "pending",
             picture_url: "",
+            qualifications_url: '',
         });
         setNewPosition({
             title: "",
@@ -1014,7 +1044,7 @@ export default function UpdateElectionPage() {
                             Add Candidate
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="max-h-[90vh] h-auto overflow-y-auto rounded-2xl p-4">
                             <DialogHeader>
                             <DialogTitle className="text-red-900">Add New Candidate</DialogTitle>
                             </DialogHeader>
@@ -1115,6 +1145,33 @@ export default function UpdateElectionPage() {
                                 rows={4}
                                 />
                             </div>
+                            <div>
+                                <Label className="text-black">Qualifications</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                    type="text"
+                                    value={qualificationsUrl ? qualificationsUrl.split('/').pop() : ''}
+                                    readOnly
+                                    placeholder="No file uploaded"
+                                    className="flex-1 text-black placeholder-gray-400"
+                                    />
+                                    <input
+                                    type="file"
+                                    accept="image/*"
+                                    ref={qualificationsInputRef}
+                                    style={{ display: 'none' }}
+                                    onChange={handleQualificationsChange}
+                                    />
+                                    <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => qualificationsInputRef.current?.click()}
+                                    className="bg-red-900 text-white"
+                                    >
+                                    Upload
+                                    </Button>
+                                </div>
+                            </div>
                             <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingCandidate}>
                                 {isAddingCandidate ? 'Adding...' : 'Add Candidate'}
                             </Button>
@@ -1162,12 +1219,13 @@ export default function UpdateElectionPage() {
                                   candidate={{ 
                                     ...candidate, 
                                     id: candidateId || candidate.email || 'temp-id', 
-                                    position: position.title 
+                                    position: position.title,
+                                    qualifications_url: candidate.qualifications_url
                                   }}
                                   onDelete={handleDeleteCandidate}
                                   onApprove={isRealUUID ? (id) => handleStatusChange(id, "approved") : undefined}
                                   onDisqualify={isRealUUID ? (id) => handleStatusChange(id, "disqualified") : undefined}
-                                  onViewDetails={setDetailViewCandidate}
+                                  onViewDetails={(candidate) => setDetailViewCandidate({ ...candidate, qualifications_url: candidate.qualifications_url })}
                                   onEdit={handleEditCandidate}
                                   showActions={true}
                                 />
@@ -1189,7 +1247,7 @@ export default function UpdateElectionPage() {
 
                 {/* Edit Candidate Dialog */}
                 <Dialog open={isEditCandidateOpen} onOpenChange={setIsEditCandidateOpen}>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent className="max-h-[90vh] h-auto overflow-y-auto rounded-2xl p-4">
                         <DialogHeader>
                         <DialogTitle className="text-red-900">Edit Candidate</DialogTitle>
                         </DialogHeader>
@@ -1290,7 +1348,7 @@ export default function UpdateElectionPage() {
                             rows={4}
                             />
                         </div>
-                        <div className="text-black">
+                        <div>
                             <Label htmlFor="edit-candidate-status" className="text-black">Status</Label>
                             <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, status: value as "pending" | "approved" | "disqualified" }))}>
                             <SelectTrigger>
@@ -1302,6 +1360,54 @@ export default function UpdateElectionPage() {
                                 <SelectItem value="disqualified">Disqualified</SelectItem>
                             </SelectContent>
                             </Select>
+                        </div>
+                        <div>
+                            <Label htmlFor="edit-candidate-qualifications" className="text-black">Qualifications</Label>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                id="edit-candidate-qualifications"
+                                type="text"
+                                className="text-black flex-1"
+                                value={newCandidate.qualifications_url ? newCandidate.qualifications_url.split('/').pop() : 'No file uploaded'}
+                                readOnly
+                                style={{ background: '#f3f3f3', cursor: 'not-allowed' }}
+                                />
+                                <Button
+                                size="sm"
+                                className="bg-gray-200 text-red-900 hover:bg-gray-100 focus:bg-gray-100 border border-gray-300"
+                                onClick={() => qualificationsInputRef.current?.click()}
+                                type="button"
+                                >
+                                Upload
+                                </Button>
+                                <input
+                                type="file"
+                                accept="image/*"
+                                ref={qualificationsInputRef}
+                                style={{ display: 'none' }}
+                                onChange={handleQualificationsChange}
+                                />
+                                {newCandidate.qualifications_url && (
+                                <Button
+                                    size="sm"
+                                    className="ml-2 bg-blue-100 text-blue-900 border border-blue-300"
+                                    type="button"
+                                    onClick={() => window.open(newCandidate.qualifications_url, '_blank')}
+                                >
+                                    View
+                                </Button>
+                                )}
+                            </div>
+                            {newCandidate.qualifications_url && (
+                                <div className="mt-2 flex justify-center">
+                                <img
+                                    src={newCandidate.qualifications_url}
+                                    alt="Qualifications Preview"
+                                    className="max-h-32 rounded shadow border"
+                                    style={{ objectFit: 'contain' }}
+                                />
+                                </div>
+                            )}
                         </div>
                         <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
                             Update Candidate
@@ -1459,10 +1565,10 @@ export default function UpdateElectionPage() {
                   detailViewCandidate ? {
                     ...detailViewCandidate,
                     id: detailViewCandidate.id ?? detailViewCandidate.email ?? 'generated-id',
-                    positionName: getPositionById(detailViewCandidate.positionId ?? detailViewCandidate.positionId ?? 'generated-id')?.title || "Unknown Position"
+                    positionName: getPositionById(detailViewCandidate.positionId ?? detailViewCandidate.positionId ?? 'generated-id')?.title || "Unknown Position",
+                    qualifications_url: detailViewCandidate.qualifications_url
                   } as any : null
                 }
-
                 isOpen={!!detailViewCandidate}
                 onClose={() => setDetailViewCandidate(null)}
                 onApprove={(id) => handleStatusChange(id, "approved")}

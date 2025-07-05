@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { User, Award, FileText, Check, X, Edit } from "lucide-react"
 import { useRef, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
+import { createPortal } from 'react-dom';
 
 interface CandidateDetailModalProps {
   candidate: {
@@ -23,6 +24,7 @@ interface CandidateDetailModalProps {
     achievements?: string[]
     experience?: string[]
     picture_url?: string
+    qualifications_url?: string
   } | null
   isOpen: boolean
   onClose: () => void
@@ -41,9 +43,12 @@ export function CandidateDetailModal({
 }: CandidateDetailModalProps) {
   if (!candidate) return null
 
+  console.log('Candidate in modal:', candidate);
+
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState(candidate.picture_url || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showQualificationsPreview, setShowQualificationsPreview] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -153,6 +158,50 @@ export function CandidateDetailModal({
             </h3>
             <p className="text-gray-700 leading-relaxed">{candidate.detailedCredentials || candidate.credentials}</p>
           </div>
+
+          {/* Qualifications Section - separate box */}
+          {candidate.qualifications_url && (
+            <div className="bg-white p-6 rounded-lg border border-red-200 mt-4">
+              <h3 className="text-xl font-bold text-red-900 mb-3 flex items-center gap-2">
+                Qualifications
+              </h3>
+              <img
+                src={candidate.qualifications_url}
+                alt="Qualifications"
+                className="rounded border object-contain max-h-64 max-w-full cursor-pointer hover:shadow-lg transition-shadow"
+                style={{ background: "#f3f4f6" }}
+                onClick={() => setShowQualificationsPreview(true)}
+              />
+              {showQualificationsPreview && typeof window !== 'undefined' && createPortal(
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm pointer-events-auto"
+                  style={{ background: "rgba(255,255,255,0.5)" }}
+                  onClick={() => setShowQualificationsPreview(false)}
+                >
+                  <div className="relative" onClick={e => e.stopPropagation()}>
+                    <img
+                      src={candidate.qualifications_url}
+                      alt="Qualifications Full Preview"
+                      className="max-h-[80vh] max-w-[90vw] rounded shadow-lg border-4 border-white"
+                      style={{ background: "#fff" }}
+                    />
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        setShowQualificationsPreview(false);
+                      }}
+                      className="absolute top-2 right-2 z-50 pointer-events-auto bg-white bg-opacity-80 rounded-full px-3 py-1 text-red-900 font-bold text-lg shadow hover:bg-opacity-100 border border-red-200"
+                      type="button"
+                      aria-label="Close preview"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>,
+                window.document.body
+              )}
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 pt-4 border-t border-red-100">
