@@ -109,7 +109,7 @@ export default function VoteNow({ electionId }: VoteNowProps) {
   };
 
   const handleBackToDashboard = () => {
-    router.push(`/Voterdashboard?department_org=${departmentOrg}`);
+    router.push('/Voterdashboard');
   };
 
   const handleLogout = async () => {

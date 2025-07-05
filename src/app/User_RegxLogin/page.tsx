@@ -194,7 +194,7 @@ const SIGNIN: NextPage = () => {
         if (data.user) {
           // Store the session in localStorage
           localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-          router.push(`/Voterdashboard?email=${encodeURIComponent(email)}${voterProfile.department_org ?`&department_org=${encodeURIComponent(voterProfile.department_org)}` : ''}`);
+          router.push('/Voterdashboard');
         }
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');

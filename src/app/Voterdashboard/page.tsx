@@ -28,8 +28,10 @@ export default function VotingDashboard() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const searchParams = useSearchParams();
-  const departmentOrg = searchParams.get("department_org") || searchParams.get("administered_Org");
-  const email = searchParams.get("email") || "";
+  const [userProfile, setUserProfile] = useState<any>(null);
+  // Use userProfile data instead of URL parameters
+  const departmentOrg = userProfile?.department_org || searchParams.get("department_org") || searchParams.get("administered_Org");
+  const email = userProfile?.email || searchParams.get("email") || "";
 
   // Always call hooks at the top level
   useEffect(() => {
@@ -37,11 +39,30 @@ export default function VotingDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       setIsLoggedIn(!!user);
       setAuthChecked(true);
+      
+      // If user is logged in, fetch their profile
+      if (user) {
+        try {
+          const { data: voterProfile, error: voterProfileError } = await supabase
+            .from('voter_profiles')
+            .select('*')
+            .eq('email', user.email)
+            .single();
+            
+          if (!voterProfileError && voterProfile) {
+            setUserProfile(voterProfile);
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
     }
     checkAuth();
   }, []);
 
   useEffect(() => {
+    if (!userProfile) return; // Wait for user profile to load
+    
     setLoading(true);
     async function fetchElections() {
       // 1. Fetch all university-wide elections
@@ -90,7 +111,7 @@ export default function VotingDashboard() {
       });
     }
     fetchElections();
-  }, []);
+  }, [userProfile, departmentOrg]);
 
   const handleLogout = async () => {
     try {
@@ -129,7 +150,7 @@ export default function VotingDashboard() {
   }
 
   const handleVoteNow = (electionId: string) => {
-    router.push(`/OrganizationElection?election_id=${electionId}${`&department_org=${departmentOrg}`}`);
+    router.push(`/OrganizationElection?election_id=${electionId}${userProfile?.department_org ? `&department_org=${encodeURIComponent(userProfile.department_org)}` : ''}`);
   }
 
   // Helper to format date and time in Singapore timezone (like ElectionStatusBar)
