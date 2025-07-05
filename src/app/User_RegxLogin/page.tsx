@@ -15,6 +15,9 @@ const SIGNIN: NextPage = () => {
   const [signInError, setSignInError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [lastTapTime, setLastTapTime] = useState(0);
   const router = useRouter();
 
   const MAX_ATTEMPTS = 5;
@@ -227,6 +230,58 @@ const SIGNIN: NextPage = () => {
     });
   }, [router]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Shift + A + D combination (desktop)
+      if (event.shiftKey && event.key.toLowerCase() === 'a') {
+        // Wait for the 'D' key
+        const handleDKey = (dEvent: KeyboardEvent) => {
+          if (dEvent.key.toLowerCase() === 'd') {
+            setShowAdminLogin(true);
+            document.removeEventListener('keydown', handleDKey);
+          }
+        };
+        document.addEventListener('keydown', handleDKey);
+        
+        // Remove the listener after a short delay if 'D' is not pressed
+        setTimeout(() => {
+          document.removeEventListener('keydown', handleDKey);
+        }, 1000);
+      }
+    };
+
+    const handleTap = () => {
+      const now = Date.now();
+      const timeDiff = now - lastTapTime;
+      
+      // Reset tap count if more than 2 seconds have passed
+      if (timeDiff > 2000) {
+        setTapCount(1);
+      } else {
+        setTapCount(prev => prev + 1);
+      }
+      
+      setLastTapTime(now);
+      
+      // Show admin login after 5 taps
+      if (tapCount + 1 >= 5) {
+        setShowAdminLogin(true);
+        setTapCount(0);
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleTap);
+    document.addEventListener('touchstart', handleTap);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleTap);
+      document.removeEventListener('touchstart', handleTap);
+    };
+  }, [tapCount, lastTapTime]);
+
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -349,12 +404,17 @@ const SIGNIN: NextPage = () => {
               SIGN UP
             </motion.button>
 
-            <motion.button
-              onClick={handleAdminLogin}
-              className="w-full h-[50px] mt-4 flex items-center justify-center text-white text-xl cursor-pointer rounded-lg transition-colors duration-200 hover:text-[#fac36b] underline underline-offset-4"
-            >
-              Login as Admin
-            </motion.button>
+            {showAdminLogin && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={handleAdminLogin}
+                className="w-full h-[50px] mt-4 flex items-center justify-center text-white text-xl cursor-pointer rounded-lg transition-colors duration-200 hover:text-[#fac36b] underline underline-offset-4"
+              >
+                Login as Admin
+              </motion.button>
+            )}
           </motion.div>
         </motion.div>
       </div>
