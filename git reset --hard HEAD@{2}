@@ -1,0 +1,47 @@
+[33m2af981b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mupdated-aboutandloginanimation-page[m[33m, [m[1;31morigin/updated-aboutandloginanimation-page[m[33m)[m HEAD@{0}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m7d28143[m HEAD@{1}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m94bf058[m HEAD@{2}: commit: reviewing candidates debug (course&year and postion)
+[33m1861657[m HEAD@{3}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33ma540c8f[m HEAD@{4}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m8e7e74a[m HEAD@{5}: commit: Added (initial) update election page for modifying upcoming/ongoing sessions.
+[33m59d725d[m HEAD@{6}: commit: Initial fetch logic is added for fetching election data.
+[33m0774856[m HEAD@{7}: commit: Admin can login as voter
+[33mdb74709[m HEAD@{8}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m4096d16[m HEAD@{9}: checkout: moving from Admin-with-database-connection to updated-aboutandloginanimation-page
+[33m5b2cad4[m[33m ([m[1;31morigin/Admin-with-database-connection[m[33m, [m[1;32mAdmin-with-database-connection[m[33m)[m HEAD@{10}: checkout: moving from updated-aboutandloginanimation-page to Admin-with-database-connection
+[33m4096d16[m HEAD@{11}: checkout: moving from Admin-with-database-connection to updated-aboutandloginanimation-page
+[33m5b2cad4[m[33m ([m[1;31morigin/Admin-with-database-connection[m[33m, [m[1;32mAdmin-with-database-connection[m[33m)[m HEAD@{12}: commit: Added initial connection to the database tables with RLS
+[33m45d10b3[m HEAD@{13}: checkout: moving from updated-aboutandloginanimation-page to Admin-with-database-connection
+[33m45d10b3[m HEAD@{14}: commit: minor changes in sign in button logic in sign in page in login as admin page
+[33m1ecdfe6[m HEAD@{15}: commit (merge): Merge branch 'updated-aboutandloginanimation-page' of https://github.com/JohnEmmanuelPacres/Sydney-PollPro---Web-Based-Voting-System-For-University-Level-Elections into updated-aboutandloginanimation-page
+[33m09249a0[m HEAD@{16}: commit: Major changes in both voters and admins registration. Added more important fields to match to database.
+[33ma92ef6b[m HEAD@{17}: pull origin updated-aboutandloginanimation-page: Fast-forward
+[33m3abbbf6[m HEAD@{18}: checkout: moving from updated-aboutandloginanimation-page to updated-aboutandloginanimation-page
+[33m3abbbf6[m HEAD@{19}: checkout: moving from with-AdminDashboard to updated-aboutandloginanimation-page
+[33mdf3032a[m[33m ([m[1;31morigin/with-AdminDashboard[m[33m, [m[1;32mwith-AdminDashboard[m[33m)[m HEAD@{20}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33me4a6194[m HEAD@{21}: commit: Added an Admin Dashboard but still not optimized and complete. Earlier Optimizations of other files are not commited here.
+[33m3abbbf6[m HEAD@{22}: checkout: moving from updated-aboutandloginanimation-page to with-AdminDashboard
+[33m3abbbf6[m HEAD@{23}: commit (merge): Merge branch 'updated-aboutandloginanimation-page' of https://github.com/JohnEmmanuelPacres/Sydney-PollPro---Web-Based-Voting-System-For-University-Level-Elections into updated-aboutandloginanimation-page
+[33med6a216[m HEAD@{24}: commit: Update page.tsx
+[33mbae7ee9[m HEAD@{25}: commit (merge): Merge branch 'updated-aboutandloginanimation-page' of https://github.com/JohnEmmanuelPacres/Sydney-PollPro---Web-Based-Voting-System-For-University-Level-Elections into updated-aboutandloginanimation-page
+[33m970d70c[m[33m ([m[1;31morigin/with-admin-authentications[m[33m, [m[1;32mwith-admin-authentications[m[33m)[m HEAD@{26}: checkout: moving from with-admin-authentications to updated-aboutandloginanimation-page
+[33m970d70c[m[33m ([m[1;31morigin/with-admin-authentications[m[33m, [m[1;32mwith-admin-authentications[m[33m)[m HEAD@{27}: commit: updates for admin authentication
+[33me06602b[m HEAD@{28}: checkout: moving from with-Election-Results-page to with-admin-authentications
+[33me06602b[m HEAD@{29}: pull: Fast-forward
+[33m70ce44e[m HEAD@{30}: commit: Optimized and restructured the code by using components. Also added initial working About and Election Results page.
+[33me2c2065[m HEAD@{31}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m0164e7b[m HEAD@{32}: pull: Fast-forward
+[33m4f996f7[m HEAD@{33}: pull: Fast-forward
+[33m0704fb2[m HEAD@{34}: commit: "Added election results page and optimized some UI elements.
+[33m7341eba[m[33m ([m[1;31morigin/User-Authentication-page[m[33m, [m[1;32mUser-Authentication-page[m[33m)[m HEAD@{35}: checkout: moving from User-Authentication-page to with-Election-Results-page
+[33m7341eba[m[33m ([m[1;31morigin/User-Authentication-page[m[33m, [m[1;32mUser-Authentication-page[m[33m)[m HEAD@{36}: pull: Fast-forward
+[33mdd5e8a5[m HEAD@{37}: reset: moving to HEAD
+[33mdd5e8a5[m HEAD@{38}: pull: Fast-forward
+[33m17a5c40[m HEAD@{39}: commit: Added Registration Page
+[33mbf0e2e9[m HEAD@{40}: pull origin User-Authentication-page: Fast-forward
+[33m73f6eb5[m HEAD@{41}: checkout: moving from User-Authentication-page to User-Authentication-page
+[33m73f6eb5[m HEAD@{42}: checkout: moving from main to User-Authentication-page
+[33m664a849[m HEAD@{43}: checkout: moving from User-Authentication-page to main
+[33m73f6eb5[m HEAD@{44}: commit: Added the first initial login page
+[33m664a849[m HEAD@{45}: checkout: moving from main to User-Authentication-page
+[33m664a849[m HEAD@{46}: commit (initial): Initial commit from Create Next App
