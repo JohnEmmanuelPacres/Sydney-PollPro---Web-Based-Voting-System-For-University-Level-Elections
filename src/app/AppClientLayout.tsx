@@ -17,6 +17,9 @@ export default function AppClientLayout({ children }: { children: React.ReactNod
   // Check if it's the public Update_Section page (exact path without any query parameters)
   const isPublicUpdateSection = pathname === "/Update_Section" && searchParams.toString() === "";
   
+  const isVoterLoginPage = pathname === "/User_RegxLogin";
+  const isAdminLoginPage = pathname === "/User_RegxLogin/LoginAdmin";
+  
   // Don't apply ClientLayout (and AFK timeout) to:
   // - Landing page
   // - CreateAccount page  
@@ -24,5 +27,7 @@ export default function AppClientLayout({ children }: { children: React.ReactNod
   // - About page
   // - Public Election_Results page (only when no query parameters)
   // - Public Update_Section page (only when no query parameters)
-  return (isLandingPage || isCreateAccountPage || isSetPasswordVoterPage || isAboutPage || isPublicElectionResults || isPublicUpdateSection) ? <>{children}</> : <ClientLayout>{children}</ClientLayout>;
+  // - Voter Login page
+  // - Admin Login page
+  return (isLandingPage || isCreateAccountPage || isSetPasswordVoterPage || isAboutPage || isPublicElectionResults || isPublicUpdateSection || isVoterLoginPage || isAdminLoginPage) ? <>{children}</> : <ClientLayout>{children}</ClientLayout>;
 } 
