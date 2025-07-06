@@ -1,42 +1,54 @@
 "use client";
 import { Suspense } from "react";
 import ClientLayout from "@/app/components/LoadingScreenComponents/ClientLayout";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export default function AppClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={null}>
-      <AppClientLayoutInner>{children}</AppClientLayoutInner>
+      <PathnameAwareLayout>{children}</PathnameAwareLayout>
     </Suspense>
   );
 }
 
-function AppClientLayoutInner({ children }: { children: React.ReactNode }) {
+function PathnameAwareLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   
+  // These paths don't need searchParams checks
   const isLandingPage = pathname === "/";
   const isCreateAccountPage = pathname === "/User_RegxLogin/CreateAccount";
   const isSetPasswordVoterPage = pathname === "/User_RegxLogin/SetPasswordVoter";
   const isAboutPage = pathname === "/About";
-  
-  // Check if it's the public Election_Results page (exact path without any query parameters)
-  const isPublicElectionResults = pathname === "/Election_Results" && searchParams.toString() === "";
-  
-  // Check if it's the public Update_Section page (exact path without any query parameters)
-  const isPublicUpdateSection = pathname === "/Update_Section" && searchParams.toString() === "";
-  
   const isVoterLoginPage = pathname === "/User_RegxLogin";
   const isAdminLoginPage = pathname === "/User_RegxLogin/LoginAdmin";
+
+  // For these paths, we'll use a separate component that handles searchParams
+  const needsSearchParamCheck = pathname === "/Election_Results" || pathname === "/Update_Section";
   
-  // Don't apply ClientLayout (and AFK timeout) to:
-  // - Landing page
-  // - CreateAccount page  
-  // - SetPasswordVoter page
-  // - About page
-  // - Public Election_Results page (only when no query parameters)
-  // - Public Update_Section page (only when no query parameters)
-  // - Voter Login page
-  // - Admin Login page
-  return (isLandingPage || isCreateAccountPage || isSetPasswordVoterPage || isAboutPage || isPublicElectionResults || isPublicUpdateSection || isVoterLoginPage || isAdminLoginPage) ? <>{children}</> : <ClientLayout>{children}</ClientLayout>;
-} 
+  if (needsSearchParamCheck) {
+    return (
+      <Suspense fallback={null}>
+        <SearchParamAwareLayout pathname={pathname}>
+          {children}
+        </SearchParamAwareLayout>
+      </Suspense>
+    );
+  }
+
+  // Don't apply ClientLayout to specific pages
+  const shouldSkipClientLayout = isLandingPage || isCreateAccountPage || 
+    isSetPasswordVoterPage || isAboutPage || isVoterLoginPage || isAdminLoginPage;
+
+  return shouldSkipClientLayout ? <>{children}</> : <ClientLayout>{children}</ClientLayout>;
+}
+
+function SearchParamAwareLayout({ children, pathname }: { children: React.ReactNode, pathname: string }) {
+  const searchParams = useSearchParams();
+  
+  const isPublicElectionResults = pathname === "/Election_Results" && searchParams.toString() === "";
+  const isPublicUpdateSection = pathname === "/Update_Section" && searchParams.toString() === "";
+
+  return (isPublicElectionResults || isPublicUpdateSection) ? 
+    <>{children}</> : 
+    <ClientLayout>{children}</ClientLayout>;
+}
