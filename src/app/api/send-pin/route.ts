@@ -19,6 +19,7 @@ const temporaryPINs = new Map<string, {
   email: string;
   courseYear?: string;
   department_org?: string;
+  administered_Org?: string;
 }>();
 
 const generateTemporaryPIN = (): string =>
@@ -26,7 +27,7 @@ const generateTemporaryPIN = (): string =>
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, courseYear = undefined, department_org = undefined } = await request.json();
+    const { email, courseYear = undefined, department_org = undefined, administered_Org = undefined } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
       email,
       ...(courseYear && { courseYear }),
       ...(department_org && { department_org }),
+      ...(administered_Org && { administered_Org }),
     });
 
     console.log(`🔐 Generated PIN for ${email}: ${pin}`);
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
       message: 'PIN generated successfully',
       pin: process.env.NODE_ENV === 'development' ? pin : undefined,
       department_org,
+      administered_Org,
     });
 
   } catch (error: any) {
@@ -126,6 +129,10 @@ export async function PUT(request: NextRequest) {
 
     if (storedData.courseYear) {
       responseData.courseYear = storedData.courseYear;
+    }
+
+    if (storedData.administered_Org) {
+      responseData.administered_Org = storedData.administered_Org;
     }
 
     temporaryPINs.delete(email);
