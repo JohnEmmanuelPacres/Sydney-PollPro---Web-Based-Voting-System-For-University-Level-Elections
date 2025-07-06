@@ -8,33 +8,39 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const electionId = searchParams.get('electionId');
+  let electionId = searchParams.get('electionId');
 
-  if (!electionId) {
-    return NextResponse.json({
-      voters: 0,
-      votes: 0,
-      participation: 0,
-      error: 'Missing electionId parameter.'
-    }, { status: 400 });
-  }
-
-  // Fetch total registered voters eligible for this election
-  // (Assume all voters are eligible unless you have eligibility logic)
+  // Always fetch total registered voters
   const { count: voters } = await supabaseAdmin
     .from('voter_profiles')
     .select('*', { count: 'exact', head: true });
 
-  // Fetch all user_id values from votes for this election and count unique ones
   let uniqueVoters = 0;
   let totalVotes = 0;
+
+  // If no electionId, find the latest university-level election (ongoing or upcoming)
+  if (!electionId) {
+    const now = new Date().toISOString();
+    const { data: elections, error: electionsError } = await supabaseAdmin
+      .from('elections')
+      .select('id, start_date')
+      .eq('is_uni_level', true)
+      .gte('end_date', now)
+      .order('start_date', { ascending: true });
+    if (elections && elections.length > 0) {
+      electionId = elections[0].id;
+    }
+  }
+
+  if (electionId) {
     const { data: votesData } = await supabaseAdmin
       .from('votes')
-    .select('user_id, election_id')
-    .eq('election_id', electionId);
-  if (votesData) {
-    uniqueVoters = new Set(votesData.map(v => v.user_id)).size;
-    totalVotes = votesData.length;
+      .select('user_id, election_id')
+      .eq('election_id', electionId);
+    if (votesData) {
+      uniqueVoters = new Set(votesData.map(v => v.user_id)).size;
+      totalVotes = votesData.length;
+    }
   }
 
   const safeVoters = voters ?? 0;
