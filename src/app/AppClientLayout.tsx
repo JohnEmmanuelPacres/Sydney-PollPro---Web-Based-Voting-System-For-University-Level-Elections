@@ -1,7 +1,7 @@
 "use client";
 import { Suspense } from "react";
 import ClientLayout from "@/app/components/LoadingScreenComponents/ClientLayout";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function AppClientLayout({ children }: { children: React.ReactNode }) {
   return (
