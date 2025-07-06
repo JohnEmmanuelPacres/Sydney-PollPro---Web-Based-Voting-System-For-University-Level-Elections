@@ -10,7 +10,7 @@ interface CompletedElection {
   start_date: string;
   end_date: string;
   allow_abstain: boolean;
-  is_Uni_level: boolean;
+  is_uni_level: boolean;
   org_id: string;
 }
 
@@ -42,7 +42,7 @@ const ReviewElectionPanel: React.FC<ReviewElectionPanelProps> = ({ completedElec
     // Navigate to election results page
     const params = new URLSearchParams({
       election_id: election.id,
-      scope: election.is_Uni_level ? 'university' : 'organization'
+      scope: election.is_uni_level ? 'university' : 'organization'
     });
     window.open(`/dashboard/Admin/ElectionSummaryPage?administered_Org=${administeredOrg}&${params.toString()}`, '_blank');
   };
@@ -102,7 +102,7 @@ const ReviewElectionPanel: React.FC<ReviewElectionPanelProps> = ({ completedElec
               {formatDateForDisplay(election.start_date)} &mdash; {formatDateForDisplay(election.end_date)}
             </p>
             <p className="text-sm text-gray-700">
-              {election.is_Uni_level ? 'University Level Election' : 'Department/Organization Election'}
+              {election.is_uni_level ? 'University Level Election' : 'Department/Organization Election'}
             </p>
           </div>
 

@@ -194,7 +194,7 @@ const SIGNIN: NextPage = () => {
         if (data.user) {
           // Store the session in localStorage
           localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-          router.push('/Voterdashboard');
+          router.push(`/Voterdashboard?department_org=${voterProfile.department_org}`);
         }
       } catch (err) {
         setSignInError('An unexpected error occurred. Please try again.');
@@ -221,9 +221,21 @@ const SIGNIN: NextPage = () => {
   }, [signInError]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        router.push('/Voterdashboard');
+        // Fetch the voter profile to get department_org
+        const { data: voterProfile, error } = await supabase
+          .from('voter_profiles')
+          .select('department_org')
+          .eq('id', session.user.id)
+          .single();
+
+        if (voterProfile && voterProfile.department_org) {
+          router.push(`/Voterdashboard?department_org=${voterProfile.department_org}`);
+        } else {
+          // If no profile or error, just go to dashboard without department_org
+          router.push('/Voterdashboard');
+        }
       } else {
         setLoading(false); // Show login form
       }

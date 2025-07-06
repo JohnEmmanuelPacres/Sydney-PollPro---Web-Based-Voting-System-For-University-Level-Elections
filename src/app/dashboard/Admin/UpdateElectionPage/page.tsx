@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Settings, Eye, CheckCircle, User, Award, Users } from "lucide-react"
+import { Plus, Settings, Eye, CheckCircle, User, Award, Users, Trash2 } from "lucide-react"
 
 // Import custom components
 import { ElectionTabs } from "../../../components/CreateElectionComponents/election-tabs"
@@ -460,6 +460,8 @@ export default function UpdateElectionPage() {
   const [isAddingPosition, setIsAddingPosition] = useState(false);
   const [isAddingCandidate, setIsAddingCandidate] = useState(false);
   const isAddingCandidateRef = useRef(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletingElection, setIsDeletingElection] = useState(false);
 
   // Add state for qualifications upload
   const [qualificationsFile, setQualificationsFile] = useState<File | null>(null);
@@ -881,6 +883,45 @@ export default function UpdateElectionPage() {
     }
   }
 
+  const handleDeleteElection = async () => {
+    if (!electionId) {
+        alert('Election ID is missing. Cannot delete election.');
+        return;
+    }
+
+    try {
+        setIsDeletingElection(true);
+        console.log("🗑️ Starting election deletion...");
+        
+        const response = await fetch('/api/delete-election', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ electionId }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to delete election');
+        }
+
+        alert(result.message || 'Election deleted successfully!');
+        console.log("✅ Election deleted successfully");
+        
+        // Redirect back to admin dashboard
+        window.location.href = '/dashboard/Admin';
+        
+    } catch (error) {
+        console.error('❌ Error deleting election:', error);
+        alert('Failed to delete election. Please try again.');
+    } finally {
+        setIsDeletingElection(false);
+        setIsDeleteDialogOpen(false);
+    }
+  }
+
   const getPositionCandidates = (positionId: string) => {
     return election.candidates.filter((c) => c.positionId === positionId)
   }
@@ -915,8 +956,79 @@ export default function UpdateElectionPage() {
         {/* Semantic Main Content */}
         <main className="pt-32"> {/* Adjust based on header height */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-3xl font-bold text-white">Update Election</h1>
-                <p className="text-red-100 mt-1">Update election with positions, candidates, and voting rules</p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white">Update Election</h1>
+                        <p className="text-red-100 mt-1">Update election with positions, candidates, and voting rules</p>
+                    </div>
+                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button 
+                                variant="destructive" 
+                                className="bg-red-800 hover:bg-red-500 text-white"
+                                size="lg"
+                            >
+                                <Trash2 className="w-5 h-5 mr-2" />
+                                Delete Election
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="text-red-900 text-xl">Delete Election</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                <div className="text-center">
+                                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Trash2 className="w-8 h-8 text-red-600" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                        Are you absolutely sure?
+                                    </h3>
+                                    <p className="text-gray-600 mb-4">
+                                        This action cannot be undone. This will permanently delete the election 
+                                        <span className="font-semibold text-red-900"> "{election.name}"</span> and all associated data including:
+                                    </p>
+                                    <ul className="text-left text-sm text-gray-600 space-y-1 mb-6">
+                                        <li>• All positions and candidates</li>
+                                        <li>• All votes and voting records</li>
+                                        <li>• All election settings and configurations</li>
+                                    </ul>
+                                    <p className="text-red-600 font-medium">
+                                        This action is irreversible!
+                                    </p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setIsDeleteDialogOpen(false)}
+                                        className="flex-1"
+                                        disabled={isDeletingElection}
+                                    >
+                                        <div className="text-black">Cancel</div>
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleDeleteElection}
+                                        className="flex-1 bg-red-600 hover:bg-red-700"
+                                        disabled={isDeletingElection}
+                                    >
+                                        {isDeletingElection ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                                Deleting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Trash2 className="w-4 h-4 mr-2" />
+                                                Delete Permanently
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
             <div className="max-w-7xl mx-auto p-6">
                 {/* Navigation Tabs */}

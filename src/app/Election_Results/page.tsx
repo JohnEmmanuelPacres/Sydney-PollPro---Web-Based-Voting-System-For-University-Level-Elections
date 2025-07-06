@@ -123,9 +123,11 @@ const Results: NextPage = () => {
           <div className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
             {!propsReady ? (
               <div className="flex items-center justify-center min-h-[300px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+              <div className="flex items-center gap-4"> {/* Add this wrapper */}
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                 <div className="text-white text-xl">Loading election results...</div>
               </div>
+            </div>
             ) : (
               <ElectionResultsDisplay 
                 electionId={electionID || undefined}

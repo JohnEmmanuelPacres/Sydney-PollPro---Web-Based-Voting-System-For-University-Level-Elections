@@ -14,6 +14,7 @@ import { Vote, Building, University, TrendingUp, Users } from "lucide-react"
 import { useElection } from "../components/election-context"
 import { UniversityElectionCard } from "../components/university-election-card"
 import { OrganizationElectionCard } from "../components/organization-election-card"
+import Footer from "../components/Footer";
 
 export default function VotingDashboard() {
   const { getOrganizationById } = useElection()
@@ -297,9 +298,7 @@ export default function VotingDashboard() {
         </div>
       </main>
       {/* Footer with quick links */}
-      <footer className="w-full bg-red-950 shadow-[0px_5px_4px_0px_rgba(0,0,0,0.50)] mt-12 py-10 px-6 flex flex-col items-center justify-center gap-5 text-center">
-        <div className="text-white text-sm font-semibold tracking-wide">© 2025 SydneyPolls. All rights reserved.</div>
-      </footer>
+      <Footer />
       {/* Election Details Modal */}
       {(modalLoading || selectedElection) && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 z-50">

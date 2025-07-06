@@ -8,7 +8,7 @@ interface CompletedElection {
   start_date: string;
   end_date: string;
   allow_abstain: boolean;
-  is_Uni_level: boolean;
+  is_uni_level: boolean;
   org_id: string;
 }
 

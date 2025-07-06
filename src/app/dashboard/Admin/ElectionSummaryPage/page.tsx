@@ -7,8 +7,9 @@ import PollCard from '../../../components/PollCard';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { supabase } from '@/utils/supabaseClient';
 import { Badge } from "@/components/ui/badge";
-import { Eye, CheckCircle, Users, Vote, TrendingUp } from "lucide-react";
+import { Eye, CheckCircle, Users, Vote, TrendingUp, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Footer from "../../../components/Footer";
 
 interface Candidate {
@@ -54,6 +55,7 @@ export default function ElectionSummaryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [electionStatus, setElectionStatus] = useState<string>('');
+  const [displayStatus, setDisplayStatus] = useState<string>(''); // For manual status override
   const [isLive, setIsLive] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<'preview' | 'results'>('preview');
@@ -222,6 +224,13 @@ export default function ElectionSummaryPage() {
     fetchVoteData();
   }, [electionId, type, department_org, isLive]);
 
+  // Sync display status with actual election status when it changes
+  useEffect(() => {
+    if (electionStatus && !displayStatus) {
+      setDisplayStatus(electionStatus);
+    }
+  }, [electionStatus, displayStatus]);
+
   // Auto-refresh for live results
   useEffect(() => {
     if (!isLive || electionStatus !== 'active') return;
@@ -258,7 +267,7 @@ export default function ElectionSummaryPage() {
         `Description,${election?.description || 'No description'}`,
         `Start Date,${election?.startDate || 'Unknown'}`,
         `End Date,${election?.endDate || 'Unknown'}`,
-        `Election Status,${electionStatus || 'Unknown'}`,
+        `Election Status,${displayStatus || electionStatus || 'Unknown'}`,
         `Election Type,${election?.settings?.isUniLevel ? 'University Level' : 'Organization Level'}`,
         `Allow Abstain,${election?.settings?.allowAbstain ? 'Yes' : 'No'}`,
         '',
@@ -338,6 +347,7 @@ export default function ElectionSummaryPage() {
       case 'active': return 'text-green-600 bg-green-100';
       case 'completed': return 'text-blue-600 bg-blue-100';
       case 'upcoming': return 'text-yellow-600 bg-yellow-100';
+      case 'annulled': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -490,13 +500,27 @@ export default function ElectionSummaryPage() {
                   <CardContent className="space-y-4 sm:space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
                       <div className="flex items-center gap-2 sm:gap-4">
-                        {electionStatus && (
-                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(electionStatus)}`}>
-                            {electionStatus.toUpperCase()}
-                  </span>
-                )}
-              </div>
-              
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700">Status:</span>
+                          <Select value={displayStatus} onValueChange={setDisplayStatus}>
+                            <SelectTrigger className="w-32 sm:w-40">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="annulled">Annulled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {displayStatus && (
+                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(displayStatus)}`}>
+                            {displayStatus.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        * Status can be manually changed for display and export purposes
+                      </div>
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <button
                   onClick={fetchVoteData}

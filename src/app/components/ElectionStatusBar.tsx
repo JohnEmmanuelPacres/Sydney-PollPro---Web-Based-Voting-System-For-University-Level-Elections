@@ -8,7 +8,7 @@ interface ElectionStatusBarProps {
     name: string;
     start_date: string;
     end_date: string;
-    is_Uni_level: boolean;
+    is_uni_level: boolean;
     allow_abstain: boolean;
   };
   onClick?: () => void;
@@ -93,7 +93,7 @@ const ElectionStatusBar: React.FC<ElectionStatusBarProps> = ({ election }) => {
             {formatDateForDisplay(election.start_date)} &mdash; {formatDateForDisplay(election.end_date)}
           </p>
           <p className="text-sm text-gray-700">
-            {election.is_Uni_level ? 'University Level Election' : 'Department/Organization Election'}
+            {election.is_uni_level ? 'University Level Election' : 'Department/Organization Election'}
           </p>
         </div>
 

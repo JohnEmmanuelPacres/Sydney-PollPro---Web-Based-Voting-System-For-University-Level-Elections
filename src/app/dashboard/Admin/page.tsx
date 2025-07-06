@@ -20,7 +20,7 @@ interface Election {
   start_date: string;
   end_date: string;
   allow_abstain: boolean;
-  is_Uni_level: boolean;
+  is_uni_level: boolean;
   org_id: string;
 }
 
@@ -116,7 +116,7 @@ const AdminDashboardNoSession: NextPage = () => {
         return (
           election.name.toLowerCase().includes(searchLower) ||
           (election.description && election.description.toLowerCase().includes(searchLower)) ||
-          (election.is_Uni_level ?? false).toString().toLowerCase().includes(searchLower) ||
+          (election.is_uni_level ?? false).toString().toLowerCase().includes(searchLower) ||
           election.allow_abstain.toString().toLowerCase().includes(searchLower)
         );
       });
