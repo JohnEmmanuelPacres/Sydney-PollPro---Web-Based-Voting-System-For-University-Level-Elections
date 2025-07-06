@@ -18,8 +18,9 @@ const temporaryPINs = new Map<string, {
   timestamp: number;
   email: string;
   courseYear?: string;
-  department_org?: string;
-  administered_Org?: string;
+  programOrg?: string;
+  advocacyOrgs?: string[];
+  adminOrgs?: string[];
 }>();
 
 const generateTemporaryPIN = (): string =>
@@ -27,7 +28,7 @@ const generateTemporaryPIN = (): string =>
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, courseYear = undefined, department_org = undefined, administered_Org = undefined } = await request.json();
+    const { email, courseYear = undefined, programOrg = undefined, advocacyOrgs = undefined, adminOrgs = undefined } = await request.json();
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -41,13 +42,16 @@ export async function POST(request: NextRequest) {
       timestamp: Date.now(),
       email,
       ...(courseYear && { courseYear }),
-      ...(administered_Org && { administered_Org }),
-      ...(department_org && { department_org }),
+      ...(programOrg && { programOrg }),
+      ...(advocacyOrgs && { advocacyOrgs }),
+      ...(adminOrgs && { adminOrgs }),
     });
 
     console.log(`🔐 Generated PIN for ${email}: ${pin}`);
-    console.log(`🏛️ Org: ${administered_Org || 'None'}, 📚 Year: ${courseYear || 'None'}`);
-    console.log(`🏢 Department/Org: ${department_org || 'None'}`);
+    console.log(`📚 Course Year: ${courseYear || 'None'}`);
+    console.log(`🏢 Program Org: ${programOrg || 'None'}`);
+    console.log(`🎯 Advocacy Orgs: ${advocacyOrgs?.join(', ') || 'None'}`);
+    console.log(`⚙️ Admin Orgs: ${adminOrgs?.join(', ') || 'None'}`);
 
     // 3. Send Email
     try {
@@ -80,7 +84,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'PIN generated successfully',
       pin: process.env.NODE_ENV === 'development' ? pin : undefined,
-      administered_Org,
+      programOrg,
     });
 
   } catch (error: any) {
@@ -115,30 +119,36 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid PIN' }, { status: 400 });
     }
 
-    console.log("PUT orgName:", storedData.administered_Org);
-    console.log("PUT deptName:", storedData.department_org);
+    console.log("PUT programOrg:", storedData.programOrg);
+    console.log("PUT advocacyOrgs:", storedData.advocacyOrgs);
+    console.log("PUT adminOrgs:", storedData.adminOrgs);
 
     const responseData: any = {
       success: true,
       message: 'PIN verified successfully'
     };
 
-    if (storedData.administered_Org) {
-      responseData.administered_Org = storedData.administered_Org;
+    if (storedData.programOrg) {
+      responseData.programOrg = storedData.programOrg;
     }
 
     if (storedData.courseYear) {
       responseData.courseYear = storedData.courseYear;
     }
 
-    if (storedData.department_org) {
-      responseData.department_org = storedData.department_org;
+    if (storedData.advocacyOrgs) {
+      responseData.advocacyOrgs = storedData.advocacyOrgs;
+    }
+
+    if (storedData.adminOrgs) {
+      responseData.adminOrgs = storedData.adminOrgs;
     }
 
     temporaryPINs.delete(email);
     console.log('🧠 Sending to client:', responseData);
-    console.log("✅ Returning from memory:", storedData.administered_Org);
-    console.log("✅ Returning from memory:", storedData.department_org);
+    console.log("✅ Returning from memory:", storedData.programOrg);
+    console.log("✅ Returning from memory:", storedData.advocacyOrgs);
+    console.log("✅ Returning from memory:", storedData.adminOrgs);
     return NextResponse.json(responseData);
   } catch (error) {
     console.error('PIN verification error:', error);
