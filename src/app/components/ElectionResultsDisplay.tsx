@@ -11,6 +11,7 @@ interface Candidate {
   course_year: string;
   picture_url?: string;
   votes: number;
+  is_abstain?: boolean;
 }
 
 interface PositionResult {
@@ -35,6 +36,8 @@ const supabase = createClient(
 const positionOrder = [
   "President",
   "Vice President",
+  "Vice President Internal",
+  "Vice President External",
   "Secretary",
   "Treasurer",
   "Auditor",
@@ -44,7 +47,8 @@ const positionOrder = [
   "Representative",
   "Councilor",
   "Senator",
-  "Delegate"
+  "Delegate",
+  "Committee"
 ];
 
 export default function ElectionResultsDisplay({
@@ -166,7 +170,10 @@ export default function ElectionResultsDisplay({
               {poll.position}
             </h3>
             <div className="space-y-8">
-              {poll.candidates.map((candidate, candidateIndex) => {
+              {/* Regular candidates only - abstain votes are hidden from public results */}
+              {poll.candidates
+                .filter(candidate => !candidate.is_abstain)
+                .map((candidate, candidateIndex) => {
                 const percent =
                   totalVoters && totalVoters > 0
                     ? (candidate.votes / totalVoters) * 100

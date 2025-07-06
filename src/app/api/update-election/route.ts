@@ -28,6 +28,7 @@ interface candidate {
   detailed_achievements?: string;
   picture_url?: string;
   qualifications_url?: string;
+  isAbstain?: boolean;
 }
 
 // Helper to create ISO string from admin's input (same as create-elections)
@@ -66,7 +67,6 @@ export async function POST(request: NextRequest) {
         end_date: createDateTimeISO(electionData.endDate, electionData.endTime),
         is_uni_level: electionData.settings.isUniLevel,
         allow_abstain: electionData.settings.allowAbstain,
-        eligible_courseYear: electionData.settings.eligibleCourseYear,
       })
       .eq('id', electionId);
 
@@ -210,6 +210,7 @@ export async function POST(request: NextRequest) {
               detailed_achievements: achievementsValue,
               picture_url: candidate.picture_url,
               qualifications_url: candidate.qualifications_url,
+              is_abstain: candidate.isAbstain || false,
             })
             .eq('id', candidate.id)
             .eq('election_id', electionId);
@@ -233,6 +234,7 @@ export async function POST(request: NextRequest) {
               detailed_achievements: achievementsValue,
               picture_url: candidate.picture_url,
               qualifications_url: candidate.qualifications_url,
+              is_abstain: candidate.isAbstain || false,
               election_id: electionId,
             })
             .select('id')

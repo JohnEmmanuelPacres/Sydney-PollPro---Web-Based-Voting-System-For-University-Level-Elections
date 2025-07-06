@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { electionId, name, email, positionId, status, credentials, course, year, platform, picture_url, qualifications_url } = await request.json();
+    const { electionId, name, email, positionId, status, credentials, course, year, platform, picture_url, qualifications_url, isAbstain } = await request.json();
     if (!electionId || !name || !email || !positionId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
         platform: platform || '',
         picture_url: picture_url || null,
         qualifications_url: qualifications_url || null,
+        is_abstain: isAbstain || false,
       })
       .select()
       .single();

@@ -26,7 +26,7 @@ import { MultiSelectDropdown } from "../../../components/CreateElectionComponent
 import AdminHeader from "../../../components/AdminHeader"
 
 interface Position {
-  id?: string
+  id: string
   title: string
   description: string
   maxCandidates: number
@@ -49,6 +49,7 @@ interface Candidate {
   achievements?: string[]
   experience?: string[]
   qualifications_url?: string
+  isAbstain?: boolean
 }
 
 interface Election {
@@ -62,10 +63,7 @@ interface Election {
   candidates: Candidate[];
   settings: {
     isUniLevel: boolean;
-    isOrgLevel: boolean;
     allowAbstain: boolean;
-    eligibleOrganizations: string[];
-    useAdministeredOrg: boolean;
   };
 }
 
@@ -117,7 +115,7 @@ const organizationCategories = [
 
 const defaultPositions: Position[] = [
   {
-    id: "1",
+    id: crypto.randomUUID(),
     title: "President",
     description: "Chief executive of the student body",
     maxCandidates: 5,
@@ -125,7 +123,7 @@ const defaultPositions: Position[] = [
     isRequired: true,
   },
   {
-    id: "2",
+    id: crypto.randomUUID(),
     title: "Vice President",
     description: "Second in command and legislative leader",
     maxCandidates: 5,
@@ -133,7 +131,7 @@ const defaultPositions: Position[] = [
     isRequired: true,
   },
   {
-    id: "3",
+    id: crypto.randomUUID(),
     title: "Secretary",
     description: "Records keeper and communications officer",
     maxCandidates: 3,
@@ -141,7 +139,7 @@ const defaultPositions: Position[] = [
     isRequired: true,
   },
   {
-    id: "4",
+    id: crypto.randomUUID(),
     title: "Treasurer",
     description: "Financial officer and budget manager",
     maxCandidates: 3,
@@ -259,8 +257,6 @@ export default function UpdateElectionPage() {
     settings: {
       isUniLevel: false,
       allowAbstain: true,
-      eligibleOrganizations: [],
-      useAdministeredOrg: true,
     },
   })
 
@@ -308,6 +304,55 @@ export default function UpdateElectionPage() {
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
   }
+
+  // Function to create abstain candidate for a position
+  const createAbstainCandidate = (positionId: string): Candidate => {
+    return {
+      name: "Abstain",
+      email: "abstain@election.system",
+      positionId: positionId,
+      status: "approved", // Abstain is always approved
+      credentials: "Voter chose to abstain from voting for this position",
+      course: "",
+      year: "",
+      platform: "This option allows voters to abstain from voting for this position",
+      isAbstain: true,
+      picture_url: "",
+      qualifications_url: "",
+    }
+  }
+
+  // Function to add abstain candidates to all positions
+  const addAbstainCandidatesToAllPositions = () => {
+    if (!election.settings.allowAbstain) return;
+    // Remove all existing abstain candidates first
+    setElection(prev => {
+      const filteredCandidates = prev.candidates.filter(c => !c.isAbstain);
+      // Add one abstain candidate per position
+      const abstainCandidates = prev.positions.map(position => createAbstainCandidate(position.id));
+      return {
+        ...prev,
+        candidates: [...filteredCandidates, ...abstainCandidates]
+      };
+    });
+  }
+
+  // Function to remove abstain candidates from all positions
+  const removeAbstainCandidatesFromAllPositions = () => {
+    setElection(prev => ({
+      ...prev,
+      candidates: prev.candidates.filter(c => !c.isAbstain)
+    }));
+  }
+
+  // Effect to handle abstain candidates when allowAbstain setting changes
+  useEffect(() => {
+    if (election.settings.allowAbstain) {
+      addAbstainCandidatesToAllPositions();
+    } else {
+      removeAbstainCandidatesFromAllPositions();
+    }
+  }, [election.settings.allowAbstain, election.positions.length]);
 
   // Helper function to parse course_year string (same as in API route)
   const parseCourseYear = (courseYearString: string | null | undefined): { course: string; year: string } => {
@@ -398,6 +443,7 @@ export default function UpdateElectionPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             electionId,
+            id: crypto.randomUUID(),
             title: newPosition.title,
             description: newPosition.description,
             maxCandidates: newPosition.maxCandidates || 3,
@@ -500,11 +546,17 @@ export default function UpdateElectionPage() {
     setIsEditCandidateOpen(true)
   }
 
-  const handleUpdateCandidate = () => {
-    if (editingCandidate && newCandidate.name && newCandidate.email && newCandidate.positionId) {
+  const handleUpdateCandidate = async () => {
+    if (!editingCandidate || !newCandidate.name || !newCandidate.email || !newCandidate.positionId) {
+      alert('Please fill in all required fields for the candidate.');
+      return;
+    }
+
+    try {
       // Parse the course-year input
       const { course, year } = parseCourseYear(newCandidate.course);
       
+      // Update local state first for immediate UI feedback
       setElection((prev) => ({
         ...prev,
         candidates: prev.candidates.map((c) =>
@@ -524,7 +576,40 @@ export default function UpdateElectionPage() {
               }
             : c
         ),
-      }))
+      }));
+
+      // Persist changes to database
+      const response = await fetch('/api/update-candidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId: editingCandidate.id,
+          candidateData: {
+            name: newCandidate.name,
+            email: newCandidate.email,
+            positionId: newCandidate.positionId,
+            credentials: newCandidate.credentials || "",
+            course: course,
+            year: year,
+            platform: newCandidate.platform || "",
+            status: newCandidate.status || "pending",
+            picture_url: newCandidate.picture_url || "",
+            qualifications_url: newCandidate.qualifications_url || '',
+          }
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Failed to update candidate in database:', result.error);
+        alert('Failed to update candidate in database: ' + result.error);
+        // Revert local state on error
+        await fetchElectionData();
+        return;
+      }
+
+      console.log('✅ Candidate updated successfully in database');
       
       // Reset form
       setNewCandidate({
@@ -538,10 +623,16 @@ export default function UpdateElectionPage() {
         status: "pending",
         picture_url: "",
         qualifications_url: '',
-      })
+      });
       setImageUrl(''); // Reset the image URL
-      setEditingCandidate(null)
-      setIsEditCandidateOpen(false)
+      setEditingCandidate(null);
+      setIsEditCandidateOpen(false);
+      
+    } catch (error) {
+      console.error('❌ Error updating candidate:', error);
+      alert('Failed to update candidate. Please try again.');
+      // Revert local state on error
+      await fetchElectionData();
     }
   }
 
@@ -663,22 +754,36 @@ export default function UpdateElectionPage() {
     try {
         console.log("🔄 Starting election update...");
         
+        // Separate regular candidates from abstain candidates
+        const regularCandidates = election.candidates.filter(c => !c.isAbstain);
+        const abstainCandidates = election.candidates.filter(c => c.isAbstain);
+        
         // Transform candidate data to match database schema
+        const transformedRegularCandidates = regularCandidates.map(candidate => ({
+            ...candidate,
+            course_year: candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : '',
+            detailed_achievements: candidate.credentials || '',
+            // Remove the separate course and year fields as they're not in the database schema
+            course: undefined,
+            year: undefined,
+            credentials: undefined
+        }));
+
+        const transformedAbstainCandidates = abstainCandidates.map(candidate => ({
+            ...candidate,
+            course_year: candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : '',
+            detailed_achievements: candidate.credentials || '',
+            course: undefined,
+            year: undefined,
+            credentials: undefined,
+            isAbstain: true,
+        }));
+        
         const transformedElectionData = {
             ...election,
-            candidates: election.candidates.map(candidate => ({
-                ...candidate,
-                course_year: candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : '',
-                detailed_achievements: candidate.credentials || '',
-                // Remove the separate course and year fields as they're not in the database schema
-                course: undefined,
-                year: undefined,
-                credentials: undefined
-            })),
+            candidates: [...transformedRegularCandidates, ...transformedAbstainCandidates],
             settings: {
-                ...election.settings,
-                eligibleOrganizations: election.settings.eligibleOrganizations
-            }
+                ...election.settings}
         };
         
         const response = await fetch('/api/update-election', {
@@ -767,7 +872,7 @@ export default function UpdateElectionPage() {
         console.log("✅ Election deleted successfully");
         
         // Redirect back to admin dashboard
-        window.location.href = '/dashboard/Admin';
+        window.location.href = `/dashboard/Admin?administered_Org=${administeredOrg}`;
         
     } catch (error) {
         console.error('❌ Error deleting election:', error);
@@ -779,7 +884,11 @@ export default function UpdateElectionPage() {
   }
 
   const getPositionCandidates = (positionId: string) => {
-    return election.candidates.filter((c) => c.positionId === positionId)
+    return election.candidates.filter((c) => c.positionId === positionId && !c.isAbstain)
+  }
+
+  const getPositionAbstainCandidate = (positionId: string) => {
+    return election.candidates.find((c) => c.positionId === positionId && c.isAbstain)
   }
 
   const getPositionById = (positionId: string) => {
@@ -829,8 +938,8 @@ export default function UpdateElectionPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">Update Election</h1>
-                        <p className="text-red-100 mt-1">Update election with positions, candidates, and voting rules</p>
+                <h1 className="text-3xl font-bold text-white">Update Election</h1>
+                <p className="text-red-100 mt-1">Update election with positions, candidates, and voting rules</p>
                     </div>
                     <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                         <DialogTrigger asChild>
@@ -1027,11 +1136,11 @@ export default function UpdateElectionPage() {
                             Add Candidate
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-h-[90vh] h-auto overflow-y-auto rounded-2xl p-4">
+                        <DialogContent className="w-full max-w-2xl max-h-[90vh] h-auto flex flex-col rounded-2xl p-6">
                             <DialogHeader>
                             <DialogTitle className="text-red-900">Add New Candidate</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
+                            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                             <div className="flex flex-col items-center">
                                 <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
                                 {imageUrl ? (
@@ -1155,9 +1264,11 @@ export default function UpdateElectionPage() {
                                     </Button>
                                 </div>
                             </div>
-                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingCandidate}>
-                                {isAddingCandidate ? 'Adding...' : 'Add Candidate'}
-                            </Button>
+                            </div>
+                            <div className="sticky bottom-0 pt-4 border-t border-gray-200 bg-white">
+                                <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingCandidate}>
+                                    {isAddingCandidate ? 'Adding...' : 'Add Candidate'}
+                                </Button>
                             </div>
                         </DialogContent>
                         </Dialog>
@@ -1171,6 +1282,11 @@ export default function UpdateElectionPage() {
                             <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
                             {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length} candidates
                             </Badge>
+                            {election.settings.allowAbstain && (
+                              <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                                + Abstain option
+                              </Badge>
+                            )}
                         </div>
                         
                         {/* Warning for candidates without real UUIDs */}
@@ -1215,6 +1331,25 @@ export default function UpdateElectionPage() {
                               );
                             })}
                         </div>
+                        
+                        {/* Show abstain candidate if enabled */}
+                        {election.settings.allowAbstain && getPositionAbstainCandidate(position.id ?? position.title ?? 'generated-id') && (
+                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="text-blue-900 font-semibold">Abstain Option</h4>
+                                <p className="text-blue-700 text-sm">Voters can choose to abstain from voting for this position</p>
+                              </div>
+                              <Badge className="bg-blue-600 text-white">System Generated</Badge>
+                            </div>
+                          </div>
+                        )}
+                        
                         {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length === 0 && (
                             <EmptyState
                             icon={<User className="w-12 h-12" />}
@@ -1230,11 +1365,11 @@ export default function UpdateElectionPage() {
 
                 {/* Edit Candidate Dialog */}
                 <Dialog open={isEditCandidateOpen} onOpenChange={setIsEditCandidateOpen}>
-                    <DialogContent className="max-h-[90vh] h-auto overflow-y-auto rounded-2xl p-4">
+                    <DialogContent className="w-full max-w-2xl max-h-[90vh] h-auto flex flex-col rounded-2xl p-6">
                         <DialogHeader>
                         <DialogTitle className="text-red-900">Edit Candidate</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4">
+                        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                         <div className="flex flex-col items-center">
                             <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
                             {imageUrl ? (
@@ -1392,9 +1527,11 @@ export default function UpdateElectionPage() {
                                 </div>
                             )}
                         </div>
-                        <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
-                            Update Candidate
-                        </Button>
+                        </div>
+                        <div className="sticky bottom-0 pt-4 border-t border-gray-200 bg-white">
+                            <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
+                                Update Candidate
+                            </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1436,19 +1573,16 @@ export default function UpdateElectionPage() {
                                 <Switch
                                 id="uni-level"
                                 checked={election.settings.isUniLevel}
-                                disabled={election.settings.isOrgLevel}
                                 onCheckedChange={(checked) =>
-                                    setElection((prev) => ({
+                                setElection((prev) => ({
                                     ...prev,
-                                    settings: { 
-                                        ...prev.settings, 
-                                        isUniLevel: checked,
-                                        isOrgLevel: checked ? false : prev.settings.isOrgLevel,
-                                        eligibleOrganizations: checked ? [] : prev.settings.eligibleOrganizations
+                                    settings: {
+                                        ...prev.settings,
+                                        isUniLevel: checked
                                     },
-                                    }))
+                                }))
                                 }
-                                />
+                        />
                             </div>
             
                         </div>
@@ -1494,9 +1628,16 @@ export default function UpdateElectionPage() {
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-semibold text-red-900">{position.title}</h4>
-                                <Badge className="bg-yellow-100 text-yellow-800">
+                                <div className="flex gap-2">
+                                  <Badge className="bg-yellow-100 text-yellow-800">
                                     {getPositionCandidates(position.id ?? position.title ?? 'generated-id').length} candidates
-                                </Badge>
+                                  </Badge>
+                                  {election.settings.allowAbstain && (
+                                    <Badge className="bg-blue-100 text-blue-800">
+                                      + Abstain option
+                                    </Badge>
+                                  )}
+                                </div>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-3">{position.description}</p>
                                 <div className="flex flex-wrap gap-2">
@@ -1505,10 +1646,34 @@ export default function UpdateElectionPage() {
                                     {candidate.name}
                                     </Badge>
                                 ))}
+                                {election.settings.allowAbstain && (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    Abstain
+                                  </Badge>
+                                )}
                                 </div>
                             </CardContent>
                             </Card>
                         ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">Election Settings</h3>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-blue-700">University Level Election:</span>
+                                <span className="font-medium">{election.settings.isUniLevel ? 'Yes' : 'No'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-blue-700">Allow Abstain Votes:</span>
+                                <span className="font-medium">{election.settings.allowAbstain ? 'Yes' : 'No'}</span>
+                            </div>
+                            {election.settings.allowAbstain && (
+                                <p className="text-blue-600 text-xs mt-2">
+                                    ℹ️ Voters will see an "Abstain" option for each position, allowing them to choose not to vote for any candidate.
+                                </p>
+                            )}
                         </div>
                     </div>
 

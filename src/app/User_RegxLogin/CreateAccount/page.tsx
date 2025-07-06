@@ -393,7 +393,7 @@ const CreateAccount = () => {
     } else if (e.key === 'Enter' && highlightedIndexCourseYear >= 0) {
       setFormData((prev) => ({ ...prev, courseYear: filteredOptions[highlightedIndexCourseYear] }));
       setDropdownOpenCourseYear(false);
-      setHighlightedIndexDepartment(-1);
+      setHighlightedIndexCourseYear(-1);
     } else if (e.key === 'Escape') {
       setDropdownOpenCourseYear(false);
       setHighlightedIndexCourseYear(-1);
@@ -446,25 +446,21 @@ const CreateAccount = () => {
     setError(null);
     setSuccess(null);
     
-    try {
-      // Validate all required fields are filled
-      if (!formData.email.trim()) {
-        setError('Please enter your institutional email address');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!formData.courseYear.trim()) {
-        setError('Please select your course and year');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!formData.programOrg.trim()) {
-        setError('Please select your program organization');
-        setIsLoading(false);
-        return;
-      }
+    // Validate all required fields are filled
+    if (!formData.email.trim()) {
+      setError('Please enter your institutional email address');
+      return;
+    }
+    
+    if (!formData.courseYear.trim()) {
+      setError('Please select your course and year');
+      return;
+    }
+    
+    if (!formData.programOrg.trim()) {
+      setError('Please select your program organization');
+      return;
+    }
 
     if (!formData.email.endsWith('@cit.edu')) {
       setError('Please use your CIT email address (@cit.edu)');
@@ -484,22 +480,19 @@ const CreateAccount = () => {
     setIsCooldownActive(false);
     setCooldownSeconds(5);
     setIsLoading(true);
+    setError(null);
+    setSuccess(null);
     
     try {
-      try {
-        const checkRes = await fetch('/api/check-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email }),
-        });
-        const checkData = await checkRes.json();
-        if (checkData.exists) {
-          setError('This email is already registered. Please log in or use a different email.');
-          setIsLoading(false);
-          return;
-        }
-      } catch (err) {
-        setError('Could not verify email. Please try again.');
+      // Check if email already exists
+      const checkRes = await fetch('/api/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const checkData = await checkRes.json();
+      if (checkData.exists) {
+        setError('This email is already registered. Please log in or use a different email.');
         setIsLoading(false);
         return;
       }
@@ -710,9 +703,9 @@ const CreateAccount = () => {
                             onClick={() => {
                               setFormData((prev) => ({ ...prev, courseYear: option }));
                               setDropdownOpenCourseYear(false);
-                              setHighlightedIndexDepartment(-1);
+                              setHighlightedIndexCourseYear(-1);
                             }}
-                            onMouseEnter={() => setHighlightedIndexDepartment(idx)}
+                            onMouseEnter={() => setHighlightedIndexCourseYear(idx)}
                             role="option"
                             aria-selected={formData.courseYear === option}
                           >

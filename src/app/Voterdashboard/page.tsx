@@ -218,15 +218,15 @@ export default function VotingDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#52100D]">
-      <VoterHeader /> 
+    <div className="min-h-screen flex flex-col bg-[#52100D]">
+      <VoterHeader />
       <div className="bg-gradient-to-r from-red-900 to-red-800 text-white p-6 mt-33">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold mb-2">Election Dashboard</h2>
           <p className="text-red-100">Welcome to the UniVote Dashboard</p>
         </div>
       </div>
-      <main className="pt-15 pb-8 px-4 space-y-8">
+      <main className="flex-1 pt-15 pb-8 px-4 space-y-8">
         <div className="max-w-7xl mx-auto p-6">
           {/* Elections Columns Layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -297,7 +297,6 @@ export default function VotingDashboard() {
           </div>
         </div>
       </main>
-      {/* Footer with quick links */}
       <Footer />
       {/* Election Details Modal */}
       {(modalLoading || selectedElection) && (

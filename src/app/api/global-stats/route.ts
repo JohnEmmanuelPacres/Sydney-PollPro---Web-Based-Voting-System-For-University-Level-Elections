@@ -28,8 +28,8 @@ export async function GET(request: Request) {
   // Fetch all user_id values from votes for this election and count unique ones
   let uniqueVoters = 0;
   let totalVotes = 0;
-  const { data: votesData } = await supabaseAdmin
-    .from('votes')
+    const { data: votesData } = await supabaseAdmin
+      .from('votes')
     .select('user_id, election_id')
     .eq('election_id', electionId);
   if (votesData) {

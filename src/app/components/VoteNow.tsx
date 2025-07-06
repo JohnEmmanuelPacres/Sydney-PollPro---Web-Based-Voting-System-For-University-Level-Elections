@@ -16,6 +16,7 @@ interface Candidate {
   platform: string;
   detailed_achievements: string;
   picture_url?: string;
+  is_abstain?: boolean;
 }
 
 interface Position {
@@ -109,7 +110,7 @@ export default function VoteNow({ electionId }: VoteNowProps) {
   };
 
   const handleBackToDashboard = () => {
-    router.push('/Voterdashboard');
+    router.push(`/Voterdashboard?department_org=${departmentOrg}`);
   };
 
   const handleLogout = async () => {
@@ -382,7 +383,10 @@ export default function VoteNow({ electionId }: VoteNowProps) {
                             
                         {election.candidatesByPosition[position.id]?.length > 0 ? (
                               <div className="space-y-4">
-                            {election.candidatesByPosition[position.id].map((candidate: Candidate) => (
+                            {/* Regular candidates */}
+                            {election.candidatesByPosition[position.id]
+                              .filter((candidate: Candidate) => !candidate.is_abstain)
+                              .map((candidate: Candidate) => (
                                   <div key={candidate.id} className="border border-yellow-300 rounded-lg p-4 hover:bg-yellow-50 transition-colors break-words whitespace-pre-line overflow-x-auto max-w-full">
                                     <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
                                       <button 
@@ -429,6 +433,49 @@ export default function VoteNow({ electionId }: VoteNowProps) {
                                     </div>
                                   </div>
                                 ))}
+
+                            {/* Abstain option */}
+                            {election.allow_abstain && election.candidatesByPosition[position.id]?.some((c: Candidate) => c.is_abstain) && (
+                              <div className="border-2 border-blue-300 rounded-lg p-4 hover:bg-blue-50 transition-colors">
+                                <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
+                                  <button 
+                                    onClick={() => {
+                                      const abstainCandidate = election.candidatesByPosition[position.id].find((c: Candidate) => c.is_abstain);
+                                      if (abstainCandidate) {
+                                        handleCandidateSelect(position.id, abstainCandidate.id);
+                                      }
+                                    }}
+                                    className="mt-1 flex-shrink-0"
+                                  >
+                                    <div className={`w-4 h-4 rounded-full border-2 ${selectedCandidates[position.id] === election.candidatesByPosition[position.id]?.find((c: Candidate) => c.is_abstain)?.id ? 'bg-blue-600 border-blue-600' : 'border-blue-600'}`} />
+                                  </button>
+                                  
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col sm:flex-row items-start gap-4 w-full">
+                                      <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      </div>
+                                      
+                                      <div className="flex-1 space-y-2 min-w-0 break-words">
+                                        <div>
+                                          <h4 className="text-blue-700 text-lg font-semibold font-['Geist'] break-words">Abstain</h4>
+                                          <p className="text-blue-600 text-sm font-medium font-['Geist'] break-words">Choose not to vote for this position</p>
+                                        </div>
+                                        
+                                        <div className="space-y-1">
+                                          <p className="text-blue-600 text-sm font-medium font-['Geist']">What this means:</p>
+                                          <p className="text-blue-700 text-sm font-medium font-['Geist'] break-words whitespace-pre-line">
+                                            By selecting "Abstain", you choose not to vote for any candidate in this position. This is a valid voting option and will be recorded in the election results.
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                               </div>
                             ) : (
                               <div className="text-center py-8 text-gray-500">

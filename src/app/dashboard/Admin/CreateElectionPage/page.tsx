@@ -48,6 +48,7 @@ interface Candidate {
   achievements?: string[]
   experience?: string[]
   picture_url?: string
+  isAbstain?: boolean
 }
 
 interface Election {
@@ -62,13 +63,12 @@ interface Election {
   settings: {
     isUniLevel: boolean;
     allowAbstain: boolean;
-    eligibleCourseYear: string[];
   };
 }
 
 const defaultPositions: Position[] = [
   {
-    id: "1",
+    id: crypto.randomUUID(),
     title: "President",
     description: "Chief executive of the student body",
     maxCandidates: 5,
@@ -76,7 +76,7 @@ const defaultPositions: Position[] = [
     isRequired: true,
   },
   {
-    id: "2",
+    id: crypto.randomUUID(),
     title: "Vice President",
     description: "Second in command and legislative leader",
     maxCandidates: 5,
@@ -84,7 +84,7 @@ const defaultPositions: Position[] = [
     isRequired: true,
   },
   {
-    id: "3",
+    id: crypto.randomUUID(),
     title: "Secretary",
     description: "Records keeper and communications officer",
     maxCandidates: 3,
@@ -92,7 +92,7 @@ const defaultPositions: Position[] = [
     isRequired: true,
   },
   {
-    id: "4",
+    id: crypto.randomUUID(),
     title: "Treasurer",
     description: "Financial officer and budget manager",
     maxCandidates: 3,
@@ -371,7 +371,6 @@ export default function CreateElectionPage() {
     settings: {
       isUniLevel: false,
       allowAbstain: true,
-      eligibleCourseYear: [],
     },
   })
 
@@ -407,6 +406,69 @@ export default function CreateElectionPage() {
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
   }
+
+  // Function to create abstain candidate for a position
+  const createAbstainCandidate = (positionId: string): Candidate => {
+    console.log(`🔧 Creating abstain candidate for position ${positionId}`);
+    const abstainCandidate: Candidate = {
+      id: Date.now().toString(),
+      name: "Abstain",
+      email: "abstain@election.system",
+      positionId: positionId,
+      status: "approved" as const, // Abstain is always approved
+      credentials: "Voter chose to abstain from voting for this position",
+      course: "",
+      year: "",
+      platform: "This option allows voters to abstain from voting for this position",
+      isAbstain: true,
+      picture_url: "",
+    };
+    console.log('✅ Created abstain candidate:', abstainCandidate);
+    return abstainCandidate;
+  }
+
+  // Function to add abstain candidates to all positions
+  const addAbstainCandidatesToAllPositions = () => {
+    console.log('🔄 Adding abstain candidates to all positions...');
+    if (!election.settings.allowAbstain) {
+      console.log('❌ Abstain is disabled, skipping...');
+      return;
+    }
+    // Remove all existing abstain candidates first
+    setElection(prev => {
+      const filteredCandidates = prev.candidates.filter(c => !c.isAbstain);
+      // Add one abstain candidate per position
+      const abstainCandidates = prev.positions.map(position => createAbstainCandidate(position.id));
+      console.log(`📝 Adding ${abstainCandidates.length} new abstain candidates (after clearing old ones)`);
+      return {
+        ...prev,
+        candidates: [...filteredCandidates, ...abstainCandidates]
+      };
+    });
+  }
+
+  // Function to remove abstain candidates from all positions
+  const removeAbstainCandidatesFromAllPositions = () => {
+    console.log('🗑️ Removing abstain candidates from all positions...');
+    setElection(prev => {
+      const filteredCandidates = prev.candidates.filter(c => !c.isAbstain);
+      console.log(`📝 Removed ${prev.candidates.length - filteredCandidates.length} abstain candidates`);
+      return {
+        ...prev,
+        candidates: filteredCandidates
+      };
+    });
+  }
+
+  // Effect to handle abstain candidates when allowAbstain setting changes
+  useEffect(() => {
+    console.log('🔄 Abstain setting changed:', election.settings.allowAbstain);
+    if (election.settings.allowAbstain) {
+      addAbstainCandidatesToAllPositions();
+    } else {
+      removeAbstainCandidatesFromAllPositions();
+    }
+  }, [election.settings.allowAbstain, election.positions.length]);
 
   const handleAddPosition = () => {
     if (newPosition.title && newPosition.description) {
@@ -568,30 +630,83 @@ export default function CreateElectionPage() {
   };
 
   const handleCreateElection = async () => {
+    console.log('🚀 Starting handleCreateElection...');
+    console.log('🔍 Current election state:', election);
+    
     if (!validateElection(election)) {
+        console.error('❌ Election validation failed');
         alert('Please complete all required fields before publishing');
         return;
     }
     if (!orgID) {
+        console.error('❌ Organization ID is missing');
         alert('Organization ID is missing. Cannot create election.');
         return;
     }
     if (!election.settings.isUniLevel && !adminDepartmentOrg) {
+        console.error('❌ Admin department/organization is missing');
         alert('Admin department/organization is missing. Cannot create organization election.');
         return;
     }
-    // Map candidates to API shape
-    const mappedCandidates = election.candidates.map((c) => ({
-      id: c.id,
-      name: c.name,
-      email: c.email,
-      course_Year: c.course + (c.year ? ` - ${c.year}` : ''),
-      positionId: c.positionId,
-      status: c.status,
-      platform: c.platform,
-      detailed_achievements: c.credentials || '',
-      picture_url: c.picture_url || '',
-    }));
+    
+    console.log('✅ Validation passed, processing candidates...');
+    
+    // Map candidates to API shape, excluding abstain candidates from regular candidate processing
+    const regularCandidates = election.candidates.filter(c => !c.isAbstain);
+    const abstainCandidates = election.candidates.filter(c => c.isAbstain);
+    
+    console.log('📊 Candidate breakdown:', {
+      total: election.candidates.length,
+      regular: regularCandidates.length,
+      abstain: abstainCandidates.length
+    });
+    
+    const mappedCandidates = regularCandidates.map((c) => {
+      const courseYear = c.course + (c.year ? ` - ${c.year}` : '');
+      console.log(`📝 Mapping regular candidate ${c.name}:`, {
+        course: c.course,
+        year: c.year,
+        courseYear: courseYear
+      });
+      
+      return {
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        course_Year: courseYear,
+        positionId: c.positionId,
+        status: c.status,
+        platform: c.platform,
+        detailed_achievements: c.credentials || '',
+        picture_url: c.picture_url || '',
+      };
+    });
+
+    // Map abstain candidates separately with proper course_year handling
+    const mappedAbstainCandidates = abstainCandidates.map((c) => {
+      console.log(`📝 Mapping abstain candidate ${c.name}:`, {
+        course: c.course,
+        year: c.year,
+        positionId: c.positionId
+      });
+      
+      return {
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        course_Year: 'System Generated', // Give abstain candidates a proper course_year
+        positionId: c.positionId,
+        status: c.status,
+        platform: c.platform,
+        detailed_achievements: c.credentials || '',
+        picture_url: c.picture_url || '',
+        isAbstain: true,
+      };
+    });
+
+    const allCandidates = [...mappedCandidates, ...mappedAbstainCandidates];
+    console.log('📋 Final candidate mapping:', allCandidates);
+
     const payload = {
       electionData: {
         name: election.name,
@@ -601,39 +716,51 @@ export default function CreateElectionPage() {
         endDate: election.endDate,
         endTime: election.endTime,
         positions: election.positions,
-        candidates: mappedCandidates,
+        candidates: allCandidates,
         settings: {
           isUniLevel: election.settings.isUniLevel,
           allowAbstain: election.settings.allowAbstain,
-          eligibleCourseYear: election.settings.eligibleCourseYear
         },
         department_org: !election.settings.isUniLevel ? adminDepartmentOrg : null
       },
       orgID: orgID
     };
-    console.log('Payload sent to /api/create-elections:', payload);
+    
+    console.log('📤 Payload sent to /api/create-elections:', JSON.stringify(payload, null, 2));
+    
     try {
+        console.log('🌐 Making API call to /api/create-elections...');
         const response = await fetch('/api/create-elections', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response ok:', response.ok);
+        
         if (!response.ok) {
-        throw new Error('Failed to create election');
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', errorText);
+            throw new Error(`Failed to create election: ${errorText}`);
         }
+        
         const result = await response.json();
-        console.log("Creating election:", election);
-        console.log("Result:", result);
+        console.log("✅ Election creation successful:", result);
         alert('Election created successfully!');
         // Redirect or reset form as needed
     } catch (error) {
-        console.error('Error creating election:', error);
-        alert('Failed to create election. Please try again.');
+        console.error('❌ Error creating election:', error);
+        alert(`Failed to create election: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   const getPositionCandidates = (positionId: string) => {
-    return election.candidates.filter((c) => c.positionId === positionId)
+    return election.candidates.filter((c) => c.positionId === positionId && !c.isAbstain)
+  }
+
+  const getPositionAbstainCandidate = (positionId: string) => {
+    return election.candidates.find((c) => c.positionId === positionId && c.isAbstain)
   }
 
   const getPositionById = (positionId: string) => {
@@ -841,11 +968,11 @@ export default function CreateElectionPage() {
                             Add Candidate
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
                             <DialogHeader>
                             <DialogTitle className="text-red-900">Add New Candidate</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
+                            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                             <div className="flex flex-col items-center">
                                 <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
                                 {imageUrl ? (
@@ -937,9 +1064,11 @@ export default function CreateElectionPage() {
                                 rows={4}
                                 />
                             </div>
-                            <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-700 focus:bg-red-700">
-                                Add Candidate
-                            </Button>
+                            </div>
+                            <div className="pt-4 border-t border-gray-200 bg-white">
+                                <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-700 focus:bg-red-700">
+                                    Add Candidate
+                                </Button>
                             </div>
                         </DialogContent>
                         </Dialog>
@@ -953,6 +1082,11 @@ export default function CreateElectionPage() {
                             <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
                             {getPositionCandidates(position.id).length} candidates
                             </Badge>
+                            {election.settings.allowAbstain && (
+                              <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                                + Abstain option
+                              </Badge>
+                            )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {getPositionCandidates(position.id).map((candidate) => (
@@ -971,6 +1105,25 @@ export default function CreateElectionPage() {
                               />
                             ))}
                         </div>
+                        
+                        {/* Show abstain candidate if enabled */}
+                        {election.settings.allowAbstain && getPositionAbstainCandidate(position.id) && (
+                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="text-blue-900 font-semibold">Abstain Option</h4>
+                                <p className="text-blue-700 text-sm">Voters can choose to abstain from voting for this position</p>
+                              </div>
+                              <Badge className="bg-blue-600 text-white">System Generated</Badge>
+                            </div>
+                          </div>
+                        )}
+                        
                         {getPositionCandidates(position.id).length === 0 && (
                             <EmptyState
                             icon={<User className="w-12 h-12" />}
@@ -986,11 +1139,11 @@ export default function CreateElectionPage() {
 
                 {/* Edit Candidate Dialog */}
                 <Dialog open={isEditCandidateOpen} onOpenChange={setIsEditCandidateOpen}>
-                    <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
                         <DialogHeader>
                         <DialogTitle className="text-red-900">Edit Candidate</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4">
+                        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                         <div className="flex flex-col items-center">
                             <div className="w-20 h-20 bg-red-900 rounded-full flex items-center justify-center overflow-hidden mb-2">
                             {imageUrl ? (
@@ -1104,11 +1257,11 @@ export default function CreateElectionPage() {
                             rows={4}
                             />
                         </div>
-                        <div className="pt-4 border-t border-gray-200">
+                        </div>
+                        <div className="pt-4 border-t border-gray-200 bg-white">
                             <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
                                 Update Candidate
                             </Button>
-                        </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1204,9 +1357,16 @@ export default function CreateElectionPage() {
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-semibold text-red-900">{position.title}</h4>
-                                <Badge className="bg-yellow-100 text-yellow-800">
+                                <div className="flex gap-2">
+                                  <Badge className="bg-yellow-100 text-yellow-800">
                                     {getPositionCandidates(position.id).length} candidates
-                                </Badge>
+                                  </Badge>
+                                  {election.settings.allowAbstain && (
+                                    <Badge className="bg-blue-100 text-blue-800">
+                                      + Abstain option
+                                    </Badge>
+                                  )}
+                                </div>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-3">{position.description}</p>
                                 <div className="flex flex-wrap gap-2">
@@ -1215,10 +1375,34 @@ export default function CreateElectionPage() {
                                     {candidate.name}
                                     </Badge>
                                 ))}
+                                {election.settings.allowAbstain && (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    Abstain
+                                  </Badge>
+                                )}
                                 </div>
                             </CardContent>
                             </Card>
                         ))}
+                        </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">Election Settings</h3>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-blue-700">University Level Election:</span>
+                                <span className="font-medium">{election.settings.isUniLevel ? 'Yes' : 'No'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-blue-700">Allow Abstain Votes:</span>
+                                <span className="font-medium">{election.settings.allowAbstain ? 'Yes' : 'No'}</span>
+                            </div>
+                            {election.settings.allowAbstain && (
+                                <p className="text-blue-600 text-xs mt-2">
+                                    ℹ️ Voters will see an "Abstain" option for each position, allowing them to choose not to vote for any candidate.
+                                </p>
+                            )}
                         </div>
                     </div>
 

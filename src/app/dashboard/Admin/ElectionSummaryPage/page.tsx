@@ -19,6 +19,7 @@ interface Candidate {
   course_year: string;
   picture_url?: string;
   votes: number;
+  is_abstain: boolean;
 }
 
 interface Position {
@@ -135,10 +136,13 @@ export default function ElectionSummaryPage() {
       }
       if (department_org) {
         url += `&department_org=${encodeURIComponent(department_org)}`;
+        url += `&administered_Org=${encodeURIComponent(department_org)}`;
       }
       if (isLive) {
         url += '&live=true';
       }
+      
+      console.log('🌐 Fetching vote data from:', url);
       
       const response1 = await fetch(url);
       if (!response1.ok) {
@@ -148,9 +152,22 @@ export default function ElectionSummaryPage() {
       }
       
       const data = await response1.json();
+      console.log('📊 Received vote data:', {
+        success: data.success,
+        resultsCount: data.results?.length || 0,
+        totalPositions: data.totalPositions,
+        electionStatus: data.electionStatus
+      });
+      
       if (data.success) {
         setPollsData(data.results);
         setElectionStatus(data.electionStatus);
+        
+        // Log abstain candidates found
+        const totalAbstainCandidates = data.results?.reduce((sum: number, result: any) => 
+          sum + (result.candidates?.filter((c: any) => c.is_abstain).length || 0), 0
+        ) || 0;
+        console.log('✅ Abstain candidates found:', totalAbstainCandidates);
       } else {
         throw new Error(data.error || 'Failed to load vote data');
       }
@@ -278,32 +295,48 @@ export default function ElectionSummaryPage() {
         `Votes Cast,${electionStats.votesCount}`,
         `Participation Rate,${electionStats.participation}`,
         `Total Positions,${sortedPollsData.length}`,
-        `Total Candidates,${sortedPollsData.reduce((sum, poll) => sum + poll.candidates.length, 0)}`,
+        `Total Candidates,${sortedPollsData.reduce((sum, poll) => sum + poll.candidates.filter(c => !c.is_abstain).length, 0)}`,
+        `Abstain Votes Allowed,${election?.settings?.allowAbstain ? 'Yes' : 'No'}`,
+        `Total Abstain Votes,${sortedPollsData.reduce((sum, poll) => sum + poll.candidates.filter(c => c.is_abstain).reduce((s, c) => s + c.votes, 0), 0)}`,
         '',
         
         // Detailed Results Section
         'DETAILED RESULTS',
-        'Position,Candidate Name,Course Year,Votes,Vote Percentage,Rank',
+        'Position,Candidate Name,Course Year,Votes,Vote Percentage,Rank,Type',
         ...sortedPollsData.flatMap(poll => {
-          // Sort candidates by votes (descending) to determine rank
-          const sortedCandidates = [...poll.candidates].sort((a, b) => b.votes - a.votes);
-          const maxVotes = Math.max(...poll.candidates.map(c => c.votes));
+          // Separate regular candidates and abstain candidates
+          const regularCandidates = poll.candidates.filter(c => !c.is_abstain);
+          const abstainCandidates = poll.candidates.filter(c => c.is_abstain);
           
-          return sortedCandidates.map((candidate, index) => {
+          // Sort regular candidates by votes (descending) to determine rank
+          const sortedRegularCandidates = [...regularCandidates].sort((a, b) => b.votes - a.votes);
+          const maxVotes = regularCandidates.length > 0 ? Math.max(...regularCandidates.map(c => c.votes)) : 0;
+          
+          const regularResults = sortedRegularCandidates.map((candidate, index) => {
             const percent = maxVotes > 0 ? (candidate.votes / maxVotes) * 100 : 0;
             const rank = index + 1;
-            return `"${poll.position}","${candidate.name}","${candidate.course_year}",${candidate.votes},${percent.toFixed(1)}%,${rank}`;
+            return `"${poll.position}","${candidate.name}","${candidate.course_year}",${candidate.votes},${percent.toFixed(1)}%,${rank},Regular`;
           });
+          
+          // Add abstain results if they exist
+          const abstainResults = abstainCandidates.map((candidate) => {
+            const percent = maxVotes > 0 ? (candidate.votes / maxVotes) * 100 : 0;
+            return `"${poll.position}","${candidate.name}","N/A",${candidate.votes},${percent.toFixed(1)}%,N/A,Abstain`;
+          });
+          
+          return [...regularResults, ...abstainResults];
         }),
         '',
         
         // Position Summary Section
         'POSITION SUMMARY',
-        'Position,Total Candidates,Total Votes,Average Votes per Candidate',
+        'Position,Total Regular Candidates,Total Abstain Votes,Total Votes,Average Votes per Regular Candidate',
         ...sortedPollsData.map(poll => {
+          const regularCandidates = poll.candidates.filter(c => !c.is_abstain);
+          const abstainVotes = poll.candidates.filter(c => c.is_abstain).reduce((sum, c) => sum + c.votes, 0);
           const totalVotes = poll.candidates.reduce((sum, candidate) => sum + candidate.votes, 0);
-          const avgVotes = poll.candidates.length > 0 ? (totalVotes / poll.candidates.length).toFixed(1) : '0';
-          return `"${poll.position}",${poll.candidates.length},${totalVotes},${avgVotes}`;
+          const avgVotes = regularCandidates.length > 0 ? (totalVotes / regularCandidates.length).toFixed(1) : '0';
+          return `"${poll.position}",${regularCandidates.length},${abstainVotes},${totalVotes},${avgVotes}`;
         }),
         '',
         
@@ -515,9 +548,9 @@ export default function ElectionSummaryPage() {
                         {displayStatus && (
                           <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getStatusColor(displayStatus)}`}>
                             {displayStatus.toUpperCase()}
-                          </span>
-                        )}
-                      </div>
+                  </span>
+                )}
+              </div>
                       <div className="text-xs text-gray-500 mt-1">
                         * Status can be manually changed for display and export purposes
                       </div>
@@ -566,75 +599,101 @@ export default function ElectionSummaryPage() {
 
                     {sortedPollsData.length > 0 ? (
                       <div className="space-y-4 sm:space-y-6">
-                        {sortedPollsData.map((poll, index) => (
-                          <Card key={index} className="border border-red-200">
-                            <CardContent className="p-4 sm:p-6">
-                              <h3 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-[#2D0907] mb-4 sm:mb-6 lg:mb-8">
-                                {poll.position}
-                              </h3>
-                              <div className="space-y-4 sm:space-y-6">
-                                {poll.candidates.map((candidate, candidateIndex) => {
-                                  const percent = candidate.votes > 0 ? (candidate.votes / Math.max(...poll.candidates.map(c => c.votes))) * 100 : 0;
-                                  return (
-                                    <div
-                                      key={candidate.id}
-                                      className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 lg:gap-8 mb-4 sm:mb-6"
-                                    >
-                                      {/* Candidate Picture */}
-                                      <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center shadow-md mb-2 sm:mb-0 border-4 border-gray-400 flex-shrink-0">
-                                        {candidate.picture_url ? (
-                                          <img
-                                            src={candidate.picture_url}
-                                            alt={candidate.name}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        ) : (
-                                          <span className="text-gray-500 text-lg sm:text-2xl lg:text-3xl font-bold">
-                                            {candidate.name
-                                              .split(' ')
-                                              .map((n) => n[0])
-                                              .join('')
-                                              .toUpperCase()}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {/* Candidate Info and Progress */}
-                                      <div className="flex-1 w-full flex flex-col sm:flex-row items-center sm:items-stretch gap-2 sm:gap-0">
-                                        <div className="flex-1 w-full flex flex-col justify-center">
-                                          <div className="font-semibold text-[#2D0907] text-base sm:text-lg lg:text-xl xl:text-2xl text-center sm:text-left">
-                                            {candidate.name}
-                                          </div>
-                                          <div className="text-xs sm:text-sm lg:text-base text-[#3B2321] mb-2 text-center sm:text-left">
-                                            {candidate.course_year}
-                                          </div>
-                                          {/* Progress Bar */}
-                                          <div className="w-full h-2 sm:h-3 lg:h-4 bg-gray-200 rounded-full overflow-hidden border border-gray-500">
-                                            <div
-                                              className="h-full bg-[#52100D] transition-all duration-700 ease-out"
-                                              style={{ 
-                                                width: `${percent}%`,
-                                                borderRadius: '9999px'
-                                              }}
+                        {sortedPollsData.map((poll, index) => {
+                          // Debug logging for each position
+                          const regularCandidates = poll.candidates.filter(c => !c.is_abstain);
+                          const abstainCandidates = poll.candidates.filter(c => c.is_abstain);
+                          console.log(`📋 Position "${poll.position}":`, {
+                            regular: regularCandidates.length,
+                            abstain: abstainCandidates.length,
+                            totalVotes: poll.candidates.reduce((sum, c) => sum + c.votes, 0)
+                          });
+                          
+                          return (
+                            <Card key={index} className="border border-red-200">
+                              <CardContent className="p-4 sm:p-6">
+                                <h3 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-[#2D0907] mb-4 sm:mb-6 lg:mb-8">
+                                  {poll.position}
+                                </h3>
+                                <div className="space-y-4 sm:space-y-6">
+                                  {poll.candidates.map((candidate, candidateIndex) => {
+                                    const percent = candidate.votes > 0 ? (candidate.votes / Math.max(...poll.candidates.map(c => c.votes))) * 100 : 0;
+                                    console.log(`👤 Candidate "${candidate.name}":`, {
+                                      votes: candidate.votes,
+                                      isAbstain: candidate.is_abstain,
+                                      percent: percent.toFixed(1)
+                                    });
+                                    
+                                    return (
+                                      <div
+                                        key={candidate.id}
+                                        className={`flex flex-col sm:flex-row items-center gap-3 sm:gap-4 lg:gap-8 mb-4 sm:mb-6 ${
+                                          candidate.is_abstain ? 'bg-blue-50 border border-blue-200 rounded-lg p-2' : ''
+                                        }`}
+                                      >
+                                        {/* Candidate Picture */}
+                                        <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center shadow-md mb-2 sm:mb-0 border-4 border-gray-400 flex-shrink-0">
+                                          {candidate.picture_url ? (
+                                            <img
+                                              src={candidate.picture_url}
+                                              alt={candidate.name}
+                                              className="w-full h-full object-cover"
                                             />
+                                          ) : (
+                                            <span className="text-gray-500 text-lg sm:text-2xl lg:text-3xl font-bold">
+                                              {candidate.name
+                                                .split(' ')
+                                                .map((n) => n[0])
+                                                .join('')
+                                                .toUpperCase()}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {/* Candidate Info and Progress */}
+                                        <div className="flex-1 w-full flex flex-col sm:flex-row items-center sm:items-stretch gap-2 sm:gap-0">
+                                          <div className="flex-1 w-full flex flex-col justify-center">
+                                            <div className="font-semibold text-[#2D0907] text-base sm:text-lg lg:text-xl xl:text-2xl text-center sm:text-left">
+                                              {candidate.name}
+                                              {candidate.is_abstain && (
+                                                <Badge className="ml-2 bg-blue-600 text-white text-xs">
+                                                  Abstain
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <div className="text-xs sm:text-sm lg:text-base text-[#3B2321] mb-2 text-center sm:text-left">
+                                              {candidate.is_abstain ? 'System Generated' : candidate.course_year}
+                                            </div>
+                                            {/* Progress Bar */}
+                                            <div className="w-full h-2 sm:h-3 lg:h-4 bg-gray-200 rounded-full overflow-hidden border border-gray-500">
+                                              <div
+                                                className={`h-full transition-all duration-700 ease-out ${
+                                                  candidate.is_abstain ? 'bg-blue-600' : 'bg-[#52100D]'
+                                                }`}
+                                                style={{ 
+                                                  width: `${percent}%`,
+                                                  borderRadius: '9999px'
+                                                }}
+                                              />
+                                            </div>
+                                          </div>
+                                          {/* Vote Count and Percentage */}
+                                          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-center sm:justify-end min-w-[80px] sm:min-w-[90px] lg:min-w-[100px] ml-0 sm:ml-4 lg:ml-6 mt-2 sm:mt-0">
+                                            <span className="text-sm sm:text-base lg:text-lg text-[#2D0907] font-bold text-center sm:text-right block">
+                                              {candidate.votes.toLocaleString()} votes
+                                            </span>
+                                            <span className="text-sm sm:text-base lg:text-lg text-[#3B2321] font-semibold text-center sm:text-right block ml-3 sm:ml-0">
+                                              {percent.toFixed(1)}%
+                                            </span>
                                           </div>
                                         </div>
-                                        {/* Vote Count and Percentage */}
-                                        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-center sm:justify-end min-w-[80px] sm:min-w-[90px] lg:min-w-[100px] ml-0 sm:ml-4 lg:ml-6 mt-2 sm:mt-0">
-                                          <span className="text-sm sm:text-base lg:text-lg text-[#2D0907] font-bold text-center sm:text-right block">
-                                            {candidate.votes.toLocaleString()} votes
-                                          </span>
-                                          <span className="text-sm sm:text-base lg:text-lg text-[#3B2321] font-semibold text-center sm:text-right block ml-3 sm:ml-0">
-                                            {percent.toFixed(1)}%
-                                          </span>
-                                        </div>
-              </div>
-            </div>
-                                  );
-                                })}
-                </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                         {/* Summary */}
                         <div className="text-center pt-2 sm:pt-4">
                           <p className="text-gray-600 text-sm sm:text-base lg:text-lg">

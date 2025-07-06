@@ -22,6 +22,7 @@ interface Candidate {
   platform: string;
   detailed_achievements: string;
   picture_url?: string;
+  isAbstain?: boolean;
 }
 
 // Use the Supabase service role key for server-side operations (bypasses RLS)
@@ -33,8 +34,15 @@ const supabaseAdmin = createClient(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log('Received payload in /api/create-elections:', JSON.stringify(body, null, 2));
+    console.log('🚀 /api/create-elections: Received payload:', JSON.stringify(body, null, 2));
     const { electionData, orgID } = body;
+
+    console.log('🔍 Processing election data:', {
+      name: electionData.name,
+      positionsCount: electionData.positions?.length || 0,
+      candidatesCount: electionData.candidates?.length || 0,
+      settings: electionData.settings
+    });
 
     // Create ISO strings from the admin's input
     // The admin inputs the intended Singapore time, so we store it directly
@@ -52,16 +60,19 @@ export async function POST(request: Request) {
     const startDateISO = createDateTimeISO(electionData.startDate, electionData.startTime);
     const endDateISO = createDateTimeISO(electionData.endDate, electionData.endTime);
 
-    console.log('Original dates from admin:', {
-      start: `${electionData.startDate}T${electionData.startTime}:00`,
-      end: `${electionData.endDate}T${electionData.endTime}:00`
-    });
-    console.log('ISO dates for storage:', {
-      start: startDateISO,
-      end: endDateISO
+    console.log('📅 Date processing:', {
+      original: {
+        start: `${electionData.startDate}T${electionData.startTime}:00`,
+        end: `${electionData.endDate}T${electionData.endTime}:00`
+      },
+      iso: {
+        start: startDateISO,
+        end: endDateISO
+      }
     });
 
     // 1. Create election
+    console.log('🏛️ Creating election...');
     const { data: election, error: electionError } = await supabaseAdmin
       .from('elections')
       .insert({
@@ -71,16 +82,16 @@ export async function POST(request: Request) {
         end_date: endDateISO,
         is_uni_level: electionData.settings.isUniLevel,
         allow_abstain: electionData.settings.allowAbstain,
-        eligible_courseYear: electionData.settings.eligibleCourseYear, // Fixed column name
         org_id: orgID,
         department_org: electionData.department_org
       })
       .select()
       .single();
-    console.log('Election insert result:', election, electionError);
+    console.log('✅ Election insert result:', { election, error: electionError });
     if (electionError) throw electionError;
 
     // 2. Create positions with explicit typing
+    console.log('📋 Creating positions...');
     const positionsToInsert = electionData.positions.map((position: Position) => ({
       title: position.title,
       description: position.description,
@@ -90,25 +101,40 @@ export async function POST(request: Request) {
       election_id: election.id
     }));
 
+    console.log('📋 Positions to insert:', positionsToInsert);
+
     const { data: dbPositions, error: positionsError } = await supabaseAdmin
       .from('positions')
       .insert(positionsToInsert)
       .select();
-    console.log('Positions insert result:', dbPositions, positionsError);
+    console.log('✅ Positions insert result:', { dbPositions, error: positionsError });
     if (positionsError) throw positionsError;
 
     // 3. Create position ID mapping
+    console.log('🔗 Creating position ID mapping...');
     const positionMap = new Map<string, string>();
     electionData.positions.forEach((frontendPos: Position, index: number) => {
       positionMap.set(frontendPos.id, dbPositions[index].id);
+      console.log(`  ${frontendPos.title}: ${frontendPos.id} -> ${dbPositions[index].id}`);
     });
 
     // 4. Create candidates with explicit typing
+    console.log('👥 Processing candidates...');
+    console.log('📊 Candidate breakdown:', {
+      total: electionData.candidates?.length || 0,
+      regular: electionData.candidates?.filter((c: any) => !c.isAbstain).length || 0,
+      abstain: electionData.candidates?.filter((c: any) => c.isAbstain).length || 0
+    });
+
     const candidatesToInsert = electionData.candidates.map((candidate: Candidate) => {
       const dbPositionId = positionMap.get(candidate.positionId);
-      if (!dbPositionId) throw new Error(`Missing position ID for candidate ${candidate.name}`);
+      if (!dbPositionId) {
+        console.error(`❌ Missing position ID for candidate ${candidate.name}`);
+        console.error('Available positions:', Array.from(positionMap.entries()));
+        throw new Error(`Missing position ID for candidate ${candidate.name}`);
+      }
 
-      return {
+      const candidateData = {
         name: candidate.name,
         email: candidate.email,
         course_year: candidate.course_Year,
@@ -118,22 +144,42 @@ export async function POST(request: Request) {
         platform: candidate.platform,
         detailed_achievements: candidate.detailed_achievements,
         picture_url: candidate.picture_url || null,
+        is_abstain: candidate.isAbstain || false,
       };
+
+      console.log(`📝 Mapping candidate ${candidate.name}:`, {
+        original: {
+          name: candidate.name,
+          email: candidate.email,
+          course_Year: candidate.course_Year,
+          positionId: candidate.positionId,
+          isAbstain: candidate.isAbstain
+        },
+        mapped: candidateData
+      });
+
+      return candidateData;
     });
+
+    console.log('📋 Final candidates to insert:', candidatesToInsert);
 
     const { error: candidatesError } = await supabaseAdmin
       .from('candidates')
       .insert(candidatesToInsert);
-    console.log('Candidates insert result:', candidatesError);
-    if (candidatesError) throw candidatesError;
+    console.log('✅ Candidates insert result:', { error: candidatesError });
+    if (candidatesError) {
+      console.error('❌ Candidate insertion failed:', candidatesError);
+      throw candidatesError;
+    }
 
+    console.log('🎉 Election creation completed successfully!');
     return NextResponse.json({ 
       success: true,
       electionId: election.id 
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error in /api/create-elections:', error);
+    console.error('❌ Error in /api/create-elections:', error);
     return NextResponse.json(
       { error: 'Failed to create election', details: String(error) },
       { status: 500 }
