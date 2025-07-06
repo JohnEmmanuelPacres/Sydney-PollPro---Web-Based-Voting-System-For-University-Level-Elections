@@ -26,6 +26,11 @@ const CreateAccount = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  
+  // Confirmation popup states
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(5);
+  const [isCooldownActive, setIsCooldownActive] = useState(false);
 
   // Program-based organizations (single selection only)
   const programBasedOrgs = [
@@ -388,8 +393,7 @@ const CreateAccount = () => {
     } else if (e.key === 'Enter' && highlightedIndexCourseYear >= 0) {
       setFormData((prev) => ({ ...prev, courseYear: filteredOptions[highlightedIndexCourseYear] }));
       setDropdownOpenCourseYear(false);
-      setHighlightedIndexCourseYear(-1);
-      e.preventDefault();
+      setHighlightedIndexDepartment(-1);
     } else if (e.key === 'Escape') {
       setDropdownOpenCourseYear(false);
       setHighlightedIndexCourseYear(-1);
@@ -411,7 +415,6 @@ const CreateAccount = () => {
       setFormData((prev) => ({ ...prev, programOrg: programBasedOrgs[highlightedIndexDepartment] }));
       setDropdownOpenDepartment(false);
       setHighlightedIndexDepartment(-1);
-      e.preventDefault();
     } else if (e.key === 'Escape') {
       setDropdownOpenDepartment(false);
       setHighlightedIndexDepartment(-1);
@@ -424,11 +427,24 @@ const CreateAccount = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
+  // Cooldown timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isCooldownActive && cooldownSeconds > 0) {
+      interval = setInterval(() => {
+        setCooldownSeconds(prev => prev - 1);
+      }, 1000);
+    }
+    if (cooldownSeconds === 0) {
+      setIsCooldownActive(false); // Stop the timer, but do not reset cooldownSeconds here
+    }
+    return () => clearInterval(interval);
+  }, [isCooldownActive, cooldownSeconds]);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-    setIsLoading(true);
     
     try {
       // Validate all required fields are filled
@@ -450,12 +466,26 @@ const CreateAccount = () => {
         return;
       }
 
-      if (!formData.email.endsWith('@cit.edu')) {
-        setError('Please use your CIT email address (@cit.edu)');
-        setIsLoading(false);
-        return;
-      }
+    if (!formData.email.endsWith('@cit.edu')) {
+      setError('Please use your CIT email address (@cit.edu)');
+      return;
+    }
 
+    // Show confirmation popup instead of directly submitting
+    setShowConfirmation(true);
+    setIsCooldownActive(true);
+    setCooldownSeconds(5);
+  }, [formData]);
+
+  const handleConfirmRegistration = useCallback(async () => {
+    if (cooldownSeconds > 0) return;
+    
+    setShowConfirmation(false);
+    setIsCooldownActive(false);
+    setCooldownSeconds(5);
+    setIsLoading(true);
+    
+    try {
       try {
         const checkRes = await fetch('/api/check-email', {
           method: 'POST',
@@ -512,7 +542,13 @@ const CreateAccount = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, router]);
+  }, [formData, router, cooldownSeconds]);
+
+  const handleCancelRegistration = useCallback(() => {
+    setShowConfirmation(false);
+    setIsCooldownActive(false);
+    setCooldownSeconds(5);
+  }, []);
 
   const inputClasses = useMemo(() => (
     "w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-4 sm:px-6 text-base text-black"
@@ -888,6 +924,59 @@ const CreateAccount = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Confirmation Popup */}
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[2000] p-4"
+            onClick={handleCancelRegistration}
+          >
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white rounded-[20px] p-6 max-w-sm w-full mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">Proceed?</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to register with the provided information?
+                </p>
+                
+                <div className="flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: cooldownSeconds === 0 ? 1.05 : 1 }}
+                    whileTap={{ scale: cooldownSeconds === 0 ? 0.95 : 1 }}
+                    onClick={handleConfirmRegistration}
+                    disabled={cooldownSeconds > 0}
+                    className={`flex-1 py-3 px-4 font-bold rounded-lg transition-colors ${
+                      cooldownSeconds > 0 
+                        ? 'bg-gray-400 text-gray-500 cursor-not-allowed' 
+                        : 'bg-[#bb8b1b] text-white hover:bg-[#a67a1a]'
+                    }`}
+                  >
+                    {cooldownSeconds > 0 ? `Yes (${cooldownSeconds}s)` : 'Yes'}
+                  </motion.button>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCancelRegistration}
+                    className="flex-1 py-3 px-4 bg-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Toast Notifications */}
       <AnimatePresence>
