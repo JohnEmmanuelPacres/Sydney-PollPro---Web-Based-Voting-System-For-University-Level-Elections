@@ -1,11 +1,13 @@
 'use Client';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
+import { useAdminOrg } from '@/app/dashboard/Admin/AdminedOrgContext';
 
 const CreateElectionSection = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const administered_Org = searchParams.get('administered_Org');
+    const { administeredOrg } = useAdminOrg();
+    const administered_Org = searchParams.get('administered_Org') || administeredOrg;
     return (
         <section className="w-full flex flex-col items-center justify-center gap-4 py-8">
             <b className="text-[20px] md:text-[26px] leading-[150%] text-center">

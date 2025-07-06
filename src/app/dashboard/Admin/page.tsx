@@ -32,22 +32,23 @@ const AdminDashboardNoSession: NextPage = () => {
   const [selectedYear, setSelectedYear] = useState('All Years');
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const { setAdministeredOrg } = useAdminOrg();
+  const { setAdministeredOrg, administeredOrg } = useAdminOrg();
 
   useEffect(() => {
-	const administeredOrg = searchParams.get('administered_Org');
-	if (administeredOrg) setAdministeredOrg(administeredOrg);
+    const paramAdminOrg = searchParams.get('administered_Org');
+    const effectiveAdminOrg = paramAdminOrg || administeredOrg;
+    if (paramAdminOrg) setAdministeredOrg(paramAdminOrg);
 
     const fetchOrgIdAndElection = async () => {
       try {
         const { data: org, error: orgError } = await supabase
           .from('organizations')
           .select('id')
-          .eq('organization_name', administeredOrg || '')
+          .eq('organization_name', effectiveAdminOrg || '')
           .single();
 
         if (orgError || !org) {
-          setError('Organization not found. Administered org: ' + administeredOrg);
+          setError('Organization not found. Administered org: ' + effectiveAdminOrg);
           return;
         }
 
@@ -90,7 +91,7 @@ const AdminDashboardNoSession: NextPage = () => {
     };
 
     fetchOrgIdAndElection();
-  }, [searchParams, setAdministeredOrg]);
+  }, [searchParams, setAdministeredOrg, administeredOrg]);
 
   // Combined filtering function
   const applyFilters = (yearFilter: string, searchFilter: string) => {

@@ -327,7 +327,8 @@ const courseYearOptions = [
 
 export default function CreateElectionPage() {
   const searchParams = useSearchParams();
-  const administeredOrg = searchParams.get('administered_Org') || '';
+  const { administeredOrg: contextAdminOrg } = useAdminOrg();
+  const administeredOrg = searchParams.get('administered_Org') || contextAdminOrg || '';
   const [orgID, setOrgId] = useState('');
   const [adminDepartmentOrg, setAdminDepartmentOrg] = useState<string | null>(null);
 
@@ -348,13 +349,16 @@ export default function CreateElectionPage() {
   useEffect(() => {
     async function fetchAdminDepartmentOrg() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) return;
+      if (!user?.email) {
+        setAdminDepartmentOrg(administeredOrg || null); // fallback to context/search param
+        return;
+      }
       const { data: profile } = await supabase
         .from('admin_profiles')
         .select('administered_org')
         .eq('email', user.email)
         .single();
-      setAdminDepartmentOrg(profile?.administered_org || null);
+      setAdminDepartmentOrg(profile?.administered_org || administeredOrg || null); // fallback to context/search param
     }
     fetchAdminDepartmentOrg();
   }, []);
@@ -721,7 +725,7 @@ export default function CreateElectionPage() {
           isUniLevel: election.settings.isUniLevel,
           allowAbstain: election.settings.allowAbstain,
         },
-        department_org: !election.settings.isUniLevel ? adminDepartmentOrg : null
+        department_org: !election.settings.isUniLevel ? (adminDepartmentOrg || administeredOrg) : null
       },
       orgID: orgID
     };
