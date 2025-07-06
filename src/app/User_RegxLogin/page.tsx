@@ -367,12 +367,7 @@ const SIGNIN: NextPage = () => {
               />
               
               {/* Show Credential Checkbox */}
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center mt-4"
-              >
+              <div className="flex items-center mt-4">
                 <input
                   type="checkbox"
                   id="showCredential"
@@ -380,10 +375,12 @@ const SIGNIN: NextPage = () => {
                   onChange={() => setShowCredential(!showCredential)}
                   className="mr-2"
                 />
-                <label htmlFor="showCredential" className="text-white text-sm">
-                  Show {/^\d{6}$/.test(credential) ? 'PIN' : 'Password'}
-                </label>
-              </motion.div>
+                <label htmlFor="showCredential" className="text-base">Show PIN/Password</label>
+              </div>
+              {/* Forgot Password Link */}
+              <div className="mt-4 text-right">
+                <a href="/User_RegxLogin/ForgotPassword" className="text-sm text-blue-300 hover:underline">Forgot Password?</a>
+              </div>
 
               {/* Sign in */}
               <motion.button 
