@@ -4,96 +4,49 @@ import { motion } from 'framer-motion'
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
 
+interface OrganizationOption {
+  name: string;
+  category: string;
+}
+
 interface MultiSelectDropdownProps {
-  options: string[]
-  selectedOptions: string[]
-  onSelectionChange: (selected: string[]) => void
-  placeholder?: string
-  label?: string
-  className?: string
+  options: OrganizationOption[];
+  categories: string[];
+  selectedOptions: string[];
+  onSelectionChange: (selected: string[]) => void;
+  placeholder?: string;
+  label?: string;
+  className?: string;
+  disabled?: boolean;
 }
 
 export function MultiSelectDropdown({
   options,
+  categories,
   selectedOptions,
   onSelectionChange,
   placeholder = "Select options",
   label,
-  className = ""
+  className = "",
+  disabled = false
 }: MultiSelectDropdownProps) {
+  // Ensure selectedOptions is always an array
+  const safeSelectedOptions = selectedOptions || [];
+  
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
-  const [selectedYear, setSelectedYear] = useState<string>('All Years')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Categories for filtering
-  const categories = useMemo(() => [
-    'All',
-    'Architecture',
-    'Engineering',
-    'Accountancy & Business',
-    'Arts & Humanities',
-    'Education',
-    'Sciences',
-    'Health Sciences',
-    'Computing',
-    'Criminology'
-  ], [])
-
-  // Year options for filtering
-  const yearOptions = useMemo(() => [
-    'All Years',
-    '1st Year',
-    '2nd Year', 
-    '3rd Year',
-    '4th Year',
-    '5th Year'
-  ], [])
-
-  // Filter options based on search term, selected category, and selected year
+  // Filter options by category and search
   const filteredOptions = useMemo(() => {
     return options.filter(option => {
-      const matchesSearch = option.toLowerCase().includes(searchTerm.toLowerCase())
-      
-      const matchesCategory = 
-        selectedCategory === 'All' || 
-        (selectedCategory === 'Architecture' && option.includes('Architecture')) ||
-        (selectedCategory === 'Engineering' && option.includes('Engineering') && !option.includes('Accountancy')) ||
-        (selectedCategory === 'Accountancy & Business' && 
-          (option.includes('Accountancy') || 
-           option.includes('Business') || 
-           option.includes('Hospitality') || 
-           option.includes('Tourism') || 
-           option.includes('Office Administration') || 
-           option.includes('Public Administration'))) ||
-        (selectedCategory === 'Arts & Humanities' && 
-          (option.includes('Communication') || 
-           option.includes('English with Applied Linguistics'))) ||
-        (selectedCategory === 'Education' && 
-          (option.includes('Education') || 
-           option.includes('Multimedia Arts'))) ||
-        (selectedCategory === 'Sciences' && 
-          (option.includes('Biology') || 
-           option.includes('Math with Applied Industrial Mathematics') || 
-           option.includes('Psychology'))) ||
-        (selectedCategory === 'Health Sciences' && 
-          (option.includes('Nursing') || 
-           option.includes('Pharmacy') || 
-           option.includes('Medical Technology'))) ||
-        (selectedCategory === 'Computing' && 
-          (option.includes('Computer Science') || 
-           option.includes('Information Technology'))) ||
-        (selectedCategory === 'Criminology' && option.includes('Criminology'))
-      
-      const matchesYear = 
-        selectedYear === 'All Years' || 
-        option.includes(selectedYear)
-      
-      return matchesSearch && matchesCategory && matchesYear
-    })
-  }, [searchTerm, selectedCategory, selectedYear, options])
+      const matchesCategory = selectedCategory === "All" || option.category === selectedCategory;
+      const matchesSearch = option.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [searchTerm, selectedCategory, options]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -101,7 +54,6 @@ export function MultiSelectDropdown({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false)
         setHighlightedIndex(-1)
-        setSelectedYear('All Years')
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -128,22 +80,21 @@ export function MultiSelectDropdown({
     } else if (e.key === 'Escape') {
       setDropdownOpen(false)
       setHighlightedIndex(-1)
-      setSelectedYear('All Years')
       e.preventDefault()
     }
   }
 
-  const toggleOption = (option: string) => {
-    const isSelected = selectedOptions.includes(option)
+  const toggleOption = (option: OrganizationOption) => {
+    const isSelected = safeSelectedOptions.includes(option.name)
     if (isSelected) {
-      onSelectionChange(selectedOptions.filter(item => item !== option))
+      onSelectionChange(safeSelectedOptions.filter(item => item !== option.name))
     } else {
-      onSelectionChange([...selectedOptions, option])
+      onSelectionChange([...safeSelectedOptions, option.name])
     }
   }
 
   const removeOption = (option: string) => {
-    onSelectionChange(selectedOptions.filter(item => item !== option))
+    onSelectionChange(safeSelectedOptions.filter(item => item !== option))
   }
 
   const inputClasses = "w-full h-[50px] rounded-[10px] bg-white border border-[#bcbec0] px-4 sm:px-6 text-base text-black"
@@ -155,9 +106,9 @@ export function MultiSelectDropdown({
       )}
       
       {/* Selected options display */}
-      {selectedOptions.length > 0 && (
+      {safeSelectedOptions.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
-          {selectedOptions.map((option) => (
+          {safeSelectedOptions.map((option) => (
             <Badge
               key={option}
               variant="secondary"
@@ -179,17 +130,18 @@ export function MultiSelectDropdown({
       <motion.div
         whileFocus={{ scale: 1.02 }}
         transition={{ duration: 0.2 }}
-        tabIndex={0}
-        className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3`}
-        onClick={() => setDropdownOpen((open) => !open)}
-        onKeyDown={handleDropdownKeyDown}
+        tabIndex={disabled ? -1 : 0}
+        className={`${inputClasses} flex items-center justify-between cursor-pointer pr-3 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+        onClick={() => !disabled && setDropdownOpen((open) => !open)}
+        onKeyDown={disabled ? undefined : handleDropdownKeyDown}
         aria-haspopup="listbox"
         aria-expanded={dropdownOpen}
-        aria-label="Select eligible courses and years"
+        aria-label="Select eligible organizations"
+        aria-disabled={disabled}
       >
-        <span className={`truncate ${selectedOptions.length > 0 ? 'text-black' : 'text-gray-400'}`}>
-          {selectedOptions.length > 0 
-            ? `${selectedOptions.length} selected` 
+        <span className={`truncate ${safeSelectedOptions.length > 0 ? 'text-black' : 'text-gray-400'}`}>
+          {safeSelectedOptions.length > 0 
+            ? `${safeSelectedOptions.length} selected` 
             : placeholder
           }
         </span>
@@ -199,7 +151,7 @@ export function MultiSelectDropdown({
       </motion.div>
 
       {/* Dropdown content */}
-      {dropdownOpen && (
+      {dropdownOpen && !disabled && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -235,41 +187,24 @@ export function MultiSelectDropdown({
             ))}
           </div>
           
-          {/* Year filter */}
-          <div className="p-2 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
-            {yearOptions.map(year => (
-              <button
-                key={year}
-                className={`mx-1 px-3 py-1 rounded-full text-sm ${
-                  selectedYear === year 
-                    ? 'bg-[#bb8b1b] text-white' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-                onClick={() => setSelectedYear(year)}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
-          
           {/* Options list */}
           <div className="max-h-60 overflow-auto">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option, idx) => (
                 <motion.div
-                  key={option}
+                  key={option.name}
                   whileHover={{ scale: 1.02 }}
                   className={`px-4 sm:px-6 py-2 cursor-pointer text-sm sm:text-base text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
-                    selectedOptions.includes(option) ? 'bg-[#fac36b] text-white' : ''
+                    safeSelectedOptions.includes(option.name) ? 'bg-[#fac36b] text-white' : ''
                   } ${highlightedIndex === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
                   onClick={() => toggleOption(option)}
                   onMouseEnter={() => setHighlightedIndex(idx)}
                   role="option"
-                  aria-selected={selectedOptions.includes(option)}
+                  aria-selected={safeSelectedOptions.includes(option.name)}
                 >
                   <div className="flex items-center justify-between">
-                    <span>{option}</span>
-                    {selectedOptions.includes(option) && (
+                    <span>{option.name}</span>
+                    {safeSelectedOptions.includes(option.name) && (
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>

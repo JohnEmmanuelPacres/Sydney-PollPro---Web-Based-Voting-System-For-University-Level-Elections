@@ -18,13 +18,16 @@ interface candidate {
   id: string;
   name: string;
   email: string;
-  course: string;
-  year: string;
+  course_year: string;
+  course?: string;
+  year?: string;
   positionId: string;
   status: "pending" | "approved" | "disqualified";
   platform: string;
-  credentials: string;
+  credentials?: string;
+  detailed_achievements?: string;
   picture_url?: string;
+  qualifications_url?: string;
 }
 
 // Helper to create ISO string from admin's input (same as create-elections)
@@ -181,6 +184,18 @@ export async function POST(request: NextRequest) {
 
       // Update or create candidates
       for (const candidate of electionData.candidates) {
+        // Determine the course_year value
+        let courseYearValue = candidate.course_year;
+        if (!courseYearValue && candidate.course && candidate.year) {
+          courseYearValue = `${candidate.course} - ${candidate.year}`;
+        }
+        
+        // Determine the detailed_achievements value
+        let achievementsValue = candidate.detailed_achievements;
+        if (!achievementsValue && candidate.credentials) {
+          achievementsValue = candidate.credentials;
+        }
+        
         if (candidate.id) {
           // Update existing candidate
           const { error: updateCandidateError } = await supabaseAdmin
@@ -188,13 +203,13 @@ export async function POST(request: NextRequest) {
             .update({
               name: candidate.name,
               email: candidate.email,
-              course: candidate.course,
-              year: candidate.year,
+              course_year: courseYearValue,
               position_id: candidate.positionId,
               status: candidate.status,
               platform: candidate.platform,
-              credentials: candidate.credentials,
+              detailed_achievements: achievementsValue,
               picture_url: candidate.picture_url,
+              qualifications_url: candidate.qualifications_url,
             })
             .eq('id', candidate.id)
             .eq('election_id', electionId);
@@ -211,13 +226,13 @@ export async function POST(request: NextRequest) {
             .insert({
               name: candidate.name,
               email: candidate.email,
-              course: candidate.course,
-              year: candidate.year,
+              course_year: courseYearValue,
               position_id: candidate.positionId,
               status: candidate.status || 'pending',
               platform: candidate.platform,
-              credentials: candidate.credentials,
+              detailed_achievements: achievementsValue,
               picture_url: candidate.picture_url,
+              qualifications_url: candidate.qualifications_url,
               election_id: electionId,
             })
             .select('id')

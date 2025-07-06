@@ -1160,27 +1160,6 @@ export default function CreateElectionPage() {
                             </div>
                         </div>
                     </div>
-
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-red-900">Voter Eligibility</h3>
-                        <div>
-                        <MultiSelectDropdown
-                            options={courseYearOptions}
-                            selectedOptions={election.settings.eligibleCourseYear}
-                            onSelectionChange={(selected) => {
-                                setElection((prev) => ({
-                                    ...prev,
-                                    settings: {
-                                        ...prev.settings,
-                                        eligibleCourseYear: selected,
-                                    },
-                                }))
-                            }}
-                            placeholder="Select eligible courses and years"
-                            label="Eligible Courses and Year"
-                        />
-                        </div>
-                    </div>
                     </CardContent>
                 </Card>
                 )}

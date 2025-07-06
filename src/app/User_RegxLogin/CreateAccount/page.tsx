@@ -7,7 +7,9 @@ import Image from 'next/image';
 type FormData = {
   email: string;
   courseYear: string;
-  department_org: string;
+  programOrg: string; // Single selection for program-based organizations
+  advocacyOrgs: string[]; // Multiple selection for advocacy-based organizations
+  adminOrgs: string[]; // Multiple selection for admin-commissioned organizations
 };
 
 const CreateAccount = () => {
@@ -15,7 +17,9 @@ const CreateAccount = () => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
     courseYear: '',
-    department_org: '',
+    programOrg: '',
+    advocacyOrgs: [],
+    adminOrgs: [],
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -28,10 +32,8 @@ const CreateAccount = () => {
   const [cooldownSeconds, setCooldownSeconds] = useState(5);
   const [isCooldownActive, setIsCooldownActive] = useState(false);
 
-  const organizations = [
-    'Supreme Student Government (SSG)',
-    'The Technologian Student Press (TTSP)',
-    'Honor Society (HS)',
+  // Program-based organizations (single selection only)
+  const programBasedOrgs = [
     'American Concrete Institute of the Philippines (ACIP) CIT University Student Chapter',
     'Biology Students Alliance (BSA)',
     'Psychology Society',
@@ -54,6 +56,10 @@ const CreateAccount = () => {
     'Philippine Society of Mining Engineers (PSEM) Central Visayas',
     'United Architects of the Philippines Student Auxiliary (UAPSA)',
     'Young Educators Association (YEA)',
+  ];
+
+  // Advocacy-based organizations (multiple selection allowed)
+  const advocacyBasedOrgs = [
     'Christian Fellowship',
     'DOST Scholars Association',
     'Elite Debate Society',
@@ -64,6 +70,13 @@ const CreateAccount = () => {
     'Rotaract Club of Metro Cebu CIT University Chapter',
     'Wildcats E-Sports League',
     'Youth for Christ',
+  ];
+
+  // Admin-commissioned organizations (multiple selection allowed)
+  const adminCommissionedOrgs = [
+    'Supreme Student Government (SSG)',
+    'The Technologian Student Press (TTSP)',
+    'Honor Society (HS)',
   ];
 
   const courseYearOptions = [
@@ -393,13 +406,13 @@ const CreateAccount = () => {
   const handleDepartmentKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!dropdownOpenDepartment) return;
     if (e.key === 'ArrowDown') {
-      setHighlightedIndexDepartment((prev) => (prev < organizations.length - 1 ? prev + 1 : 0));
+      setHighlightedIndexDepartment((prev) => (prev < programBasedOrgs.length - 1 ? prev + 1 : 0));
       e.preventDefault();
     } else if (e.key === 'ArrowUp') {
-      setHighlightedIndexDepartment((prev) => (prev > 0 ? prev - 1 : organizations.length - 1));
+      setHighlightedIndexDepartment((prev) => (prev > 0 ? prev - 1 : programBasedOrgs.length - 1));
       e.preventDefault();
     } else if (e.key === 'Enter' && highlightedIndexDepartment >= 0) {
-      setFormData((prev) => ({ ...prev, department_org: organizations[highlightedIndexDepartment] }));
+      setFormData((prev) => ({ ...prev, programOrg: programBasedOrgs[highlightedIndexDepartment] }));
       setDropdownOpenDepartment(false);
       setHighlightedIndexDepartment(-1);
     } else if (e.key === 'Escape') {
@@ -433,21 +446,25 @@ const CreateAccount = () => {
     setError(null);
     setSuccess(null);
     
-    // Validate all required fields are filled
-    if (!formData.email.trim()) {
-      setError('Please enter your institutional email address');
-      return;
-    }
-    
-    if (!formData.courseYear.trim()) {
-      setError('Please select your course and year');
-      return;
-    }
-    
-    if (!formData.department_org.trim()) {
-      setError('Please select your department organization');
-      return;
-    }
+    try {
+      // Validate all required fields are filled
+      if (!formData.email.trim()) {
+        setError('Please enter your institutional email address');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!formData.courseYear.trim()) {
+        setError('Please select your course and year');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!formData.programOrg.trim()) {
+        setError('Please select your program organization');
+        setIsLoading(false);
+        return;
+      }
 
     if (!formData.email.endsWith('@cit.edu')) {
       setError('Please use your CIT email address (@cit.edu)');
@@ -487,6 +504,15 @@ const CreateAccount = () => {
         return;
       }
 
+      // Combine all selected organizations into a single string for department_org
+      const allOrganizations = [
+        formData.programOrg,
+        ...formData.advocacyOrgs,
+        ...formData.adminOrgs
+      ].filter(org => org && org.trim() !== ''); // Remove empty strings
+      
+      const department_org = allOrganizations.join(' | ');
+
       const response = await fetch('/api/send-pin', {
         method: 'POST',
         headers: {
@@ -495,7 +521,7 @@ const CreateAccount = () => {
         body: JSON.stringify({ 
           email: formData.email,
           courseYear: formData.courseYear,
-          department_org: formData.department_org
+          department_org: department_org
         }),
       });
 
@@ -704,7 +730,7 @@ const CreateAccount = () => {
               </div>
 
               <div className="relative" ref={dropdownRefDepartment}>
-                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Department Organization <span className="text-red-500">*</span></div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Program Organization <span className="text-red-500">*</span></div>
                 <div
                   tabIndex={0}
                   className={`${inputClasses} flex items-center justify-between cursor-pointer focus:border-[#fac36b] focus:ring-2 focus:ring-[#fac36b] transition-all duration-200 hover:border-[#fac36b] pr-3 bg-white text-black`}
@@ -712,10 +738,10 @@ const CreateAccount = () => {
                   onKeyDown={handleDepartmentKeyDown}
                   aria-haspopup="listbox"
                   aria-expanded={dropdownOpenDepartment}
-                  aria-label="Select your Department's Organization"
+                  aria-label="Select your Program's Organization"
                 >
-                  <span className={formData.department_org ? 'text-black' : 'text-gray-400'}>
-                    {formData.department_org || 'Select your Department\'s Organization'}
+                  <span className={formData.programOrg ? 'text-black' : 'text-gray-400'}>
+                    {formData.programOrg || 'Select your Program\'s Organization'}
                   </span>
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-[#bb8b1b] ml-2">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -726,20 +752,20 @@ const CreateAccount = () => {
                     className="absolute left-0 mt-2 w-full bg-white border border-[#bcbec0] rounded-[10px] shadow-lg z-50 max-h-60 overflow-auto"
                     role="listbox"
                   >
-                    {organizations.map((option, idx) => (
+                    {programBasedOrgs.map((option, idx) => (
                       <li
                         key={option}
                         className={`px-6 py-2 cursor-pointer text-black hover:bg-[#fac36b] hover:text-white transition-colors ${
-                          formData.department_org === option ? 'bg-[#fac36b] text-white' : ''
+                          formData.programOrg === option ? 'bg-[#fac36b] text-white' : ''
                         } ${highlightedIndexDepartment === idx ? 'bg-[#bb8b1b] text-white' : ''}`}
                         onClick={() => {
-                          setFormData((prev) => ({ ...prev, department_org: option }));
+                          setFormData((prev) => ({ ...prev, programOrg: option }));
                           setDropdownOpenDepartment(false);
                           setHighlightedIndexDepartment(-1);
                         }}
                         onMouseEnter={() => setHighlightedIndexDepartment(idx)}
                         role="option"
-                        aria-selected={formData.department_org === option}
+                        aria-selected={formData.programOrg === option}
                       >
                         {option}
                       </li>
@@ -747,6 +773,112 @@ const CreateAccount = () => {
                   </ul>
                 )}
               </div>
+
+              {/* Advocacy-based Organizations (Multiple Selection) */}
+              <div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Advocacy Organizations <span className="text-gray-400">(Optional)</span></div>
+                <div className="bg-white border border-[#bcbec0] rounded-[10px] p-4 max-h-48 overflow-y-auto">
+                  {advocacyBasedOrgs.map((org) => (
+                    <div key={org} className="flex items-center mb-3 last:mb-0">
+                      <input
+                        type="checkbox"
+                        id={`advocacy-${org}`}
+                        checked={formData.advocacyOrgs.includes(org)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              advocacyOrgs: [...prev.advocacyOrgs, org]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              advocacyOrgs: prev.advocacyOrgs.filter(o => o !== org)
+                            }));
+                          }
+                        }}
+                        className="w-4 h-4 text-[#bb8b1b] bg-gray-100 border-gray-300 rounded focus:ring-[#bb8b1b] focus:ring-2"
+                      />
+                      <label htmlFor={`advocacy-${org}`} className="ml-3 text-sm text-black cursor-pointer hover:text-[#bb8b1b] transition-colors">
+                        {org}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {formData.advocacyOrgs.length > 0 && (
+                  <div className="mt-2 text-sm text-white/80">
+                    Selected: {formData.advocacyOrgs.length} organization(s)
+                  </div>
+                )}
+              </div>
+
+              {/* Admin-Commissioned Organizations (Multiple Selection) */}
+              <div>
+                <div className="text-lg sm:text-xl mb-2 sm:mb-4">Admin-Commissioned Organizations <span className="text-gray-400">(Optional)</span></div>
+                <div className="bg-white border border-[#bcbec0] rounded-[10px] p-4 max-h-48 overflow-y-auto">
+                  {adminCommissionedOrgs.map((org) => (
+                    <div key={org} className="flex items-center mb-3 last:mb-0">
+                      <input
+                        type="checkbox"
+                        id={`admin-${org}`}
+                        checked={formData.adminOrgs.includes(org)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              adminOrgs: [...prev.adminOrgs, org]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              adminOrgs: prev.adminOrgs.filter(o => o !== org)
+                            }));
+                          }
+                        }}
+                        className="w-4 h-4 text-[#bb8b1b] bg-gray-100 border-gray-300 rounded focus:ring-[#bb8b1b] focus:ring-2"
+                      />
+                      <label htmlFor={`admin-${org}`} className="ml-3 text-sm text-black cursor-pointer hover:text-[#bb8b1b] transition-colors">
+                        {org}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {formData.adminOrgs.length > 0 && (
+                  <div className="mt-2 text-sm text-white/80">
+                    Selected: {formData.adminOrgs.length} organization(s)
+                  </div>
+                )}
+              </div>
+
+              {/* Summary of selected organizations */}
+              {(formData.programOrg || formData.advocacyOrgs.length > 0 || formData.adminOrgs.length > 0) && (
+                <div className="bg-white/10 rounded-lg p-4 mb-4">
+                  <h3 className="text-lg font-semibold mb-2 text-white">Selected Organizations:</h3>
+                  <div className="space-y-2 text-sm">
+                    {formData.programOrg && (
+                      <div className="flex items-center">
+                        <span className="text-[#fac36b] mr-2">•</span>
+                        <span className="text-white">{formData.programOrg}</span>
+                        <span className="text-gray-300 ml-2">(Program)</span>
+                      </div>
+                    )}
+                    {formData.advocacyOrgs.map((org, index) => (
+                      <div key={index} className="flex items-center">
+                        <span className="text-[#fac36b] mr-2">•</span>
+                        <span className="text-white">{org}</span>
+                        <span className="text-gray-300 ml-2">(Advocacy)</span>
+                      </div>
+                    ))}
+                    {formData.adminOrgs.map((org, index) => (
+                      <div key={index} className="flex items-center">
+                        <span className="text-[#fac36b] mr-2">•</span>
+                        <span className="text-white">{org}</span>
+                        <span className="text-gray-300 ml-2">(Admin)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2">
                 <motion.a 
@@ -760,7 +892,7 @@ const CreateAccount = () => {
 
                 <motion.button 
                   type="submit"
-                  disabled={isLoading || !formData.email.trim() || !formData.courseYear.trim() || !formData.department_org.trim()}
+                  disabled={isLoading || !formData.email.trim() || !formData.courseYear.trim() || !formData.programOrg.trim()}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="w-full h-[50px] text-white text-lg sm:text-xl font-bold cursor-pointer border-2 border-black rounded-lg hover:text-[#fac36b] hover:border-[#fac36b] bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
