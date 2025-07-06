@@ -62,234 +62,57 @@ interface Election {
   candidates: Candidate[];
   settings: {
     isUniLevel: boolean;
+    isOrgLevel: boolean;
     allowAbstain: boolean;
-    eligibleCourseYear: string[];
+    eligibleOrganizations: string[];
+    useAdministeredOrg: boolean;
   };
 }
 
-const courseYearOptions = [
-// Architecture
-'BS Architecture - 1st Year',
-'BS Architecture - 2nd Year',
-'BS Architecture - 3rd Year',
-'BS Architecture - 4th Year',
-'BS Architecture - 5th Year',
+// Organization list with categories
+const organizationOptions = [
+  { name: 'Supreme Student Government (SSG)', category: 'Admin-Commissioned Organizations' },
+  { name: 'The Technologian Student Press (TTSP)', category: 'Admin-Commissioned Organizations' },
+  { name: 'Honor Society (HS)', category: 'Admin-Commissioned Organizations' },
+  { name: 'American Concrete Institute of the Philippines (ACIP) CIT University Student Chapter', category: 'Program-based Organizations' },
+  { name: 'Biology Students Alliance (BSA)', category: 'Program-based Organizations' },
+  { name: 'Psychology Society', category: 'Program-based Organizations' },
+  { name: 'Creative Alliance of Multimedia and Visual Arts Students (CAMVAS)', category: 'Program-based Organizations' },
+  { name: 'Computer Students Society (CSS)', category: 'Program-based Organizations' },
+  { name: 'Industrial Engineering Council', category: 'Program-based Organizations' },
+  { name: 'Institute of Computer Engineers of the Philippines Student Edition (ICpEP.SE)', category: 'Program-based Organizations' },
+  { name: 'Institute of Electronics Engineers of the Philippines (IECEP) CIT University Chapter', category: 'Program-based Organizations' },
+  { name: 'Institute of Integrated Electrical Engineers of the Philippines (IIEE) CIT University Chapter', category: 'Program-based Organizations' },
+  { name: 'Junior Criminology Council (JCC)', category: 'Program-based Organizations' },
+  { name: 'Junior Financial Executives (JFINEX)', category: 'Program-based Organizations' },
+  { name: 'Junior People Management Association of the Philippines (JPMAP)', category: 'Program-based Organizations' },
+  { name: 'Junior Philippine Institute of Accountants (JPIA) CIT University Chapter', category: 'Program-based Organizations' },
+  { name: 'Junior Philippine Institute of Chemical Engineers (JPIChE) CIT University Chapter', category: 'Program-based Organizations' },
+  { name: 'Junior Association of Hospitality and Tourism Executives (JAHTEX)', category: 'Program-based Organizations' },
+  { name: 'Junior Philippine Society of Mechanical Engineers (JPSME) CIT University Chapter', category: 'Program-based Organizations' },
+  { name: 'Nursing Community Extension Services (NCES)', category: 'Advocacy-based Organizations' },
+  { name: 'Nursing Student Body Organization (NSBO)', category: 'Program-based Organizations' },
+  { name: 'Philippine Institute of Civil Engineers (PICE) CIT University Chapter', category: 'Program-based Organizations' },
+  { name: 'Philippine Society of Mining Engineers (PSEM) Central Visayas', category: 'Program-based Organizations' },
+  { name: 'United Architects of the Philippines Student Auxiliary (UAPSA)', category: 'Program-based Organizations' },
+  { name: 'Young Educators Association (YEA)', category: 'Program-based Organizations' },
+  { name: 'Christian Fellowship', category: 'Advocacy-based Organizations' },
+  { name: 'DOST Scholars Association', category: 'Advocacy-based Organizations' },
+  { name: 'Elite Debate Society', category: 'Advocacy-based Organizations' },
+  { name: 'Google Developer Student Club', category: 'Advocacy-based Organizations' },
+  { name: 'Philippine Junior Jaycees', category: 'Advocacy-based Organizations' },
+  { name: 'Radio/Rescue and Emergency Assistance Volunteer Organization (REAVO)', category: 'Advocacy-based Organizations' },
+  { name: 'Red Cross Youth Council (RCY)', category: 'Advocacy-based Organizations' },
+  { name: 'Rotaract Club of Metro Cebu CIT University Chapter', category: 'Advocacy-based Organizations' },
+  { name: 'Wildcats E-Sports League', category: 'Advocacy-based Organizations' },
+  { name: 'Youth for Christ', category: 'Advocacy-based Organizations' },
+];
 
-// Engineering Programs
-'BS Chemical Engineering - 1st Year',
-'BS Chemical Engineering - 2nd Year',
-'BS Chemical Engineering - 3rd Year',
-'BS Chemical Engineering - 4th Year',
-
-'BS Civil Engineering - 1st Year',
-'BS Civil Engineering - 2nd Year',
-'BS Civil Engineering - 3rd Year',
-'BS Civil Engineering - 4th Year',
-
-'BS Computer Engineering - 1st Year',
-'BS Computer Engineering - 2nd Year',
-'BS Computer Engineering - 3rd Year',
-'BS Computer Engineering - 4th Year',
-
-'BS Electrical Engineering - 1st Year',
-'BS Electrical Engineering - 2nd Year',
-'BS Electrical Engineering - 3rd Year',
-'BS Electrical Engineering - 4th Year',
-
-'BS Electronics Engineering - 1st Year',
-'BS Electronics Engineering - 2nd Year',
-'BS Electronics Engineering - 3rd Year',
-'BS Electronics Engineering - 4th Year',
-
-'BS Industrial Engineering - 1st Year',
-'BS Industrial Engineering - 2nd Year',
-'BS Industrial Engineering - 3rd Year',
-'BS Industrial Engineering - 4th Year',
-
-'BS Mechanical Engineering - 1st Year',
-'BS Mechanical Engineering - 2nd Year',
-'BS Mechanical Engineering - 3rd Year',
-'BS Mechanical Engineering - 4th Year',
-
-'BS Mechanical Engineering with Computational Science - 1st Year',
-'BS Mechanical Engineering with Computational Science - 2nd Year',
-'BS Mechanical Engineering with Computational Science - 3rd Year',
-'BS Mechanical Engineering with Computational Science - 4th Year',
-
-'BS Mechanical Engineering with Mechatronics - 1st Year',
-'BS Mechanical Engineering with Mechatronics - 2nd Year',
-'BS Mechanical Engineering with Mechatronics - 3rd Year',
-'BS Mechanical Engineering with Mechatronics - 4th Year',
-
-'BS Mining Engineering - 1st Year',
-'BS Mining Engineering - 2nd Year',
-'BS Mining Engineering - 3rd Year',
-'BS Mining Engineering - 4th Year',
-
-// Accountancy and Business Programs
-'BS Accountancy - 1st Year',
-'BS Accountancy - 2nd Year',
-'BS Accountancy - 3rd Year',
-'BS Accountancy - 4th Year',
-
-'BS Accounting Information Systems - 1st Year',
-'BS Accounting Information Systems - 2nd Year',
-'BS Accounting Information Systems - 3rd Year',
-'BS Accounting Information Systems - 4th Year',
-
-'BS Management Accounting - 1st Year',
-'BS Management Accounting - 2nd Year',
-'BS Management Accounting - 3rd Year',
-'BS Management Accounting - 4th Year',
-
-'BS Business Administration (Banking & Financial Management) - 1st Year',
-'BS Business Administration (Banking & Financial Management) - 2nd Year',
-'BS Business Administration (Banking & Financial Management) - 3rd Year',
-'BS Business Administration (Banking & Financial Management) - 4th Year',
-
-'BS Business Administration (Business Analytics) - 1st Year',
-'BS Business Administration (Business Analytics) - 2nd Year',
-'BS Business Administration (Business Analytics) - 3rd Year',
-'BS Business Administration (Business Analytics) - 4th Year',
-
-'BS Business Administration (General Business Management) - 1st Year',
-'BS Business Administration (General Business Management) - 2nd Year',
-'BS Business Administration (General Business Management) - 3rd Year',
-'BS Business Administration (General Business Management) - 4th Year',
-
-'BS Business Administration (Human Resource Management) - 1st Year',
-'BS Business Administration (Human Resource Management) - 2nd Year',
-'BS Business Administration (Human Resource Management) - 3rd Year',
-'BS Business Administration (Human Resource Management) - 4th Year',
-
-'BS Business Administration (Marketing Management) - 1st Year',
-'BS Business Administration (Marketing Management) - 2nd Year',
-'BS Business Administration (Marketing Management) - 3rd Year',
-'BS Business Administration (Marketing Management) - 4th Year',
-
-'BS Business Administration (Operations Management) - 1st Year',
-'BS Business Administration (Operations Management) - 2nd Year',
-'BS Business Administration (Operations Management) - 3rd Year',
-'BS Business Administration (Operations Management) - 4th Year',
-
-'BS Business Administration (Quality Management) - 1st Year',
-'BS Business Administration (Quality Management) - 2nd Year',
-'BS Business Administration (Quality Management) - 3rd Year',
-'BS Business Administration (Quality Management) - 4th Year',
-
-'BS Hospitality Management - 1st Year',
-'BS Hospitality Management - 2nd Year',
-'BS Hospitality Management - 3rd Year',
-'BS Hospitality Management - 4th Year',
-
-'BS Tourism Management - 1st Year',
-'BS Tourism Management - 2nd Year',
-'BS Tourism Management - 3rd Year',
-'BS Tourism Management - 4th Year',
-
-'BS Office Administration - 1st Year',
-'BS Office Administration - 2nd Year',
-'BS Office Administration - 3rd Year',
-'BS Office Administration - 4th Year',
-
-'Associate in Office Administration - 1st Year',
-'Associate in Office Administration - 2nd Year',
-
-'Bachelor in Public Administration - 1st Year',
-'Bachelor in Public Administration - 2nd Year',
-'Bachelor in Public Administration - 3rd Year',
-'Bachelor in Public Administration - 4th Year',
-
-// Arts and Humanities
-'AB Communication - 1st Year',
-'AB Communication - 2nd Year',
-'AB Communication - 3rd Year',
-'AB Communication - 4th Year',
-
-'AB English with Applied Linguistics - 1st Year',
-'AB English with Applied Linguistics - 2nd Year',
-'AB English with Applied Linguistics - 3rd Year',
-'AB English with Applied Linguistics - 4th Year',
-
-// Education
-'Bachelor of Elementary Education - 1st Year',
-'Bachelor of Elementary Education - 2nd Year',
-'Bachelor of Elementary Education - 3rd Year',
-'Bachelor of Elementary Education - 4th Year',
-
-'Bachelor of Secondary Education (English) - 1st Year',
-'Bachelor of Secondary Education (English) - 2nd Year',
-'Bachelor of Secondary Education (English) - 3rd Year',
-'Bachelor of Secondary Education (English) - 4th Year',
-
-'Bachelor of Secondary Education (Filipino) - 1st Year',
-'Bachelor of Secondary Education (Filipino) - 2nd Year',
-'Bachelor of Secondary Education (Filipino) - 3rd Year',
-'Bachelor of Secondary Education (Filipino) - 4th Year',
-
-'Bachelor of Secondary Education (Mathematics) - 1st Year',
-'Bachelor of Secondary Education (Mathematics) - 2nd Year',
-'Bachelor of Secondary Education (Mathematics) - 3rd Year',
-'Bachelor of Secondary Education (Mathematics) - 4th Year',
-
-'Bachelor of Secondary Education (Science) - 1st Year',
-'Bachelor of Secondary Education (Science) - 2nd Year',
-'Bachelor of Secondary Education (Science) - 3rd Year',
-'Bachelor of Secondary Education (Science) - 4th Year',
-
-'Bachelor of Multimedia Arts - 1st Year',
-'Bachelor of Multimedia Arts - 2nd Year',
-'Bachelor of Multimedia Arts - 3rd Year',
-'Bachelor of Multimedia Arts - 4th Year',
-
-// Sciences
-'BS Biology - 1st Year',
-'BS Biology - 2nd Year',
-'BS Biology - 3rd Year',
-'BS Biology - 4th Year',
-
-'BS Math with Applied Industrial Mathematics - 1st Year',
-'BS Math with Applied Industrial Mathematics - 2nd Year',
-'BS Math with Applied Industrial Mathematics - 3rd Year',
-'BS Math with Applied Industrial Mathematics - 4th Year',
-
-'BS Psychology - 1st Year',
-'BS Psychology - 2nd Year',
-'BS Psychology - 3rd Year',
-'BS Psychology - 4th Year',
-
-// Health Sciences
-'BS Nursing - 1st Year',
-'BS Nursing - 2nd Year',
-'BS Nursing - 3rd Year',
-'BS Nursing - 4th Year',
-
-'BS Pharmacy - 1st Year',
-'BS Pharmacy - 2nd Year',
-'BS Pharmacy - 3rd Year',
-'BS Pharmacy - 4th Year',
-
-'BS Medical Technology - 1st Year',
-'BS Medical Technology - 2nd Year',
-'BS Medical Technology - 3rd Year',
-'BS Medical Technology - 4th Year',
-
-// Computing
-'BS Computer Science - 1st Year',
-'BS Computer Science - 2nd Year',
-'BS Computer Science - 3rd Year',
-'BS Computer Science - 4th Year',
-
-'BS Information Technology - 1st Year',
-'BS Information Technology - 2nd Year',
-'BS Information Technology - 3rd Year',
-'BS Information Technology - 4th Year',
-
-// Criminology
-'BS Criminology - 1st Year',
-'BS Criminology - 2nd Year',
-'BS Criminology - 3rd Year',
-'BS Criminology - 4th Year'
+const organizationCategories = [
+  'All',
+  'Program-based Organizations',
+  'Advocacy-based Organizations',
+  'Admin-Commissioned Organizations',
 ];
 
 const defaultPositions: Position[] = [
@@ -329,7 +152,7 @@ const defaultPositions: Position[] = [
 ];
 
 export default function UpdateElectionPage() {
-  const { administeredOrg } = useAdminOrg();
+  const { administeredOrg, setAdministeredOrg } = useAdminOrg();
   const searchParams = useSearchParams();
   const electionId = searchParams.get('electionId');
   const [loading, setLoading] = useState(true);
@@ -377,16 +200,29 @@ export default function UpdateElectionPage() {
         candidates: result.election.candidates.map((c: any) => ({ name: c.name, id: c.id }))
       });
 
-      setElection(result.election);
+      // Ensure settings are properly initialized with the new structure
+      const electionData = {
+        ...result.election,
+        settings: {
+          isUniLevel: result.election.settings?.isUniLevel || false,
+          isOrgLevel: result.election.settings?.isOrgLevel || false,
+          allowAbstain: result.election.settings?.allowAbstain ?? true,
+          eligibleOrganizations: result.election.settings?.eligibleOrganizations || 
+                                result.election.settings?.eligibleCourseYear || [],
+          useAdministeredOrg: result.election.settings?.useAdministeredOrg || false,
+        }
+      };
+
+      setElection(electionData);
       setNewCandidate({
         name: "",
         email: "",
         positionId: "",
+        status: "pending",
         credentials: "",
         course: "",
         year: "",
         platform: "",
-        status: "pending",
         picture_url: "",
       });
       setEditingCandidate(null);
@@ -423,7 +259,8 @@ export default function UpdateElectionPage() {
     settings: {
       isUniLevel: false,
       allowAbstain: true,
-      eligibleCourseYear: [],
+      eligibleOrganizations: [],
+      useAdministeredOrg: true,
     },
   })
 
@@ -825,6 +662,25 @@ export default function UpdateElectionPage() {
 
     try {
         console.log("🔄 Starting election update...");
+        
+        // Transform candidate data to match database schema
+        const transformedElectionData = {
+            ...election,
+            candidates: election.candidates.map(candidate => ({
+                ...candidate,
+                course_year: candidate.course && candidate.year ? `${candidate.course} - ${candidate.year}` : '',
+                detailed_achievements: candidate.credentials || '',
+                // Remove the separate course and year fields as they're not in the database schema
+                course: undefined,
+                year: undefined,
+                credentials: undefined
+            })),
+            settings: {
+                ...election.settings,
+                eligibleOrganizations: election.settings.eligibleOrganizations
+            }
+        };
+        
         const response = await fetch('/api/update-election', {
             method: 'POST',
             headers: {
@@ -832,7 +688,7 @@ export default function UpdateElectionPage() {
             },
             body: JSON.stringify({
                 electionId,
-                electionData: election
+                electionData: transformedElectionData
             }),
         });
 
@@ -929,6 +785,21 @@ export default function UpdateElectionPage() {
   const getPositionById = (positionId: string) => {
     return election.positions.find((p) => p.id === positionId)
   }
+
+  // Fetch the admin's administered_org on mount
+  useEffect(() => {
+    async function fetchAdminOrg() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) return;
+      const { data: profile } = await supabase
+        .from('admin_profiles')
+        .select('administered_org')
+        .eq('email', user.email)
+        .single();
+      if (profile?.administered_org) setAdministeredOrg(profile.administered_org);
+    }
+    fetchAdminOrg();
+  }, []);
 
   if (loading) {
     return (
@@ -1229,9 +1100,9 @@ export default function UpdateElectionPage() {
                                     <SelectValue placeholder="Select course and Year" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {courseYearOptions.map((course) => (
-                                    <SelectItem key={course} value={course}>
-                                        {course}
+                                    {organizationOptions.map((org) => (
+                                    <SelectItem key={org.name} value={org.name}>
+                                        {org.name}
                                     </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -1432,9 +1303,9 @@ export default function UpdateElectionPage() {
                                 <SelectValue placeholder="Select course and Year" />
                             </SelectTrigger>
                             <SelectContent>
-                                {courseYearOptions.map((course) => (
-                                <SelectItem key={course} value={course}>
-                                    {course}
+                                {organizationOptions.map((org) => (
+                                <SelectItem key={org.name} value={org.name}>
+                                    {org.name}
                                 </SelectItem>
                                 ))}
                             </SelectContent>
@@ -1565,35 +1436,21 @@ export default function UpdateElectionPage() {
                                 <Switch
                                 id="uni-level"
                                 checked={election.settings.isUniLevel}
+                                disabled={election.settings.isOrgLevel}
                                 onCheckedChange={(checked) =>
                                     setElection((prev) => ({
                                     ...prev,
-                                    settings: { ...prev.settings, isUniLevel: checked },
+                                    settings: { 
+                                        ...prev.settings, 
+                                        isUniLevel: checked,
+                                        isOrgLevel: checked ? false : prev.settings.isOrgLevel,
+                                        eligibleOrganizations: checked ? [] : prev.settings.eligibleOrganizations
+                                    },
                                     }))
                                 }
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-red-900">Voter Eligibility</h3>
-                        <div>
-                        <MultiSelectDropdown
-                            options={courseYearOptions}
-                            selectedOptions={election.settings.eligibleCourseYear}
-                            onSelectionChange={(selected) => {
-                                setElection((prev) => ({
-                                    ...prev,
-                                    settings: {
-                                        ...prev.settings,
-                                        eligibleCourseYear: selected,
-                                    },
-                                }))
-                            }}
-                            placeholder="Select eligible courses and years"
-                            label="Eligible Courses and Year"
-                        />
+            
                         </div>
                     </div>
                     </CardContent>

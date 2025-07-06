@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
     } else if (type === 'university') {
       query = query.eq('is_uni_level', true);
     } else if (type === 'organization' && departmentOrg) {
-      query = query.eq('is_uni_level', false).eq('department_org', departmentOrg);
+      const departmentOrgArray = departmentOrg.split('|').map(org => org.trim());
+      query = query.eq('is_uni_level', false).in('department_org', departmentOrgArray);
     } else if (orgId) {
       query = query.eq('org_id', orgId);
     } else {

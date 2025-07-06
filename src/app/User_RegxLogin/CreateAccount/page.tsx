@@ -474,6 +474,15 @@ const CreateAccount = () => {
         return;
       }
 
+      // Combine all selected organizations into a single string for department_org
+      const allOrganizations = [
+        formData.programOrg,
+        ...formData.advocacyOrgs,
+        ...formData.adminOrgs
+      ].filter(org => org && org.trim() !== ''); // Remove empty strings
+      
+      const department_org = allOrganizations.join(' | ');
+
       const response = await fetch('/api/send-pin', {
         method: 'POST',
         headers: {
@@ -482,9 +491,7 @@ const CreateAccount = () => {
         body: JSON.stringify({ 
           email: formData.email,
           courseYear: formData.courseYear,
-          programOrg: formData.programOrg,
-          advocacyOrgs: formData.advocacyOrgs,
-          adminOrgs: formData.adminOrgs
+          department_org: department_org
         }),
       });
 
@@ -806,6 +813,36 @@ const CreateAccount = () => {
                   </div>
                 )}
               </div>
+
+              {/* Summary of selected organizations */}
+              {(formData.programOrg || formData.advocacyOrgs.length > 0 || formData.adminOrgs.length > 0) && (
+                <div className="bg-white/10 rounded-lg p-4 mb-4">
+                  <h3 className="text-lg font-semibold mb-2 text-white">Selected Organizations:</h3>
+                  <div className="space-y-2 text-sm">
+                    {formData.programOrg && (
+                      <div className="flex items-center">
+                        <span className="text-[#fac36b] mr-2">•</span>
+                        <span className="text-white">{formData.programOrg}</span>
+                        <span className="text-gray-300 ml-2">(Program)</span>
+                      </div>
+                    )}
+                    {formData.advocacyOrgs.map((org, index) => (
+                      <div key={index} className="flex items-center">
+                        <span className="text-[#fac36b] mr-2">•</span>
+                        <span className="text-white">{org}</span>
+                        <span className="text-gray-300 ml-2">(Advocacy)</span>
+                      </div>
+                    ))}
+                    {formData.adminOrgs.map((org, index) => (
+                      <div key={index} className="flex items-center">
+                        <span className="text-[#fac36b] mr-2">•</span>
+                        <span className="text-white">{org}</span>
+                        <span className="text-gray-300 ml-2">(Admin)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2">
                 <motion.a 

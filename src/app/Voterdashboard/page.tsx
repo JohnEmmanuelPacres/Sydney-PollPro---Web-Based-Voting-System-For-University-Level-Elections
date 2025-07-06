@@ -385,7 +385,7 @@ export default function VotingDashboard() {
                                     <div className="flex-1">
                                       <p className="font-semibold text-gray-900">{candidate.name}</p>
                                       <p className="text-xs text-gray-600">
-                                        {candidate.course} • {candidate.year}
+                                        {candidate.course_year || 'Course not specified'}
                                       </p>
                                     </div>
                                 </div>

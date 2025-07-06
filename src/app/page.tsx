@@ -28,13 +28,25 @@ export default function Home() {
       const latestElection = uniData?.elections && uniData.elections.length > 0 ? uniData.elections[0] : null;
       setCurrentElection(latestElection);
       setElectionLoading(false);
+      
       if (latestElection) {
-        // Fetch stats for the latest university-level election
-        const statsRes = await fetch(`/api/global-stats?electionId=${latestElection.id}`);
-        const statsData = await statsRes.json();
-        setVotersCount(statsData.voters !== undefined ? statsData.voters.toLocaleString() : 'N/A');
-        setVotesCount(statsData.votes !== undefined ? statsData.votes.toLocaleString() : 'N/A');
-        setParticipation(statsData.participation !== undefined ? `${statsData.participation}%` : 'N/A');
+        // Check if the election is upcoming
+        const now = new Date();
+        const startDate = new Date(latestElection.start_date);
+        
+        if (now < startDate) {
+          // For upcoming elections, set stats to show they're not available yet
+          setVotersCount('N/A');
+          setVotesCount('N/A');
+          setParticipation('N/A');
+        } else {
+          // Fetch stats for active or ended elections
+          const statsRes = await fetch(`/api/global-stats?electionId=${latestElection.id}`);
+          const statsData = await statsRes.json();
+          setVotersCount(statsData.voters !== undefined ? statsData.voters.toLocaleString() : 'N/A');
+          setVotesCount(statsData.votes !== undefined ? statsData.votes.toLocaleString() : 'N/A');
+          setParticipation(statsData.participation !== undefined ? `${statsData.participation}%` : 'N/A');
+        }
       } else {
         // Fallback: show global stats
         const res = await fetch('/api/global-stats');

@@ -60,6 +60,18 @@ export function OrganizationElectionCard({
 
   useEffect(() => {
     async function fetchStats() {
+      // Only fetch stats for elections that are not upcoming
+      const now = new Date();
+      const startDate = new Date(election.startDate);
+      
+      if (now < startDate) {
+        // For upcoming elections, set stats to show they're not available yet
+        setVotersCount('N/A');
+        setVotesCount('N/A');
+        setParticipation('N/A');
+        return;
+      }
+      
       const res = await fetch(`/api/global-stats?electionId=${election.id}`);
       const data = await res.json();
       setVotersCount(data.voters !== undefined ? data.voters.toLocaleString() : 'N/A');
@@ -67,7 +79,7 @@ export function OrganizationElectionCard({
       setParticipation(data.participation !== undefined ? `${data.participation}%` : 'N/A');
     }
     fetchStats();
-  }, []);
+  }, [election.startDate, election.id]);
 
   useEffect(() => {
     async function fetchUserAndEmail() {
