@@ -498,89 +498,105 @@ const CreateAccount = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
-  // Memoized submit handler
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  // Add state for confirmation popup and cooldown
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(5);
+  const [isCooldownActive, setIsCooldownActive] = useState(false);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (isCooldownActive && cooldownSeconds > 0) {
+      interval = setInterval(() => {
+        setCooldownSeconds(prev => prev - 1);
+      }, 1000);
+    }
+    if (cooldownSeconds === 0) {
+      setIsCooldownActive(false);
+    }
+    return () => clearInterval(interval);
+  }, [isCooldownActive, cooldownSeconds]);
+
+  // Refactor handleSubmit to show confirmation popup
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    // Validate all required fields are filled
+    if (!formData.email.trim()) {
+      setError('Please enter your institutional email address');
+      return;
+    }
+    if (!formData.courseYear.trim()) {
+      setError('Please select your course and year');
+      return;
+    }
+    if (!formData.department_org?.trim()) {
+      setError('Please select your department organization');
+      return;
+    }
+    if (!formData.administered_Org.trim()) {
+      setError('Please select your administered organization');
+      return;
+    }
+    if (!formData.orgID.trim()) {
+      setError('Please enter the organization code');
+      return;
+    }
+    if (!formData.email.endsWith('@cit.edu')) {
+      setError('Please use your CIT email address (@cit.edu)');
+      return;
+    }
+    setShowConfirmation(true);
+    setIsCooldownActive(true);
+    setCooldownSeconds(5);
+  }, [formData]);
+
+  const handleCancelRegistration = useCallback(() => {
+    setShowConfirmation(false);
+    setIsCooldownActive(false);
+    setCooldownSeconds(5);
+  }, []);
+
+  const handleConfirmRegistration = useCallback(async () => {
+    if (cooldownSeconds > 0) return;
+    setShowConfirmation(false);
+    setIsCooldownActive(false);
+    setCooldownSeconds(5);
     setIsLoading(true);
-    
     try {
-      // Validate all required fields are filled
-      if (!formData.email.trim()) {
-        setError('Please enter your institutional email address');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!formData.courseYear.trim()) {
-        setError('Please select your course and year');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!formData.department_org?.trim()) {
-        setError('Please select your department organization');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!formData.administered_Org.trim()) {
-        setError('Please select your administered organization');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!formData.orgID.trim()) {
-        setError('Please enter the organization code');
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate email format
-      if (!formData.email.endsWith('@cit.edu')) {
-        setError('Please use your CIT email address (@cit.edu)');
-        setIsLoading(false);
-        return;
-      }
-
       const { data: orgMatch, error } = await supabase
         .from('organizations')
         .select('*')
         .eq('organization_name', formData.administered_Org)
         .eq('org_id', formData.orgID)
         .single();
-
       if (!orgMatch || error) {
         setError('Invalid Organization Code.');
         setIsLoading(false);
         return;
       }
-      else {
-        // Send temporary PIN
-        const response = await fetch('/api/send-pin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            email: formData.email,
-            courseYear: formData.courseYear,
-            department_org: formData.department_org, 
-            administered_Org: formData.administered_Org,
-          }),
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.error || 'Failed to send temporary PIN');
-          setTimeout(() => setError(null), 5000);
-          return;
-        }
-
-        setSuccess('Temporary PIN sent to your email! Please check your inbox and use the PIN to log in.');
-        setTimeout(() => router.push('/User_RegxLogin/LoginAdmin'), 8000);
+      // Send temporary PIN
+      const response = await fetch('/api/send-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: formData.email,
+          courseYear: formData.courseYear,
+          department_org: formData.department_org, 
+          administered_Org: formData.administered_Org,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'Failed to send temporary PIN');
+        setTimeout(() => setError(null), 5000);
+        return;
       }
+      setSuccess('Temporary PIN sent to your email! Please check your inbox and use the PIN to log in.');
+      setTimeout(() => router.push('/User_RegxLogin/LoginAdmin'), 8000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during registration';
       setError(errorMessage);
@@ -588,7 +604,7 @@ const CreateAccount = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, router]);
+  }, [formData, router, cooldownSeconds]);
 
   // Memoized common input classes to avoid repetition
   const inputClasses = useMemo(() => (
@@ -902,6 +918,57 @@ const CreateAccount = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Confirmation Popup */}
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[2000] p-4"
+            onClick={handleCancelRegistration}
+          >
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white rounded-[20px] p-6 max-w-sm w-full mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">Proceed?</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to register with the provided information?
+                </p>
+                <div className="flex gap-3">
+                  <motion.button
+                    whileHover={{ scale: cooldownSeconds === 0 ? 1.05 : 1 }}
+                    whileTap={{ scale: cooldownSeconds === 0 ? 0.95 : 1 }}
+                    onClick={handleConfirmRegistration}
+                    disabled={cooldownSeconds > 0}
+                    className={`flex-1 py-3 px-4 font-bold rounded-lg transition-colors ${
+                      cooldownSeconds > 0 
+                        ? 'bg-gray-400 text-gray-500 cursor-not-allowed' 
+                        : 'bg-[#bb8b1b] text-white hover:bg-[#a67a1a]'
+                    }`}
+                  >
+                    {cooldownSeconds > 0 ? `Yes (${cooldownSeconds}s)` : 'Yes'}
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCancelRegistration}
+                    className="flex-1 py-3 px-4 bg-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-400 transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Toast Notifications */}
       <AnimatePresence>
