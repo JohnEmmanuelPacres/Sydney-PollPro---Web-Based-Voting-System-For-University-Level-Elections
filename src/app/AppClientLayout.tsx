@@ -1,8 +1,17 @@
 "use client";
+import { Suspense } from "react";
 import ClientLayout from "@/app/components/LoadingScreenComponents/ClientLayout";
 import { usePathname, useSearchParams } from "next/navigation";
 
 export default function AppClientLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <AppClientLayoutInner>{children}</AppClientLayoutInner>
+    </Suspense>
+  );
+}
+
+function AppClientLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
