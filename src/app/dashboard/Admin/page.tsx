@@ -37,13 +37,14 @@ const AdminDashboardNoSession = () => {
   const [resignPassword, setResignPassword] = useState('');
   const [resignError, setResignError] = useState<string | null>(null);
   const [resignLoading, setResignLoading] = useState(false);
+  const [showResignPassword, setShowResignPassword] = useState(false);
   const searchParams = useSearchParams();
   const { setAdministeredOrg, administeredOrg } = useAdminOrg();
   const router = useRouter();
-
+  const paramAdminOrg = searchParams.get('administered_Org');
+  const effectiveAdminOrg = paramAdminOrg || administeredOrg;
+  
   useEffect(() => {
-    const paramAdminOrg = searchParams.get('administered_Org');
-    const effectiveAdminOrg = paramAdminOrg || administeredOrg;
     if (paramAdminOrg) setAdministeredOrg(paramAdminOrg);
 
     const fetchOrgIdAndElection = async () => {
@@ -166,21 +167,40 @@ const AdminDashboardNoSession = () => {
         setResignLoading(false);
         return;
       }
+      // Delete all posts by this admin first
+      const { error: postsDeleteError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('admin_id', user.id);
+      if (postsDeleteError) {
+        console.error('Failed to delete posts for admin:', postsDeleteError);
+        setResignError('Failed to delete posts for admin: ' + (postsDeleteError.message || JSON.stringify(postsDeleteError)));
+        setResignLoading(false);
+        return;
+      }
+      // Log values before delete
+      console.log('Attempting to delete admin profile:', { email: user.email, effectiveAdminOrg });
       // Delete from admin_profiles
       const { error: profileError } = await supabase
         .from('admin_profiles')
         .delete()
         .eq('email', user.email)
-        .eq('administered_org', administeredOrg);
+        .eq('administered_org', effectiveAdminOrg);
       if (profileError) {
-        setResignError('Failed to remove admin profile.');
+        console.error('Failed to remove admin profile:', profileError);
+        setResignError('Failed to remove admin profile: ' + (profileError.message || JSON.stringify(profileError)));
         setResignLoading(false);
         return;
       }
-      // Delete user account
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-      if (deleteError) {
-        setResignError('Failed to delete user account.');
+      // Delete user account via API route
+      const res = await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResignError('Failed to delete user account: ' + (data.error || 'Unknown error'));
         setResignLoading(false);
         return;
       }
@@ -190,6 +210,7 @@ const AdminDashboardNoSession = () => {
       // Redirect to login or home
       router.push('/User_RegxLogin');
     } catch (err) {
+      console.error('Unexpected error in handleResign:', err);
       setResignError('Unexpected error. Please try again.');
       setResignLoading(false);
     }
@@ -271,14 +292,28 @@ const AdminDashboardNoSession = () => {
           <div className="space-y-4">
             <p className="text-black">Are you sure you want to resign as admin for <span className="font-bold">{administeredOrg}</span>? This action is irreversible and will delete your admin account.</p>
             <p className="text-black">Please enter your password to confirm:</p>
-            <input
-              type="password"
-              className="w-full border border-gray-300 rounded px-3 py-2 text-black"
-              placeholder="Enter your password"
-              value={resignPassword}
-              onChange={e => setResignPassword(e.target.value)}
-              disabled={resignLoading}
-            />
+            <div className="relative">
+              <input
+                type={showResignPassword ? 'text' : 'password'}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-black pr-10"
+                placeholder="Enter your password"
+                value={resignPassword}
+                onChange={e => setResignPassword(e.target.value)}
+                disabled={resignLoading}
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 focus:outline-none"
+                onClick={() => setShowResignPassword(v => !v)}
+                tabIndex={-1}
+              >
+                {showResignPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.403-3.22 1.125-4.575m2.1-2.1A9.956 9.956 0 0112 3c5.523 0 10 4.477 10 10 0 1.657-.403 3.22-1.125 4.575m-2.1 2.1A9.956 9.956 0 0112 21c-5.523 0-10-4.477-10-10 0-1.657.403-3.22 1.125-4.575" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c1.657 0 3.22.403 4.575 1.125m2.1 2.1A9.956 9.956 0 0121 12c0 1.657-.403 3.22-1.125 4.575m-2.1 2.1A9.956 9.956 0 0112 21c-5.523 0-10-4.477-10-10 0-1.657.403-3.22 1.125-4.575" /></svg>
+                )}
+              </button>
+            </div>
             {resignError && <div className="text-red-600 text-sm">{resignError}</div>}
             <div className="flex gap-3 mt-4">
               <Button onClick={handleResign} className="flex-1 bg-red-700 hover:bg-red-900 text-white" disabled={resignLoading || !resignPassword}>
