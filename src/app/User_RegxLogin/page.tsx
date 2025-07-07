@@ -16,8 +16,6 @@ const SIGNIN: NextPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
-  const [lastTapTime, setLastTapTime] = useState(0);
   const router = useRouter();
 
   const MAX_ATTEMPTS = 5;
@@ -254,7 +252,6 @@ const SIGNIN: NextPage = () => {
           }
         };
         document.addEventListener('keydown', handleDKey);
-        
         // Remove the listener after a short delay if 'D' is not pressed
         setTimeout(() => {
           document.removeEventListener('keydown', handleDKey);
@@ -262,37 +259,13 @@ const SIGNIN: NextPage = () => {
       }
     };
 
-    const handleTap = () => {
-      const now = Date.now();
-      const timeDiff = now - lastTapTime;
-      
-      // Reset tap count if more than 2 seconds have passed
-      if (timeDiff > 2000) {
-        setTapCount(1);
-      } else {
-        setTapCount(prev => prev + 1);
-      }
-      
-      setLastTapTime(now);
-      
-      // Show admin login after 5 taps
-      if (tapCount + 1 >= 5) {
-        setShowAdminLogin(true);
-        setTapCount(0);
-      }
-    };
-
     // Add event listeners
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('click', handleTap);
-    document.addEventListener('touchstart', handleTap);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('click', handleTap);
-      document.removeEventListener('touchstart', handleTap);
     };
-  }, [tapCount, lastTapTime]);
+  }, []);
 
   if (loading) return <div>Loading...</div>;
 
