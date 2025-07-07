@@ -7,11 +7,12 @@ import Footer from '../components/Footer';
 import ElectionResultsDisplay from '../components/ElectionResultsDisplay';
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 
 const Results: NextPage = () => {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const departmentOrg = searchParams.get('department_org');
   const administeredOrg = searchParams.get('administered_Org');
   const [isSignedIn, setIsSignedIn] = useState(false);
@@ -36,6 +37,7 @@ const Results: NextPage = () => {
   const [isLive, setIsLive] = useState(false);
   const [Org, setOrg] = useState<string>();
   const [filterScope, setFilterScope] = useState<'university' | 'organization'>('university');
+  const hasQueryParams = Array.from(searchParams.entries()).length > 0;
 
   // Header selection logic
   let headerComponent = <Header />;
@@ -130,16 +132,18 @@ const Results: NextPage = () => {
         </h1>
 
         {/* Filter Dropdown */}
-        <div className="flex justify-center mt-8">
-          <select
-            className="bg-white text-black rounded px-4 py-2 text-lg font-medium shadow border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-400"
-            value={filterScope}
-            onChange={e => setFilterScope(e.target.value as 'university' | 'organization')}
-          >
-            <option value="university">University Results</option>
-            <option value="organization">Organization Results</option>
-          </select>
-        </div>
+        {hasQueryParams && (
+          <div className="flex justify-center mt-8">
+            <select
+              className="bg-white text-black rounded px-4 py-2 text-lg font-medium shadow border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-400"
+              value={filterScope}
+              onChange={e => setFilterScope(e.target.value as 'university' | 'organization')}
+            >
+              <option value="university">University Results</option>
+              <option value="organization">Organization Results</option>
+            </select>
+          </div>
+        )}
 
         <div className="mt-12 md:mt-16 lg:mt-20 flex flex-col items-center gap-6 md:gap-8 lg:gap-10 pb-20 md:pb-24 lg:pb-32 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-4xl lg:max-w-5xl xl:max-w-6xl">
