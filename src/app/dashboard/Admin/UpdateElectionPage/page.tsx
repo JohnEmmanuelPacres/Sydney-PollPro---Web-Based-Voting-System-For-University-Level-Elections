@@ -67,6 +67,231 @@ interface Election {
   };
 }
 
+const courseYearOptions = [
+    // Architecture
+    'BS Architecture - 1st Year',
+    'BS Architecture - 2nd Year',
+    'BS Architecture - 3rd Year',
+    'BS Architecture - 4th Year',
+    'BS Architecture - 5th Year',
+
+    // Engineering Programs
+    'BS Chemical Engineering - 1st Year',
+    'BS Chemical Engineering - 2nd Year',
+    'BS Chemical Engineering - 3rd Year',
+    'BS Chemical Engineering - 4th Year',
+    
+    'BS Civil Engineering - 1st Year',
+    'BS Civil Engineering - 2nd Year',
+    'BS Civil Engineering - 3rd Year',
+    'BS Civil Engineering - 4th Year',
+    
+    'BS Computer Engineering - 1st Year',
+    'BS Computer Engineering - 2nd Year',
+    'BS Computer Engineering - 3rd Year',
+    'BS Computer Engineering - 4th Year',
+    
+    'BS Electrical Engineering - 1st Year',
+    'BS Electrical Engineering - 2nd Year',
+    'BS Electrical Engineering - 3rd Year',
+    'BS Electrical Engineering - 4th Year',
+    
+    'BS Electronics Engineering - 1st Year',
+    'BS Electronics Engineering - 2nd Year',
+    'BS Electronics Engineering - 3rd Year',
+    'BS Electronics Engineering - 4th Year',
+    
+    'BS Industrial Engineering - 1st Year',
+    'BS Industrial Engineering - 2nd Year',
+    'BS Industrial Engineering - 3rd Year',
+    'BS Industrial Engineering - 4th Year',
+    
+    'BS Mechanical Engineering - 1st Year',
+    'BS Mechanical Engineering - 2nd Year',
+    'BS Mechanical Engineering - 3rd Year',
+    'BS Mechanical Engineering - 4th Year',
+    
+    'BS Mechanical Engineering with Computational Science - 1st Year',
+    'BS Mechanical Engineering with Computational Science - 2nd Year',
+    'BS Mechanical Engineering with Computational Science - 3rd Year',
+    'BS Mechanical Engineering with Computational Science - 4th Year',
+    
+    'BS Mechanical Engineering with Mechatronics - 1st Year',
+    'BS Mechanical Engineering with Mechatronics - 2nd Year',
+    'BS Mechanical Engineering with Mechatronics - 3rd Year',
+    'BS Mechanical Engineering with Mechatronics - 4th Year',
+    
+    'BS Mining Engineering - 1st Year',
+    'BS Mining Engineering - 2nd Year',
+    'BS Mining Engineering - 3rd Year',
+    'BS Mining Engineering - 4th Year',
+
+    // Accountancy and Business Programs
+    'BS Accountancy - 1st Year',
+    'BS Accountancy - 2nd Year',
+    'BS Accountancy - 3rd Year',
+    'BS Accountancy - 4th Year',
+    
+    'BS Accounting Information Systems - 1st Year',
+    'BS Accounting Information Systems - 2nd Year',
+    'BS Accounting Information Systems - 3rd Year',
+    'BS Accounting Information Systems - 4th Year',
+    
+    'BS Management Accounting - 1st Year',
+    'BS Management Accounting - 2nd Year',
+    'BS Management Accounting - 3rd Year',
+    'BS Management Accounting - 4th Year',
+    
+    'BS Business Administration (Banking & Financial Management) - 1st Year',
+    'BS Business Administration (Banking & Financial Management) - 2nd Year',
+    'BS Business Administration (Banking & Financial Management) - 3rd Year',
+    'BS Business Administration (Banking & Financial Management) - 4th Year',
+    
+    'BS Business Administration (Business Analytics) - 1st Year',
+    'BS Business Administration (Business Analytics) - 2nd Year',
+    'BS Business Administration (Business Analytics) - 3rd Year',
+    'BS Business Administration (Business Analytics) - 4th Year',
+    
+    'BS Business Administration (General Business Management) - 1st Year',
+    'BS Business Administration (General Business Management) - 2nd Year',
+    'BS Business Administration (General Business Management) - 3rd Year',
+    'BS Business Administration (General Business Management) - 4th Year',
+    
+    'BS Business Administration (Human Resource Management) - 1st Year',
+    'BS Business Administration (Human Resource Management) - 2nd Year',
+    'BS Business Administration (Human Resource Management) - 3rd Year',
+    'BS Business Administration (Human Resource Management) - 4th Year',
+    
+    'BS Business Administration (Marketing Management) - 1st Year',
+    'BS Business Administration (Marketing Management) - 2nd Year',
+    'BS Business Administration (Marketing Management) - 3rd Year',
+    'BS Business Administration (Marketing Management) - 4th Year',
+    
+    'BS Business Administration (Operations Management) - 1st Year',
+    'BS Business Administration (Operations Management) - 2nd Year',
+    'BS Business Administration (Operations Management) - 3rd Year',
+    'BS Business Administration (Operations Management) - 4th Year',
+    
+    'BS Business Administration (Quality Management) - 1st Year',
+    'BS Business Administration (Quality Management) - 2nd Year',
+    'BS Business Administration (Quality Management) - 3rd Year',
+    'BS Business Administration (Quality Management) - 4th Year',
+    
+    'BS Hospitality Management - 1st Year',
+    'BS Hospitality Management - 2nd Year',
+    'BS Hospitality Management - 3rd Year',
+    'BS Hospitality Management - 4th Year',
+    
+    'BS Tourism Management - 1st Year',
+    'BS Tourism Management - 2nd Year',
+    'BS Tourism Management - 3rd Year',
+    'BS Tourism Management - 4th Year',
+    
+    'BS Office Administration - 1st Year',
+    'BS Office Administration - 2nd Year',
+    'BS Office Administration - 3rd Year',
+    'BS Office Administration - 4th Year',
+    
+    'Associate in Office Administration - 1st Year',
+    'Associate in Office Administration - 2nd Year',
+    
+    'Bachelor in Public Administration - 1st Year',
+    'Bachelor in Public Administration - 2nd Year',
+    'Bachelor in Public Administration - 3rd Year',
+    'Bachelor in Public Administration - 4th Year',
+
+    // Arts and Humanities
+    'AB Communication - 1st Year',
+    'AB Communication - 2nd Year',
+    'AB Communication - 3rd Year',
+    'AB Communication - 4th Year',
+    
+    'AB English with Applied Linguistics - 1st Year',
+    'AB English with Applied Linguistics - 2nd Year',
+    'AB English with Applied Linguistics - 3rd Year',
+    'AB English with Applied Linguistics - 4th Year',
+
+    // Education
+    'Bachelor of Elementary Education - 1st Year',
+    'Bachelor of Elementary Education - 2nd Year',
+    'Bachelor of Elementary Education - 3rd Year',
+    'Bachelor of Elementary Education - 4th Year',
+    
+    'Bachelor of Secondary Education (English) - 1st Year',
+    'Bachelor of Secondary Education (English) - 2nd Year',
+    'Bachelor of Secondary Education (English) - 3rd Year',
+    'Bachelor of Secondary Education (English) - 4th Year',
+    
+    'Bachelor of Secondary Education (Filipino) - 1st Year',
+    'Bachelor of Secondary Education (Filipino) - 2nd Year',
+    'Bachelor of Secondary Education (Filipino) - 3rd Year',
+    'Bachelor of Secondary Education (Filipino) - 4th Year',
+    
+    'Bachelor of Secondary Education (Mathematics) - 1st Year',
+    'Bachelor of Secondary Education (Mathematics) - 2nd Year',
+    'Bachelor of Secondary Education (Mathematics) - 3rd Year',
+    'Bachelor of Secondary Education (Mathematics) - 4th Year',
+    
+    'Bachelor of Secondary Education (Science) - 1st Year',
+    'Bachelor of Secondary Education (Science) - 2nd Year',
+    'Bachelor of Secondary Education (Science) - 3rd Year',
+    'Bachelor of Secondary Education (Science) - 4th Year',
+    
+    'Bachelor of Multimedia Arts - 1st Year',
+    'Bachelor of Multimedia Arts - 2nd Year',
+    'Bachelor of Multimedia Arts - 3rd Year',
+    'Bachelor of Multimedia Arts - 4th Year',
+
+    // Sciences
+    'BS Biology - 1st Year',
+    'BS Biology - 2nd Year',
+    'BS Biology - 3rd Year',
+    'BS Biology - 4th Year',
+    
+    'BS Math with Applied Industrial Mathematics - 1st Year',
+    'BS Math with Applied Industrial Mathematics - 2nd Year',
+    'BS Math with Applied Industrial Mathematics - 3rd Year',
+    'BS Math with Applied Industrial Mathematics - 4th Year',
+    
+    'BS Psychology - 1st Year',
+    'BS Psychology - 2nd Year',
+    'BS Psychology - 3rd Year',
+    'BS Psychology - 4th Year',
+
+    // Health Sciences
+    'BS Nursing - 1st Year',
+    'BS Nursing - 2nd Year',
+    'BS Nursing - 3rd Year',
+    'BS Nursing - 4th Year',
+    
+    'BS Pharmacy - 1st Year',
+    'BS Pharmacy - 2nd Year',
+    'BS Pharmacy - 3rd Year',
+    'BS Pharmacy - 4th Year',
+    
+    'BS Medical Technology - 1st Year',
+    'BS Medical Technology - 2nd Year',
+    'BS Medical Technology - 3rd Year',
+    'BS Medical Technology - 4th Year',
+
+    // Computing
+    'BS Computer Science - 1st Year',
+    'BS Computer Science - 2nd Year',
+    'BS Computer Science - 3rd Year',
+    'BS Computer Science - 4th Year',
+    
+    'BS Information Technology - 1st Year',
+    'BS Information Technology - 2nd Year',
+    'BS Information Technology - 3rd Year',
+    'BS Information Technology - 4th Year',
+
+    // Criminology
+    'BS Criminology - 1st Year',
+    'BS Criminology - 2nd Year',
+    'BS Criminology - 3rd Year',
+    'BS Criminology - 4th Year'
+  ];
+
 // Organization list with categories
 const organizationOptions = [
   { name: 'Supreme Student Government (SSG)', category: 'Admin-Commissioned Organizations' },
@@ -300,10 +525,6 @@ export default function UpdateElectionPage() {
   const [qualificationsFile, setQualificationsFile] = useState<File | null>(null);
   const [qualificationsUrl, setQualificationsUrl] = useState<string | null>(null);
   const qualificationsInputRef = useRef<HTMLInputElement>(null);
-
-  const [editingPosition, setEditingPosition] = useState<Position | null>(null);
-  const [isEditPositionOpen, setIsEditPositionOpen] = useState(false);
-  const [editPositionFields, setEditPositionFields] = useState<Partial<Position>>({});
 
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
@@ -914,29 +1135,6 @@ export default function UpdateElectionPage() {
     fetchAdminOrg();
   }, []);
 
-  const handleEditPosition = (position: Position) => {
-    setEditingPosition(position);
-    setEditPositionFields({ ...position });
-    setIsEditPositionOpen(true);
-  };
-
-  const handleEditPositionFieldChange = (field: keyof Position, value: any) => {
-    setEditPositionFields((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveEditPosition = () => {
-    if (!editingPosition) return;
-    setElection((prev) => ({
-      ...prev,
-      positions: prev.positions.map((pos) =>
-        pos.id === editingPosition.id ? { ...pos, ...editPositionFields } : pos
-      ),
-    }));
-    setIsEditPositionOpen(false);
-    setEditingPosition(null);
-    setEditPositionFields({});
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#52100D] flex flex-col items-center justify-center">
@@ -1140,7 +1338,6 @@ export default function UpdateElectionPage() {
                             key={position.id ?? position.title ?? 'generated-id'}
                             position={{ ...position, id: position.id ?? position.title ?? 'generated-id' }}
                             onDelete={handleDeletePosition}
-                            onEdit={handleEditPosition}
                         />
                         ))}
                     </div>
@@ -1164,7 +1361,7 @@ export default function UpdateElectionPage() {
                             Add Candidate
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
+                        <DialogContent className="w-full max-w-2xl max-h-[90vh] h-auto flex flex-col rounded-2xl p-6">
                             <DialogHeader>
                             <DialogTitle className="text-red-900">Add New Candidate</DialogTitle>
                             </DialogHeader>
@@ -1198,7 +1395,12 @@ export default function UpdateElectionPage() {
                             </div>
                             <div>
                                 <Label htmlFor="candidate-name" className="text-black">Full Name</Label>
-                                <Input className="text-black focus:ring-2 focus:ring-red-200 hover:bg-gray-50" id="candidate-name" value={newCandidate.name || ""} onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))} placeholder="Enter full name" />
+                                <Input className="text-black"
+                                id="candidate-name"
+                                value={newCandidate.name || ""}
+                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
+                                placeholder="Enter full name"
+                                />
                             </div>
                             <div>
                                 <Label htmlFor="candidate-email" className="text-black">Email</Label>
@@ -1232,9 +1434,9 @@ export default function UpdateElectionPage() {
                                     <SelectValue placeholder="Select course and Year" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {organizationOptions.map((org) => (
-                                    <SelectItem key={org.name} value={org.name}>
-                                        {org.name}
+                                    {courseYearOptions.map((option) => (
+                                    <SelectItem key={option} value={option}>
+                                        {option}
                                     </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -1288,8 +1490,8 @@ export default function UpdateElectionPage() {
                                 </div>
                             </div>
                             </div>
-                            <div className="pt-4 border-t border-gray-200 bg-white">
-                                <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-700 focus:bg-red-700" disabled={isAddingCandidate}>
+                            <div className="sticky bottom-0 pt-4 border-t border-gray-200 bg-white">
+                                <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingCandidate}>
                                     {isAddingCandidate ? 'Adding...' : 'Add Candidate'}
                                 </Button>
                             </div>
@@ -1388,7 +1590,7 @@ export default function UpdateElectionPage() {
 
                 {/* Edit Candidate Dialog */}
                 <Dialog open={isEditCandidateOpen} onOpenChange={setIsEditCandidateOpen}>
-                    <DialogContent className="w-full max-w-2xl max-h-[90vh] h-auto flex flex-col rounded-2xl p-6">
+                    <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
                         <DialogHeader>
                         <DialogTitle className="text-red-900">Edit Candidate</DialogTitle>
                         </DialogHeader>
@@ -1456,14 +1658,14 @@ export default function UpdateElectionPage() {
                         </div>
                         <div className="text-black">
                             <Label htmlFor="edit-candidate-course" className="text-black">Course and Year</Label>
-                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))}>
+                            <Select onValueChange={(value) => setNewCandidate((prev) => ({ ...prev, course: value }))} value={newCandidate.course || ""}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select course and Year" />
                             </SelectTrigger>
                             <SelectContent>
-                                {organizationOptions.map((org) => (
-                                <SelectItem key={org.name} value={org.name}>
-                                    {org.name}
+                                {courseYearOptions.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                    {option}
                                 </SelectItem>
                                 ))}
                             </SelectContent>
@@ -1551,7 +1753,7 @@ export default function UpdateElectionPage() {
                             )}
                         </div>
                         </div>
-                        <div className="sticky bottom-0 pt-4 border-t border-gray-200 bg-white">
+                        <div className="pt-4 border-t border-gray-200 bg-white">
                             <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
                                 Update Candidate
                             </Button>
@@ -1732,60 +1934,6 @@ export default function UpdateElectionPage() {
                 onDisqualify={(id) => handleStatusChange(id, "disqualified")}
                 onEdit={handleEditCandidate}
                 />
-
-                {/* Edit Position Dialog */}
-                <Dialog open={isEditPositionOpen} onOpenChange={setIsEditPositionOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle className="text-red-900">Edit Position</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="edit-position-title" className="text-black">Position Title</Label>
-                                <Input className="text-black"
-                                    id="edit-position-title"
-                                    value={editPositionFields.title || ''}
-                                    onChange={(e) => handleEditPositionFieldChange('title', e.target.value)}
-                                    placeholder="e.g., President"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-position-description" className="text-black">Description</Label>
-                                <Textarea className="text-black"
-                                    id="edit-position-description"
-                                    value={editPositionFields.description || ''}
-                                    onChange={(e) => handleEditPositionFieldChange('description', e.target.value)}
-                                    placeholder="Describe the role and responsibilities..."
-                                    rows={3}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-max-candidates" className="text-black">Maximum Candidates</Label>
-                                <Input className="text-black"
-                                    id="edit-max-candidates"
-                                    type="number"
-                                    min="1"
-                                    max="10"
-                                    value={editPositionFields.maxCandidates || 3}
-                                    onChange={(e) => handleEditPositionFieldChange('maxCandidates', Number.parseInt(e.target.value))}
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-is-required" className="text-black">Required position</Label>
-                                <input
-                                    type="checkbox"
-                                    id="edit-is-required"
-                                    checked={!!editPositionFields.isRequired}
-                                    onChange={(e) => handleEditPositionFieldChange('isRequired', e.target.checked)}
-                                />
-                                <span className="ml-2 text-black">Voters must vote for this</span>
-                            </div>
-                            <Button onClick={handleSaveEditPosition} className="w-full bg-red-900 hover:bg-red-800">
-                                Save Changes
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
             </div>
         </main>
     </div>
