@@ -1425,12 +1425,6 @@ const formatTimeAgo = (date: Date) => {
             })
           )}
         </div>
-
-        {!isLoading && filteredArticles.length === 0 && articles.length > 0 && (
-          <div className="text-center py-20">
-            <p className="text-white text-xl sm:text-2xl font-medium">No updates found for this category.</p>
-          </div>
-        )}
       </div>
 
       {/* Modal for expanded article */}
