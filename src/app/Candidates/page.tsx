@@ -4,6 +4,7 @@ import { supabase } from '@/utils/supabaseClient';
 import VoteDash_Header from '../components/VoteDash_Header';
 import AdminHeader from '../components/AdminHeader';
 import { useSearchParams } from 'next/navigation';
+import Footer from '../components/Footer';
 
 interface Candidate {
   id: string;
@@ -257,9 +258,7 @@ const CandidatesPage = () => {
           </div>
         </div>
       </div>
-      <div className="w-full h-40 bg-rose-950 shadow-lg flex items-center justify-center mt-auto">
-        <div className="text-white text-sm">© 2024 UniVote. All rights reserved.</div>
-      </div>
+      <Footer />
     </div>
   );
 };

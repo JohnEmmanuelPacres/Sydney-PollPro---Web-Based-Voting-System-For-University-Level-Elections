@@ -406,6 +406,9 @@ export default function CreateElectionPage() {
   const [imageUploading, setImageUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingPosition, setEditingPosition] = useState<Position | null>(null);
+  const [isEditPositionOpen, setIsEditPositionOpen] = useState(false);
+  const [editPositionFields, setEditPositionFields] = useState<Partial<Position>>({});
 
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
@@ -832,6 +835,29 @@ export default function CreateElectionPage() {
     setImageUploading(false);
   };
 
+  const handleEditPosition = (position: Position) => {
+    setEditingPosition(position);
+    setEditPositionFields({ ...position });
+    setIsEditPositionOpen(true);
+  };
+
+  const handleEditPositionFieldChange = (field: keyof Position, value: any) => {
+    setEditPositionFields((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveEditPosition = () => {
+    if (!editingPosition) return;
+    setElection((prev) => ({
+      ...prev,
+      positions: prev.positions.map((pos) =>
+        pos.id === editingPosition.id ? { ...pos, ...editPositionFields } : pos
+      ),
+    }));
+    setIsEditPositionOpen(false);
+    setEditingPosition(null);
+    setEditPositionFields({});
+  };
+
   return (
     <div className="min-h-screen bg-[#52100D]">
         <header className="fixed top-0 left-0 right-0 z-50">
@@ -949,6 +975,7 @@ export default function CreateElectionPage() {
                             currentCandidates: getPositionCandidates(position.id).length,
                             }}
                             onDelete={handleDeletePosition}
+                            onEdit={handleEditPosition}
                         />
                         ))}
                     </div>
@@ -1265,6 +1292,60 @@ export default function CreateElectionPage() {
                         <div className="pt-4 border-t border-gray-200 bg-white">
                             <Button onClick={handleUpdateCandidate} className="w-full bg-red-900 hover:bg-red-800">
                                 Update Candidate
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Position Dialog */}
+                <Dialog open={isEditPositionOpen} onOpenChange={setIsEditPositionOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle className="text-red-900">Edit Position</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="edit-position-title" className="text-black">Position Title</Label>
+                                <Input className="text-black"
+                                    id="edit-position-title"
+                                    value={editPositionFields.title || ''}
+                                    onChange={(e) => handleEditPositionFieldChange('title', e.target.value)}
+                                    placeholder="e.g., President"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-position-description" className="text-black">Description</Label>
+                                <Textarea className="text-black"
+                                    id="edit-position-description"
+                                    value={editPositionFields.description || ''}
+                                    onChange={(e) => handleEditPositionFieldChange('description', e.target.value)}
+                                    placeholder="Describe the role and responsibilities..."
+                                    rows={3}
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-max-candidates" className="text-black">Maximum Candidates</Label>
+                                <Input className="text-black"
+                                    id="edit-max-candidates"
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={editPositionFields.maxCandidates || 3}
+                                    onChange={(e) => handleEditPositionFieldChange('maxCandidates', Number.parseInt(e.target.value))}
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-is-required" className="text-black">Required position</Label>
+                                <input
+                                    type="checkbox"
+                                    id="edit-is-required"
+                                    checked={!!editPositionFields.isRequired}
+                                    onChange={(e) => handleEditPositionFieldChange('isRequired', e.target.checked)}
+                                />
+                                <span className="ml-2 text-black">Voters must vote for this</span>
+                            </div>
+                            <Button onClick={handleSaveEditPosition} className="w-full bg-red-900 hover:bg-red-800">
+                                Save Changes
                             </Button>
                         </div>
                     </DialogContent>

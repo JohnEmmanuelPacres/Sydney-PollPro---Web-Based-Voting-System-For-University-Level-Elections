@@ -3,7 +3,7 @@
 import { NextPage } from 'next';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAdminOrg } from './AdminedOrgContext';
 import AdminHeader from '../../components/AdminHeader';
 import ReviewElectionPanel from '../../components/ReviewElections';
@@ -12,6 +12,8 @@ import YearDropdown from '../../components/YearDropDown';
 import SearchBar from '../../components/SearchBar';
 import ElectionStatusBar from '../../components/ElectionStatusBar';
 import Footer from '../../components/Footer';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Election {
   id: string;
@@ -24,15 +26,20 @@ interface Election {
   org_id: string;
 }
 
-const AdminDashboardNoSession: NextPage = () => {
+const AdminDashboardNoSession = () => {
   const [activeElection, setActiveElection] = useState<Election | null>(null);
   const [completedElections, setCompletedElections] = useState<Election[]>([]);
   const [filteredElections, setFilteredElections] = useState<Election[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState('All Years');
   const [error, setError] = useState<string | null>(null);
+  const [showResignDialog, setShowResignDialog] = useState(false);
+  const [resignPassword, setResignPassword] = useState('');
+  const [resignError, setResignError] = useState<string | null>(null);
+  const [resignLoading, setResignLoading] = useState(false);
   const searchParams = useSearchParams();
   const { setAdministeredOrg, administeredOrg } = useAdminOrg();
+  const router = useRouter();
 
   useEffect(() => {
     const paramAdminOrg = searchParams.get('administered_Org');
@@ -138,6 +145,56 @@ const AdminDashboardNoSession: NextPage = () => {
     applyFilters(selectedYear, search);
   };
 
+  const handleResign = async () => {
+    setResignError(null);
+    setResignLoading(true);
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (!user || !user.email) {
+        setResignError('User not found.');
+        setResignLoading(false);
+        return;
+      }
+      // Re-authenticate
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: resignPassword,
+      });
+      if (signInError) {
+        setResignError('Incorrect password. Please try again.');
+        setResignLoading(false);
+        return;
+      }
+      // Delete from admin_profiles
+      const { error: profileError } = await supabase
+        .from('admin_profiles')
+        .delete()
+        .eq('email', user.email)
+        .eq('administered_org', administeredOrg);
+      if (profileError) {
+        setResignError('Failed to remove admin profile.');
+        setResignLoading(false);
+        return;
+      }
+      // Delete user account
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+      if (deleteError) {
+        setResignError('Failed to delete user account.');
+        setResignLoading(false);
+        return;
+      }
+      setShowResignDialog(false);
+      setResignPassword('');
+      setResignLoading(false);
+      // Redirect to login or home
+      router.push('/User_RegxLogin');
+    } catch (err) {
+      setResignError('Unexpected error. Please try again.');
+      setResignLoading(false);
+    }
+  };
+
   return (
     <div className="relative w-full min-h-screen bg-[#52100d] text-left text-[20px] text-[#fef2f2] font-inter">
       <AdminHeader />
@@ -185,15 +242,55 @@ const AdminDashboardNoSession: NextPage = () => {
                 <YearDropdown completedElections={completedElections} onFilterChange={handleYearFilterChange} />
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto pl-0 md:pl-4 pr-0 md:pr-2 space-y-4 flex flex-col items-center">
+            <div className="flex-1 overflow-y-auto pl-0 md:pl-4 pr-0 md:pr-2 space-y-4 flex flex-col items-center"
+                 style={{ maxHeight: '600px', minHeight: '0', overflowY: filteredElections.length > 3 ? 'auto' : 'visible' }}
+            >
               <ReviewElectionPanel 
-                completedElections={filteredElections} 
+                completedElections={filteredElections.slice(0, 3)} 
                 totalCompletedElections={completedElections.length}
               />
+              {filteredElections.length > 3 && (
+                <div className="text-center w-full text-base text-gray-500 mt-2">Scroll to see more completed elections</div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Resign Feature Below Completed Elections */}
+      <div className="w-full flex flex-col items-center justify-center mt-8 mb-8">
+        <Button className="bg-red-800 hover:bg-red-900 text-white font-bold px-8 py-3 rounded-lg" onClick={() => setShowResignDialog(true)}>
+          Resign as Admin
+        </Button>
+      </div>
+      <Dialog open={showResignDialog} onOpenChange={setShowResignDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-900">Confirm Resignation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-black">Are you sure you want to resign as admin for <span className="font-bold">{administeredOrg}</span>? This action is irreversible and will delete your admin account.</p>
+            <p className="text-black">Please enter your password to confirm:</p>
+            <input
+              type="password"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-black"
+              placeholder="Enter your password"
+              value={resignPassword}
+              onChange={e => setResignPassword(e.target.value)}
+              disabled={resignLoading}
+            />
+            {resignError && <div className="text-red-600 text-sm">{resignError}</div>}
+            <div className="flex gap-3 mt-4">
+              <Button onClick={handleResign} className="flex-1 bg-red-700 hover:bg-red-900 text-white" disabled={resignLoading || !resignPassword}>
+                {resignLoading ? 'Resigning...' : 'Confirm Resignation'}
+              </Button>
+              <Button onClick={() => setShowResignDialog(false)} className="flex-1 bg-gray-300 text-black" type="button" disabled={resignLoading}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Error Message */}
       {error && (

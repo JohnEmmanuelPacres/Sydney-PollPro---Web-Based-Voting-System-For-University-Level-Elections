@@ -565,6 +565,18 @@ const CreateAccount = () => {
     setCooldownSeconds(5);
     setIsLoading(true);
     try {
+      // Check if email is already in use for the administered organization
+      const { data: existingAdmin, error: checkError } = await supabase
+        .from('admin_profiles')
+        .select('*')
+        .eq('email', formData.email)
+        .eq('administered_org', formData.administered_Org)
+        .single();
+      if (existingAdmin && !checkError) {
+        setError('This email is already registered for the selected administered organization.');
+        setIsLoading(false);
+        return;
+      }
       const { data: orgMatch, error } = await supabase
         .from('organizations')
         .select('*')
