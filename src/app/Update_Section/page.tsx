@@ -1433,385 +1433,382 @@ const formatTimeAgo = (date: Date) => {
           <div className="fixed inset-0 backdrop-blur-md bg-black/20 z-40" onClick={closeModal}></div>
           <div
             ref={modalRef}
-            className="fixed left-1/2 top-1/2 z-50 bg-white rounded-xl shadow-2xl flex flex-col"
-            style={{
-              transform: 'translate(-50%, -50%)',
-              maxWidth: '800px',
-              width: '95vw',
-              maxHeight: '90vh',
-              minHeight: '500px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
-            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+            style={{ pointerEvents: 'none' }}
           >
-            {/* Modal Header with Close */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className={`px-3 py-1 rounded-full text-white text-sm font-semibold ${getCategoryColor(expandedArticle.category)}`}>
-                  {expandedArticle.category}
+            <div
+              className="bg-white rounded-xl shadow-2xl flex flex-col w-full max-w-lg sm:max-w-2xl md:max-w-3xl max-h-[90vh] min-h-[60vh] overflow-hidden"
+              style={{ pointerEvents: 'auto' }}
+            >
+              {/* Modal Header with Close */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className={`px-3 py-1 rounded-full text-white text-sm font-semibold ${getCategoryColor(expandedArticle.category)}`}>{expandedArticle.category}</div>
+                  {expandedArticle.isUniLevel && (
+                    <div className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-semibold">🌐 University</div>
+                  )}
                 </div>
-                {expandedArticle.isUniLevel && (
-                  <div className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-semibold">
-                    🌐 University
+                <button 
+                  onClick={closeModal} 
+                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Image and Article Section - Responsive Layout */}
+                {modalView === 'article' && (
+                  <div className="flex flex-col md:flex-row gap-4 p-4 sm:p-6 flex-1 overflow-hidden">
+                    {/* Image Section - Responsive */}
+                    <div className="w-full md:w-80 flex-shrink-0 mb-4 md:mb-0">
+                      {expandedArticle.image_urls && expandedArticle.image_urls.length > 0 ? (
+                        <div className="relative w-full h-40 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => openImageViewer(modalImageIdx)}
+                        >
+                          <img
+                            src={expandedArticle.image_urls[modalImageIdx]}
+                            alt={expandedArticle.headline}
+                            className="w-full h-full object-cover"
+                          />
+                          {/* Navigation arrows for multiple images */}
+                          {expandedArticle.image_urls.length > 1 && (
+                            <>
+                              <button
+                                onClick={e => { e.stopPropagation(); prevImage(); }}
+                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); nextImage(); }}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
+                          {/* Image indicators */}
+                          {expandedArticle.image_urls.length > 1 && (
+                            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
+                              {expandedArticle.image_urls.map((img, idx) => (
+                                <button
+                                  key={`${img}-${idx}`}
+                                  className={`w-2 h-2 rounded-full transition-all ${modalImageIdx === idx ? 'bg-white' : 'bg-white bg-opacity-50 hover:bg-opacity-75'}`}
+                                  onClick={e => { e.stopPropagation(); setModalImageIdx(idx); }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="relative w-full h-40 sm:h-56 md:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => openImageViewer(0)}
+                        >
+                          <img
+                            src={expandedArticle.image || '/plain background.jpg'}
+                            alt={expandedArticle.headline || 'Article image'}
+                            onError={e => { e.currentTarget.src = '/plain background.jpg'; }}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {/* Article and Comments Section - Responsive */}
+                    <div className="flex-1 flex flex-col overflow-hidden min-h-0 w-full relative">
+                      <div className="mb-4 flex-shrink-0">
+                        <p className="text-gray-500 text-sm mb-2">{expandedArticle.timeAgo}</p>
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+                          {expandedArticle.headline}
+                        </h2>
+                      </div>
+                      <div className="flex-1 overflow-y-auto min-h-0">
+                        <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                          {expandedArticle.details}
+                        </p>
+                      </div>
+                      <div className="flex justify-center mt-6">
+                        <button
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold text-base shadow transition-colors duration-200"
+                          onClick={() => setModalView('comments')}
+                        >
+                          Check Comments
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
-              </div>
-              <button 
-                onClick={closeModal} 
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Image and Article Section - Responsive Layout */}
-              {modalView === 'article' && (
-                <div className="flex flex-col lg:flex-row gap-4 p-4 sm:p-6 flex-1 overflow-hidden">
-                  {/* Image Section - Smaller on mobile */}
-                  <div className="w-full lg:w-80 flex-shrink-0">
-                    {expandedArticle.image_urls && expandedArticle.image_urls.length > 0 ? (
-                      <div className="relative w-full h-32 sm:h-40 lg:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => openImageViewer(modalImageIdx)}
-                      >
-                        <img
-                          src={expandedArticle.image_urls[modalImageIdx]}
-                          alt={expandedArticle.headline}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Navigation arrows for multiple images */}
-                        {expandedArticle.image_urls.length > 1 && (
-                          <>
-                            <button
-                              onClick={e => { e.stopPropagation(); prevImage(); }}
-                              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={e => { e.stopPropagation(); nextImage(); }}
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </button>
-                          </>
-                        )}
-                        {/* Image indicators */}
-                        {expandedArticle.image_urls.length > 1 && (
-                          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
-                            {expandedArticle.image_urls.map((img, idx) => (
-                              <button
-                                key={`${img}-${idx}`}
-                                className={`w-2 h-2 rounded-full transition-all ${
-                                  modalImageIdx === idx 
-                                    ? 'bg-white' 
-                                    : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-                                }`}
-                                onClick={e => { e.stopPropagation(); setModalImageIdx(idx); }}
-                              />
-                            ))}
+                {/* Comments View remains unchanged */}
+                {modalView === 'comments' && (
+                  <div className="flex flex-col p-4 sm:p-6 flex-1 h-full min-h-0 overflow-hidden rounded-xl shadow-xl animate-fadeIn bg-white">
+                    <button
+                      className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold text-base"
+                      onClick={() => setModalView('article')}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Back to Article
+                    </button>
+                    {/* Real-time update loading indicator */}
+                    {isRefreshingComments && (
+                      <div className="flex items-center justify-center mb-2 p-1 bg-green-50 border border-green-200 rounded text-xs">
+                        <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-green-600 mr-1"></div>
+                        <span className="text-green-700 text-xs">{refreshMessage}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-lg font-semibold text-black">Comments ({comments.length})</h4>
+                      <div className="flex items-center gap-2">
+                        {isRefreshingComments && (
+                          <div className="flex items-center space-x-2 text-green-600">
+                            <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
                           </div>
                         )}
+                        <button
+                          onClick={() => {
+                            setIsRefreshingComments(true);
+                            fetchComments(expandedArticle.id);
+                            setTimeout(() => setIsRefreshingComments(false), 1000);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1"
+                          title="Manual refresh"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Refresh
+                        </button>
+                      <select
+                        className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
+                        value={sortOrder}
+                        onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
+                      >
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
+                      </select>
+                      </div>
+                    </div>
+                    {/* Comments List */}
+                    <div className="space-y-3 flex-1 min-h-0 overflow-y-auto mb-4">
+                      {(() => {
+                        const sortedComments = [...comments].sort((a, b) => {
+                          const dateA = new Date(a.created_at).getTime();
+                          const dateB = new Date(b.created_at).getTime();
+                          return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+                        });
+                        return sortedComments.length === 0 ? (
+                          <p className="text-gray-400 text-sm italic">No comments yet. Be the first to comment!</p>
+                        ) : (
+                          sortedComments.map((comment) => (
+                            <div key={comment.comment_id} className="flex flex-col gap-2">
+                              <div className="flex items-start gap-2 sm:gap-3 flex-wrap">
+                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
+                                  {comment.avatar_initial || 'U'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1 w-full">
+                                    <span className="font-semibold text-gray-800 text-sm break-all">{comment.display_name}</span>
+                                    <span className="text-xs text-gray-400 whitespace-nowrap">{new Date(comment.created_at).toLocaleString()}</span>
+                                    {/* Reply count indicator */}
+                                    {comment.reply_count > 0 && (
+                                      <span className="text-xs text-blue-500 font-semibold whitespace-nowrap">{comment.reply_count} repl{comment.reply_count === 1 ? 'y' : 'ies'}</span>
+                                    )}
+                                  </div>
+                                  {editingComment === comment.comment_id ? (
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2 w-full">
+                                      <input
+                                        type="text"
+                                        className="flex-1 border border-gray-300 rounded-full px-3 py-2 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
+                                        placeholder="Edit your comment..."
+                                        value={editCommentInput}
+                                        onChange={e => setEditCommentInput(e.target.value)}
+                                        onKeyPress={e => e.key === 'Enter' && saveEditComment(comment.comment_id)}
+                                      />
+                                      <div className="flex gap-1">
+                                        <button
+                                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
+                                          onClick={() => saveEditComment(comment.comment_id)}
+                                        >Save</button>
+                                        <button
+                                          className="text-gray-400 text-xs ml-1 hover:underline"
+                                          onClick={cancelEditComment}
+                                        >Cancel</button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-gray-700 text-sm mb-1 break-words">{comment.content}</p>
+                                  )}
+                                  <div className="flex flex-wrap items-center justify-between gap-2 mt-1 w-full">
+                                    <button
+                                      className="text-black text-xs font-semibold hover:underline"
+                                      onClick={() => setReplyingTo(comment.comment_id)}
+                                    >Reply</button>
+                                    <div className="flex items-center gap-1 ml-auto">
+                                      {currentUser?.id === comment.user_id && (
+                                        <>
+                                          <button
+                                            className="text-gray-400 text-xs p-1 rounded hover:text-red-600 transition-colors duration-150"
+                                            style={{ fontSize: '14px', lineHeight: 1 }}
+                                            onClick={() => handleDeleteComment(comment.comment_id)}
+                                            title="Delete Comment"
+                                          >
+                                            ×
+                                          </button>
+                                          <button
+                                            className="text-blue-500 text-xs p-1 rounded hover:bg-blue-100 transition-colors duration-150 flex items-center"
+                                            style={{ fontSize: '14px', lineHeight: 1 }}
+                                            onClick={() => startEditComment(comment.comment_id, comment.content)}
+                                            title="Edit Comment"
+                                          >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {/* Replies */}
+                                  {comment.replies.length > 0 && (
+                                    <div className="ml-4 sm:ml-8 mt-2 space-y-2">
+                                      {comment.replies.map(reply => (
+                                        <div key={reply.reply_id} className="flex items-start gap-2 flex-wrap">
+                                          <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs flex-shrink-0">
+                                            {reply.avatar_initial || 'U'}
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5 w-full">
+                                              <span className="font-semibold text-gray-800 text-xs break-all">{reply.display_name}</span>
+                                              <span className="text-xs text-gray-400 whitespace-nowrap">{new Date(reply.created_at).toLocaleString()}</span>
+                                            </div>
+                                            {editingReply === reply.reply_id ? (
+                                              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-1 w-full">
+                                                <input
+                                                  type="text"
+                                                  className="flex-1 border border-gray-300 rounded-full px-2 py-2 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
+                                                  placeholder="Edit your reply..."
+                                                  value={editReplyInput}
+                                                  onChange={e => setEditReplyInput(e.target.value)}
+                                                  onKeyPress={e => e.key === 'Enter' && saveEditReply(reply.reply_id)}
+                                                />
+                                                <div className="flex gap-1">
+                                                  <button
+                                                    className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
+                                                    onClick={() => saveEditReply(reply.reply_id)}
+                                                  >Save</button>
+                                                  <button
+                                                    className="text-gray-400 text-xs ml-1 hover:underline"
+                                                    onClick={cancelEditReply}
+                                                  >Cancel</button>
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <p className="text-gray-700 text-xs break-words">{reply.content}</p>
+                                            )}
+                                            {/* Edit and Delete reply buttons */}
+                                            {currentUser?.id === reply.user_id && (
+                                              <div className="flex items-center gap-1 mt-1">
+                                                <button
+                                                  className="text-gray-400 text-xs p-1 rounded hover:text-red-600 transition-colors duration-150"
+                                                  style={{ fontSize: '12px', lineHeight: 1 }}
+                                                  onClick={() => handleDeleteReply(reply.reply_id)}
+                                                  title="Delete Reply"
+                                                >
+                                                  ×
+                                                </button>
+                                                <button
+                                                  className="text-blue-500 text-xs p-1 rounded hover:bg-blue-100 transition-colors duration-150 flex items-center"
+                                                  style={{ fontSize: '12px', lineHeight: 1 }}
+                                                  onClick={() => startEditReply(reply.reply_id, reply.content)}
+                                                  title="Edit Reply"
+                                                >
+                                                  <Pencil className="w-3 h-3" />
+                                                </button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {/* Reply input */}
+                                  {replyingTo === comment.comment_id && canComment && (
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2 ml-4 sm:ml-8">
+                                      <input
+                                        type="text"
+                                        className="flex-1 border border-gray-300 rounded-full px-3 py-2 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
+                                        placeholder="Write a reply..."
+                                        value={replyInputs[comment.comment_id] || ''}
+                                        onChange={e => setReplyInputs(inputs => ({ ...inputs, [comment.comment_id]: e.target.value }))}
+                                        onKeyPress={e => e.key === 'Enter' && handleAddReply(comment.comment_id)}
+                                      />
+                                      <div className="flex gap-1">
+                                        <button
+                                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
+                                          onClick={() => handleAddReply(comment.comment_id)}
+                                        >Post</button>
+                                        <button
+                                          className="text-gray-400 text-xs ml-1 hover:underline"
+                                          onClick={() => setReplyingTo(null)}
+                                        >Cancel</button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        );
+                      })()}
+                    </div>
+                    {/* Comment Input or Permission Message */}
+                    {canComment ? (
+                      <div className="flex flex-col gap-1 w-full">
+                        {commentMessage && (
+                          <div className="text-green-600 text-xs font-semibold mb-1">{commentMessage}</div>
+                        )}
+                        {commentError && (
+                          <div className="text-red-600 text-xs font-semibold mb-1">{commentError}</div>
+                        )}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
+                            {currentUser?.user_metadata?.full_name?.[0] || currentUser?.email?.[0] || 'A'}
+                          </div>
+                          <div className="flex-1 flex gap-2">
+                            <input
+                              type="text"
+                              className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm text-black focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                              placeholder="Write a comment..."
+                              value={commentInput}
+                              onChange={e => setCommentInput(e.target.value)}
+                              onKeyPress={e => e.key === 'Enter' && handleAddComment()}
+                            />
+                            <button
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold text-sm shadow transition-colors duration-200 flex-shrink-0"
+                              onClick={() => handleAddComment()}
+                            >
+                              Post
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ) : (
-                      <div className="relative w-full h-32 sm:h-40 lg:h-64 bg-gray-100 flex items-center justify-center rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => openImageViewer(0)}
-                      >
-                        <img
-                          src={expandedArticle.image || '/plain background.jpg'}
-                          alt={expandedArticle.headline || 'Article image'}
-                          onError={e => { e.currentTarget.src = '/plain background.jpg'; }}
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="text-gray-400 italic mt-2">
+                        {expandedArticle?.isUniLevel
+                          ? 'Sign in as a registered voter to comment.'
+                          : 'You do not have permission to comment on this article.'}
                       </div>
                     )}
                   </div>
-                  {/* Article and Comments Section - Overlap logic */}
-                  <div className="flex-1 flex flex-col overflow-hidden min-h-0 w-full relative">
-                    <div className="mb-4 flex-shrink-0">
-                      <p className="text-gray-500 text-sm mb-2">{expandedArticle.timeAgo}</p>
-                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
-                        {expandedArticle.headline}
-                      </h2>
-                    </div>
-                    <div className="flex-1 overflow-y-auto min-h-0">
-                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                        {expandedArticle.details}
-                      </p>
-                    </div>
-                    <div className="flex justify-center mt-6">
-                      <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-semibold text-base shadow transition-colors duration-200"
-                        onClick={() => setModalView('comments')}
-                      >
-                        Check Comments
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {modalView === 'comments' && (
-                <div className="flex flex-col p-4 sm:p-6 flex-1 h-full min-h-0 overflow-hidden rounded-xl shadow-xl animate-fadeIn bg-white">
-                  <button
-                    className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold text-base"
-                    onClick={() => setModalView('article')}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Back to Article
-                  </button>
-                  {/* Real-time update loading indicator */}
-                  {isRefreshingComments && (
-                    <div className="flex items-center justify-center mb-2 p-1 bg-green-50 border border-green-200 rounded text-xs">
-                      <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-b-2 border-green-600 mr-1"></div>
-                      <span className="text-green-700 text-xs">{refreshMessage}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-lg font-semibold text-black">Comments ({comments.length})</h4>
-                    <div className="flex items-center gap-2">
-                      {isRefreshingComments && (
-                        <div className="flex items-center space-x-2 text-green-600">
-                          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => {
-                          setIsRefreshingComments(true);
-                          fetchComments(expandedArticle.id);
-                          setTimeout(() => setIsRefreshingComments(false), 1000);
-                        }}
-                        className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1"
-                        title="Manual refresh"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        Refresh
-                      </button>
-                    <select
-                      className="border border-gray-300 rounded px-2 py-1 text-sm text-black"
-                      value={sortOrder}
-                      onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
-                    >
-                      <option value="newest">Newest</option>
-                      <option value="oldest">Oldest</option>
-                    </select>
-                    </div>
-                  </div>
-                  {/* Comments List */}
-                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto mb-4">
-                    {(() => {
-                      const sortedComments = [...comments].sort((a, b) => {
-                        const dateA = new Date(a.created_at).getTime();
-                        const dateB = new Date(b.created_at).getTime();
-                        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
-                      });
-                      return sortedComments.length === 0 ? (
-                        <p className="text-gray-400 text-sm italic">No comments yet. Be the first to comment!</p>
-                      ) : (
-                        sortedComments.map((comment) => (
-                          <div key={comment.comment_id} className="flex flex-col gap-2">
-                            <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
-                                {comment.avatar_initial || 'U'}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold text-gray-800 text-sm">{comment.display_name}</span>
-                                  <span className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleString()}</span>
-                                  {/* Reply count indicator */}
-                                  {comment.reply_count > 0 && (
-                                    <span className="ml-2 text-xs text-blue-500 font-semibold">{comment.reply_count} repl{comment.reply_count === 1 ? 'y' : 'ies'}</span>
-                                  )}
-                                </div>
-                                {editingComment === comment.comment_id ? (
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <input
-                                      type="text"
-                                      className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
-                                      placeholder="Edit your comment..."
-                                      value={editCommentInput}
-                                      onChange={e => setEditCommentInput(e.target.value)}
-                                      onKeyPress={e => e.key === 'Enter' && saveEditComment(comment.comment_id)}
-                                    />
-                                <button
-                                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
-                                      onClick={() => saveEditComment(comment.comment_id)}
-                                    >Save</button>
-                                    <button
-                                      className="text-gray-400 text-xs ml-1 hover:underline"
-                                      onClick={cancelEditComment}
-                                    >Cancel</button>
-                                  </div>
-                                ) : (
-                                <p className="text-gray-700 text-sm mb-1">{comment.content}</p>
-                                )}
-                                <div className="flex items-center justify-between gap-2 mt-1">
-                                  <button
-                                    className="text-black text-xs font-semibold hover:underline"
-                                  onClick={() => setReplyingTo(comment.comment_id)}
-                                >Reply</button>
-                                  <div className="flex items-center gap-1 ml-auto">
-                                    {currentUser?.id === comment.user_id && (
-                                      <>
-                                        <button
-                                          className="text-gray-400 text-xs p-1 rounded hover:text-red-600 transition-colors duration-150"
-                                          style={{ fontSize: '14px', lineHeight: 1 }}
-                                          onClick={() => handleDeleteComment(comment.comment_id)}
-                                          title="Delete Comment"
-                                        >
-                                          ×
-                                        </button>
-                                        <button
-                                          className="text-blue-500 text-xs p-1 rounded hover:bg-blue-100 transition-colors duration-150 flex items-center"
-                                          style={{ fontSize: '14px', lineHeight: 1 }}
-                                          onClick={() => startEditComment(comment.comment_id, comment.content)}
-                                          title="Edit Comment"
-                                        >
-                                          <Pencil className="w-3.5 h-3.5" />
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                                {/* Replies */}
-                                {comment.replies.length > 0 && (
-                                  <div className="ml-8 mt-2 space-y-2">
-                                    {comment.replies.map(reply => (
-                                      <div key={reply.reply_id} className="flex items-start gap-2">
-                                        <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-xs flex-shrink-0">
-                                          {reply.avatar_initial || 'U'}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="font-semibold text-gray-800 text-xs">{reply.display_name}</span>
-                                            <span className="text-xs text-gray-400">{new Date(reply.created_at).toLocaleString()}</span>
-                                          </div>
-                                          {editingReply === reply.reply_id ? (
-                                            <div className="flex items-center gap-2 mt-1">
-                                              <input
-                                                type="text"
-                                                className="flex-1 border border-gray-300 rounded-full px-2 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
-                                                placeholder="Edit your reply..."
-                                                value={editReplyInput}
-                                                onChange={e => setEditReplyInput(e.target.value)}
-                                                onKeyPress={e => e.key === 'Enter' && saveEditReply(reply.reply_id)}
-                                              />
-                                              <button
-                                                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
-                                                onClick={() => saveEditReply(reply.reply_id)}
-                                              >Save</button>
-                                              <button
-                                                className="text-gray-400 text-xs ml-1 hover:underline"
-                                                onClick={cancelEditReply}
-                                              >Cancel</button>
-                                            </div>
-                                          ) : (
-                                          <p className="text-gray-700 text-xs">{reply.content}</p>
-                                          )}
-                                          {/* Edit and Delete reply buttons */}
-                                          {currentUser?.id === reply.user_id && (
-                                            <div className="flex items-center gap-1 mt-1">
-                                            <button
-                                                className="text-gray-400 text-xs p-1 rounded hover:text-red-600 transition-colors duration-150"
-                                                style={{ fontSize: '12px', lineHeight: 1 }}
-                                              onClick={() => handleDeleteReply(reply.reply_id)}
-                                                title="Delete Reply"
-                                              >
-                                                ×
-                                              </button>
-                                              <button
-                                                className="text-blue-500 text-xs p-1 rounded hover:bg-blue-100 transition-colors duration-150 flex items-center"
-                                                style={{ fontSize: '12px', lineHeight: 1 }}
-                                                onClick={() => startEditReply(reply.reply_id, reply.content)}
-                                                title="Edit Reply"
-                                              >
-                                                <Pencil className="w-3 h-3" />
-                                              </button>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                {/* Reply input */}
-                                {replyingTo === comment.comment_id && canComment && (
-                                  <div className="flex items-center gap-2 mt-2 ml-8">
-                                    <input
-                                      type="text"
-                                      className="flex-1 border border-gray-300 rounded-full px-3 py-1 text-xs focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 text-black"
-                                      placeholder="Write a reply..."
-                                      value={replyInputs[comment.comment_id] || ''}
-                                      onChange={e => setReplyInputs(inputs => ({ ...inputs, [comment.comment_id]: e.target.value }))}
-                                      onKeyPress={e => e.key === 'Enter' && handleAddReply(comment.comment_id)}
-                                    />
-                                    <button
-                                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full font-semibold text-xs shadow transition-colors duration-200 flex-shrink-0"
-                                      onClick={() => handleAddReply(comment.comment_id)}
-                                    >Post</button>
-                                    <button
-                                      className="text-gray-400 text-xs ml-1 hover:underline"
-                                      onClick={() => setReplyingTo(null)}
-                                    >Cancel</button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      );
-                    })()}
-                  </div>
-                  {/* Comment Input or Permission Message */}
-                  {canComment ? (
-                    <div className="flex flex-col gap-1 w-full">
-                      {commentMessage && (
-                        <div className="text-green-600 text-xs font-semibold mb-1">{commentMessage}</div>
-                      )}
-                      {commentError && (
-                        <div className="text-red-600 text-xs font-semibold mb-1">{commentError}</div>
-                      )}
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm flex-shrink-0">
-                          {currentUser?.user_metadata?.full_name?.[0] || currentUser?.email?.[0] || 'A'}
-                        </div>
-                        <div className="flex-1 flex gap-2">
-                          <input
-                            type="text"
-                            className="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm text-black focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-                            placeholder="Write a comment..."
-                            value={commentInput}
-                            onChange={e => setCommentInput(e.target.value)}
-                            onKeyPress={e => e.key === 'Enter' && handleAddComment()}
-                          />
-                          <button
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold text-sm shadow transition-colors duration-200 flex-shrink-0"
-                            onClick={() => handleAddComment()}
-                          >
-                            Post
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-gray-400 italic mt-2">
-                      {expandedArticle?.isUniLevel
-                        ? 'Sign in as a registered voter to comment.'
-                        : 'You do not have permission to comment on this article.'}
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </>
