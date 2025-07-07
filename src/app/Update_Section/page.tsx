@@ -1292,7 +1292,7 @@ const formatTimeAgo = (date: Date) => {
       {/* Main Content */}
       <div ref={contentRef} className="flex flex-col items-center px-2 sm:px-4 py-6 sm:py-8 pt-28 sm:pt-32">
         {/* Title Section */}
-        <div className="w-full max-w-4xl mb-6 sm:mb-8 px-2 sm:px-0">
+        <div className="w-full max-w-4xl mb-6 sm:mb-8 px-2 sm:px-0 mt-4">
           <h1 className="text-white text-2xl sm:text-4xl font-bold font-['Geist'] mb-2">Updates</h1>
           <p className="text-orange-100 text-base sm:text-lg font-normal font-['Geist']">
             Stay informed with the latest news and announcements from UniVote.

@@ -14,7 +14,7 @@ const TEAM_MEMBERS = [
   {
     name: "Sean Tadiamon",
     role: "Frontend Developer",
-    bio: "Sean is passionate about UI/UX and loves building beautiful web apps.",
+    bio: "\"Timing is everything.\" I touched both frontend design and backend logics including project database. I specialized on Admin functionalities and design.",
     image: "/sean.jpg",
     socials: {
       github: "https://github.com/NaesCode",
@@ -25,7 +25,7 @@ const TEAM_MEMBERS = [
   {
     name: "John Emmanuel Pacres",
     role: "Frontend Developer",
-    bio: "Pacres specializes in React and animation, making interfaces lively and fun.",
+    bio: "\"Doubt is the origin of wisdom.\" I specialized both on system security and React animation, making interfaces lively, functional, and secured.",
     image: "/pacres.jpg",
     socials: {
       github: "https://github.com/JohnEmmanuelPacres",
@@ -36,7 +36,7 @@ const TEAM_MEMBERS = [
   {
     name: "Harlie Cañas",
     role: "Backend Developer",
-    bio: "Harlie ensures the server and database are always running smoothly.",
+    bio: "\"If they can do it, let them do it.\" I specialized on user intercoms and user engagment features including About page design layout",
     image: "/harlie.jpg",
     socials: {
       github: "https://github.com/major119791",
@@ -47,7 +47,7 @@ const TEAM_MEMBERS = [
   {
     name: "Chucky Ebesa",
     role: "Backend Developer",
-    bio: "Chucky loves APIs, security, and scalable systems.",
+    bio: "\"With great power, comes great responsibility.\" I specialized on both system security and system core functionalities including the voting interface. ",
     image: "/chucky.jpg",
     socials: {
       github: "https://github.com/Chokinni",
@@ -65,6 +65,7 @@ export default function AboutPage() {
   const teamTitleRef = useRef<HTMLDivElement>(null);
   const teamMembersRef = useRef<(HTMLDivElement | null)[]>([]);
   const [selectedMember, setSelectedMember] = useState<number | null>(null);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
 
   const addToTeamRefs = (el: HTMLDivElement | null, index: number) => {
     teamMembersRef.current[index] = el;
@@ -151,37 +152,44 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-t from-yellow-900 to-red-900 overflow-hidden">
+    <div className="w-full min-h-screen" style={{ background: "linear-gradient(to bottom, #52100D 75%, black 100%)" }}>
       <Header />
 
       {/* Hero Section */}
-      <section className="relative w-full min-h-[75vh] flex items-center justify-center text-center px-4">
-        <div ref={heroImageRef} className="absolute inset-0 z-0">
-          <Image
-            src="/hero-image.jpg"
-            alt="Sydney Polls Background"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/40" />
-        </div>
+      <section className="relative w-full h-screen flex items-center justify-center text-center px-4">
+      {/* Background Image */}
+      <div ref={heroImageRef} className="absolute inset-0 z-0">
+        <Image
+          src="/prexels.jpg"
+          alt="Sydney Polls Background"
+          fill
+          className={`object-cover transition-opacity duration-1000 ${heroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+          priority
+          onLoadingComplete={() => setHeroImageLoaded(true)}
+        />
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/40 z-10" />
+        {/* Bottom Fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#52100D] to-transparent z-20 pointer-events-none" />
+      </div>
 
-        <div className="relative z-10 flex flex-col items-center justify-center">
-          <h1
-            ref={heroTitleRef}
-            className="text-red-500 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black drop-shadow-[0_8px_8px_rgba(0,0,0,0.6)]"
-          >
-            Sydney Polls
-          </h1>
-          <p
-            ref={heroSubtitleRef}
-            className="text-white text-lg sm:text-xl md:text-2xl font-semibold mt-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)]"
-          >
-            Empowering every vote, shaping every future.
-          </p>
-        </div>
-      </section>
+      {/* Foreground Content */}
+      <div className="relative z-30 flex flex-col items-center justify-center">
+        <h1
+          ref={heroTitleRef}
+          className="text-[#D8A03C] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black drop-shadow-[0_8px_8px_rgba(0,0,0,0.6)]"
+        >
+          Sydney Polls
+        </h1>
+        <p
+          ref={heroSubtitleRef}
+          className="text-white text-lg sm:text-xl md:text-2xl font-semibold mt-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.6)]"
+        >
+          Empowering every vote, shaping every future.
+        </p>
+      </div>
+    </section>
+
 
       {/* Team Section */}
       <section className="w-full py-24 px-4">
@@ -202,7 +210,7 @@ export default function AboutPage() {
             >
               <button
                 className="team-circle w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-64 rounded-full flex items-center justify-center 
-                            bg-gradient-to-br from-orange-600 to-orange-800 border-4 border-orange-300 shadow-lg focus:outline-none focus:ring-4 focus:ring-orange-400 transition-transform duration-200 overflow-hidden relative"
+                            bg-gradient-to-br from-orange-600 to-orange-800 border-2 border-[#D8A03C] shadow-lg focus:outline-none focus:ring-4 focus:ring-orange-400 transition-transform duration-200 overflow-hidden relative"
                 onClick={() => setSelectedMember(i)}
                 aria-label={`Show info for ${member.name}`}
                 tabIndex={0}
@@ -218,8 +226,8 @@ export default function AboutPage() {
                 <span className="sr-only">Show info for {member.name}</span>
               </button>
               <div
-                className="team-card w-full md:flex-1 h-auto p-8 rounded-xl border-4 border-amber-500 
-                            bg-gradient-to-r from-amber-300 to-amber-400 shadow-md flex items-center justify-center"
+                className="team-card w-full md:flex-1 h-auto p-10 rounded-xl 
+                            bg-gradient-to-r from-[#D8A03C] to-gray-100 shadow-md flex items-center justify-center"
               >
                 <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-black">
                   {member.role}

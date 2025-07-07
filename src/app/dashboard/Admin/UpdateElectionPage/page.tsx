@@ -301,6 +301,10 @@ export default function UpdateElectionPage() {
   const [qualificationsUrl, setQualificationsUrl] = useState<string | null>(null);
   const qualificationsInputRef = useRef<HTMLInputElement>(null);
 
+  const [editingPosition, setEditingPosition] = useState<Position | null>(null);
+  const [isEditPositionOpen, setIsEditPositionOpen] = useState(false);
+  const [editPositionFields, setEditPositionFields] = useState<Partial<Position>>({});
+
   const handleElectionChange = (field: string, value: string) => {
     setElection((prev) => ({ ...prev, [field]: value }))
   }
@@ -910,6 +914,29 @@ export default function UpdateElectionPage() {
     fetchAdminOrg();
   }, []);
 
+  const handleEditPosition = (position: Position) => {
+    setEditingPosition(position);
+    setEditPositionFields({ ...position });
+    setIsEditPositionOpen(true);
+  };
+
+  const handleEditPositionFieldChange = (field: keyof Position, value: any) => {
+    setEditPositionFields((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveEditPosition = () => {
+    if (!editingPosition) return;
+    setElection((prev) => ({
+      ...prev,
+      positions: prev.positions.map((pos) =>
+        pos.id === editingPosition.id ? { ...pos, ...editPositionFields } : pos
+      ),
+    }));
+    setIsEditPositionOpen(false);
+    setEditingPosition(null);
+    setEditPositionFields({});
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#52100D] flex flex-col items-center justify-center">
@@ -1113,6 +1140,7 @@ export default function UpdateElectionPage() {
                             key={position.id ?? position.title ?? 'generated-id'}
                             position={{ ...position, id: position.id ?? position.title ?? 'generated-id' }}
                             onDelete={handleDeletePosition}
+                            onEdit={handleEditPosition}
                         />
                         ))}
                     </div>
@@ -1136,7 +1164,7 @@ export default function UpdateElectionPage() {
                             Add Candidate
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="w-full max-w-2xl max-h-[90vh] h-auto flex flex-col rounded-2xl p-6">
+                        <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
                             <DialogHeader>
                             <DialogTitle className="text-red-900">Add New Candidate</DialogTitle>
                             </DialogHeader>
@@ -1170,12 +1198,7 @@ export default function UpdateElectionPage() {
                             </div>
                             <div>
                                 <Label htmlFor="candidate-name" className="text-black">Full Name</Label>
-                                <Input className="text-black"
-                                id="candidate-name"
-                                value={newCandidate.name || ""}
-                                onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))}
-                                placeholder="Enter full name"
-                                />
+                                <Input className="text-black focus:ring-2 focus:ring-red-200 hover:bg-gray-50" id="candidate-name" value={newCandidate.name || ""} onChange={(e) => setNewCandidate((prev) => ({ ...prev, name: e.target.value }))} placeholder="Enter full name" />
                             </div>
                             <div>
                                 <Label htmlFor="candidate-email" className="text-black">Email</Label>
@@ -1265,8 +1288,8 @@ export default function UpdateElectionPage() {
                                 </div>
                             </div>
                             </div>
-                            <div className="sticky bottom-0 pt-4 border-t border-gray-200 bg-white">
-                                <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-800" disabled={isAddingCandidate}>
+                            <div className="pt-4 border-t border-gray-200 bg-white">
+                                <Button onClick={handleAddCandidate} className="w-full bg-red-900 hover:bg-red-700 focus:bg-red-700" disabled={isAddingCandidate}>
                                     {isAddingCandidate ? 'Adding...' : 'Add Candidate'}
                                 </Button>
                             </div>
@@ -1709,6 +1732,60 @@ export default function UpdateElectionPage() {
                 onDisqualify={(id) => handleStatusChange(id, "disqualified")}
                 onEdit={handleEditCandidate}
                 />
+
+                {/* Edit Position Dialog */}
+                <Dialog open={isEditPositionOpen} onOpenChange={setIsEditPositionOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle className="text-red-900">Edit Position</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="edit-position-title" className="text-black">Position Title</Label>
+                                <Input className="text-black"
+                                    id="edit-position-title"
+                                    value={editPositionFields.title || ''}
+                                    onChange={(e) => handleEditPositionFieldChange('title', e.target.value)}
+                                    placeholder="e.g., President"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-position-description" className="text-black">Description</Label>
+                                <Textarea className="text-black"
+                                    id="edit-position-description"
+                                    value={editPositionFields.description || ''}
+                                    onChange={(e) => handleEditPositionFieldChange('description', e.target.value)}
+                                    placeholder="Describe the role and responsibilities..."
+                                    rows={3}
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-max-candidates" className="text-black">Maximum Candidates</Label>
+                                <Input className="text-black"
+                                    id="edit-max-candidates"
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    value={editPositionFields.maxCandidates || 3}
+                                    onChange={(e) => handleEditPositionFieldChange('maxCandidates', Number.parseInt(e.target.value))}
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="edit-is-required" className="text-black">Required position</Label>
+                                <input
+                                    type="checkbox"
+                                    id="edit-is-required"
+                                    checked={!!editPositionFields.isRequired}
+                                    onChange={(e) => handleEditPositionFieldChange('isRequired', e.target.checked)}
+                                />
+                                <span className="ml-2 text-black">Voters must vote for this</span>
+                            </div>
+                            <Button onClick={handleSaveEditPosition} className="w-full bg-red-900 hover:bg-red-800">
+                                Save Changes
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         </main>
     </div>
