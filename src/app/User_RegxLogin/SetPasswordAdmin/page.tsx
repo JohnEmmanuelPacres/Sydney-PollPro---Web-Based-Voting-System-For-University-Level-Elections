@@ -110,7 +110,7 @@ const SetPassword = () => {
         }
         if (signInData.user) {
           setSuccess('Account created and logged in successfully! Redirecting to dashboard...');
-          setTimeout(() => router.push(`/dashboard/Admin?email=${encodeURIComponent(email!)}`), 2000);
+          setTimeout(() => router.push(`/dashboard/Admin?email=${encodeURIComponent(email || '')}${`&administered_Org=${encodeURIComponent(administered_Org || '')}`}`), 2000);
           return;
         }
       }

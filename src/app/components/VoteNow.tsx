@@ -172,7 +172,7 @@ export default function VoteNow({ electionId }: VoteNowProps) {
       setSubmitSuccess(true);
       setHasVoted(true);
       alert('Your vote has been submitted successfully!');
-      router.push('/Voterdashboard');
+      router.push(`/Voterdashboard?department_org=${departmentOrg}`);
     } catch (err: any) {
       setSubmitError(err.message || 'Failed to submit votes');
     } finally {

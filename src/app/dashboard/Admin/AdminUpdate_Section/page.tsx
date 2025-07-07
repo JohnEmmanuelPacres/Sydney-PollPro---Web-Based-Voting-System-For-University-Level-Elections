@@ -339,7 +339,7 @@ const AdminUpdateSection = () => {
         <div className="w-full max-w-6xl">
           {/* Header */}
           <div className="w-full mb-8">
-            <h1 className="text-white text-2xl sm:text-4xl font-bold font-['Geist'] mb-2">Admin Panel</h1>
+            <h1 className="text-white text-2xl sm:text-4xl font-bold font-['Geist'] mb-2 mt-3">Admin Panel</h1>
             <p className="text-orange-100 text-base sm:text-lg font-normal font-['Geist']">
               Create and manage news, announcements, and updates for UniVote.
             </p>

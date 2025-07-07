@@ -223,7 +223,12 @@ export default function VotingDashboard() {
       <div className="bg-gradient-to-r from-red-900 to-red-800 text-white p-6 mt-33">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold mb-2">Election Dashboard</h2>
-          <p className="text-red-100">Welcome to the UniVote Dashboard</p>
+          {userProfile && (
+            <>
+              <p className="text-red-100">Welcome to the UniVote {userProfile.email}</p>
+              <p className="text-red-100">{userProfile.course_year}</p>
+            </>
+          )}
         </div>
       </div>
       <main className="flex-1 pt-15 pb-8 px-4 space-y-8">
