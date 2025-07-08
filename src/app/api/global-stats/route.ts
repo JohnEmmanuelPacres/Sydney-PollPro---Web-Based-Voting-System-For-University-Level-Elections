@@ -9,11 +9,36 @@ const supabaseAdmin = createClient(
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   let electionId = searchParams.get('electionId');
+  const departmentOrg = searchParams.get('department_org');
 
-  // Always fetch total registered voters
-  const { count: voters } = await supabaseAdmin
+  // Get election details to determine if it's an organization election
+  let isOrganizationElection = false;
+  let electionDepartmentOrg = null;
+  
+  if (electionId) {
+    const { data: election } = await supabaseAdmin
+      .from('elections')
+      .select('is_uni_level, department_org')
+      .eq('id', electionId)
+      .single();
+    
+    if (election) {
+      isOrganizationElection = !election.is_uni_level;
+      electionDepartmentOrg = election.department_org;
+    }
+  }
+
+  // Filter voters based on election type and department_org
+  let votersQuery = supabaseAdmin
     .from('voter_profiles')
     .select('*', { count: 'exact', head: true });
+
+  if (isOrganizationElection && electionDepartmentOrg) {
+    // For organization elections, only count voters from the same department/org
+    votersQuery = votersQuery.eq('department_org', electionDepartmentOrg);
+  }
+
+  const { count: voters } = await votersQuery;
 
   let uniqueVoters = 0;
   let totalVotes = 0;

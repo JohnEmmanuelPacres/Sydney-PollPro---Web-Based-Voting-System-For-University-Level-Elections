@@ -290,6 +290,7 @@ export default function VotingDashboard() {
                         hasVoted={false}
                         onVoteNow={() => handleVoteNow(normElection.id)}
                         onViewDetails={handleViewDetails}
+                        departmentOrg={departmentOrg}
                       />
                     </div>
                   );

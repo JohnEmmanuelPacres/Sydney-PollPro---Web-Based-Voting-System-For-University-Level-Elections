@@ -39,6 +39,7 @@ interface OrganizationElectionCardProps {
   hasVoted: boolean;
   onVoteNow: (electionId: string) => void;
   onViewDetails: (election: any) => void;
+  departmentOrg?: string; // Add department_org prop
 }
 
 export function OrganizationElectionCard({
@@ -47,6 +48,7 @@ export function OrganizationElectionCard({
   hasVoted,
   onVoteNow,
   onViewDetails,
+  departmentOrg,
 }: OrganizationElectionCardProps) {
   const [votersCount, setVotersCount] = useState<string | null>(null);
   const [votesCount, setVotesCount] = useState<string | null>(null);
@@ -72,14 +74,14 @@ export function OrganizationElectionCard({
         return;
       }
       
-      const res = await fetch(`/api/global-stats?electionId=${election.id}`);
+      const res = await fetch(`/api/global-stats?electionId=${election.id}${departmentOrg ? `&department_org=${encodeURIComponent(departmentOrg)}` : ''}`);
       const data = await res.json();
       setVotersCount(data.voters !== undefined ? data.voters.toLocaleString() : 'N/A');
       setVotesCount(data.votes !== undefined ? data.votes.toLocaleString() : 'N/A');
       setParticipation(data.participation !== undefined ? `${data.participation}%` : 'N/A');
     }
     fetchStats();
-  }, [election.startDate, election.id]);
+  }, [election.startDate, election.id, departmentOrg]);
 
   useEffect(() => {
     async function fetchUserAndEmail() {
